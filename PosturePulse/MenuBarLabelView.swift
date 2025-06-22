@@ -6,6 +6,7 @@ struct MenuBarLabelView: View {
     @Environment(\.modelContext) private var ctx
     @Query private var prefs: [UserPrefs]
     @ObservedObject var scheduler: Scheduler
+    @ObservedObject var postureService: PostureService
     
     @State private var updateCounter = 0
     @State private var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
@@ -23,7 +24,6 @@ struct MenuBarLabelView: View {
     
     private var shouldShowCountdown: Bool {
         let shouldShow = userPrefs.showMenuBarCountdown && scheduler.isRunning && !scheduler.isPaused
-        print("🔔 MenuBarLabelView - shouldShowCountdown: \(shouldShow) (showMenuBarCountdown: \(userPrefs.showMenuBarCountdown), isRunning: \(scheduler.isRunning), isPaused: \(scheduler.isPaused))")
         return shouldShow
     }
     
@@ -48,6 +48,19 @@ struct MenuBarLabelView: View {
         }
     }
     
+    private var postureEmoji: String {
+        guard userPrefs.postureMonitoringEnabledValue else { return "" }
+        
+        switch postureService.currentPosture {
+        case .good:
+            return "😊"
+        case .poor:
+            return "😟"
+        case .calibrating, .unknown, .noAirPods:
+            return ""
+        }
+    }
+    
     var body: some View {
         HStack(spacing: 4) {
             Image(systemName: "figure.stand")
@@ -57,6 +70,11 @@ struct MenuBarLabelView: View {
                 Text(" \(countdownText)")
                     .font(.system(size: 12, weight: .medium))
                     .monospacedDigit()
+            }
+            
+            if !postureEmoji.isEmpty {
+                Text(" \(postureEmoji)")
+                    .font(.system(size: 12))
             }
         }
         .onReceive(timer) { _ in

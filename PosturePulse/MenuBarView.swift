@@ -6,6 +6,7 @@ struct MenuBarView: View {
     @Environment(\.modelContext) private var ctx
     @Query private var prefs: [UserPrefs]
     @ObservedObject var scheduler: Scheduler
+    @ObservedObject var postureService: PostureService
     var onOpenSettings: () -> Void
     var onQuit: () -> Void
 
@@ -48,6 +49,14 @@ struct MenuBarView: View {
         VStack(spacing: 0) {
             VStack {
                 Spacer(minLength: 20)
+
+                // Posture indicator
+                HStack {
+                    Spacer()
+                    postureIndicator
+                    Spacer()
+                }
+                .padding(.bottom, 10)
 
                 Text(phaseText)
                     .font(.system(size: 28, weight: .medium))
@@ -113,6 +122,22 @@ struct MenuBarView: View {
                 print("🔔 Setting intervals from onChange: sitting \(p.maxSitMinutes) minutes, standing \(p.maxStandMinutes) minutes")
                 scheduler.sittingInterval = TimeInterval(p.maxSitMinutes * 60)
                 scheduler.standingInterval = TimeInterval(p.maxStandMinutes * 60)
+                
+                // Update posture service settings
+                if p.postureMonitoringEnabledValue {
+                    postureService.setPoorPostureThreshold(TimeInterval(p.poorPostureThresholdSecondsValue))
+                    postureService.setPitchThreshold(p.postureSensitivityDegreesValue)
+                    postureService.setRollThreshold(p.postureSensitivityDegreesValue)
+                    
+                    // Start monitoring if authorized
+                    if postureService.isAuthorized {
+                        postureService.startMonitoring()
+                    }
+                } else {
+                    // Stop monitoring if disabled
+                    postureService.stopMonitoring()
+                }
+                
                 // Force UI update to reflect the new setting
                 updateCounter += 1
             }
@@ -133,6 +158,18 @@ struct MenuBarView: View {
             print("🔔 Setting intervals from preferences: sitting \(p.maxSitMinutes) minutes, standing \(p.maxStandMinutes) minutes")
             scheduler.sittingInterval = TimeInterval(p.maxSitMinutes * 60)
             scheduler.standingInterval = TimeInterval(p.maxStandMinutes * 60)
+            
+            // Set up posture service if enabled
+            if p.postureMonitoringEnabledValue {
+                postureService.setPoorPostureThreshold(TimeInterval(p.poorPostureThresholdSecondsValue))
+                postureService.setPitchThreshold(p.postureSensitivityDegreesValue)
+                postureService.setRollThreshold(p.postureSensitivityDegreesValue)
+                
+                // Start monitoring if authorized
+                if postureService.isAuthorized {
+                    postureService.startMonitoring()
+                }
+            }
         }
     }
 
@@ -167,5 +204,64 @@ struct MenuBarView: View {
         let minutes = Int(remaining) / 60
         let seconds = Int(remaining) % 60
         return String(format: "%02d:%02d", minutes, seconds)
+    }
+
+    @ViewBuilder
+    private var postureIndicator: some View {
+        if let prefs = prefs.first, prefs.postureMonitoringEnabledValue {
+            HStack(spacing: 8) {
+                Text(postureEmoji)
+                    .font(.system(size: 24))
+                
+                Text(postureText)
+                    .font(.system(size: 12, weight: .medium))
+                    .opacity(0.8)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(postureBackgroundColor.opacity(0.2))
+            .cornerRadius(12)
+        }
+    }
+    
+    private var postureEmoji: String {
+        switch postureService.currentPosture {
+        case .good:
+            return "😊"
+        case .poor:
+            return "😟"
+        case .calibrating, .unknown, .noAirPods:
+            return ""
+        @unknown default:
+            return ""
+        }
+    }
+    
+    private var postureText: String {
+        switch postureService.currentPosture {
+        case .good:
+            return "Good Posture"
+        case .poor:
+            return "Poor Posture"
+        case .calibrating, .unknown:
+            return ""
+        case .noAirPods:
+            return "Wear AirPods for posture detection"
+        @unknown default:
+            return ""
+        }
+    }
+    
+    private var postureBackgroundColor: Color {
+        switch postureService.currentPosture {
+        case .good:
+            return .green
+        case .poor:
+            return .red
+        case .calibrating, .unknown, .noAirPods:
+            return .clear
+        @unknown default:
+            return .clear
+        }
     }
 } 

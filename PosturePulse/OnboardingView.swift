@@ -11,6 +11,9 @@ struct OnboardingView: View {
     @State private var maxSitBlock = 45
     @State private var notificationsGranted = false
     @State private var calendarGranted = false
+    @State private var postureEnabled = false
+    @State private var postureGranted = false
+    @StateObject private var postureService = PostureService()
     
     private var userPrefs: UserPrefs {
         if let p = prefs.first {
@@ -126,7 +129,132 @@ struct OnboardingView: View {
                     Spacer()
                     
                     HStack {
+                        Button("Back") {
+                            currentPage = 0
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.large)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 12)
+                        
                         Spacer()
+                        
+                        Button("Next") {
+                            currentPage = 2
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 12)
+                    }
+                }
+                .padding(32)
+                .tag(1)
+                
+                // Page 3: Posture Tracking
+                VStack(spacing: 32) {
+                    VStack(spacing: 16) {
+                        Text("Posture Tracking")
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                        
+                        Text("Monitor your sitting posture using AirPods")
+                            .font(.title3)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    VStack(spacing: 24) {
+                        VStack(alignment: .leading, spacing: 16) {
+                            HStack {
+                                Image(systemName: "airpods")
+                                    .font(.title)
+                                    .foregroundColor(.blue)
+                                
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("AirPods Motion Detection")
+                                        .font(.headline)
+                                        .foregroundColor(.white)
+                                    
+                                    Text("Uses your AirPods to detect if you're sitting with good posture")
+                                        .font(.subheadline)
+                                        .foregroundColor(.secondary)
+                                }
+                                
+                                Spacer()
+                                
+                                Toggle("", isOn: $postureEnabled)
+                                    .toggleStyle(CustomToggleStyle())
+                            }
+                            
+                            if postureEnabled {
+                                VStack(alignment: .leading, spacing: 12) {
+                                    PermissionCard(
+                                        title: "Motion Access",
+                                        description: "Access AirPods motion data for posture detection",
+                                        icon: "figure.stand",
+                                        isGranted: $postureGranted,
+                                        onRequest: requestPosturePermission
+                                    )
+                                    
+                                    if postureGranted {
+                                        VStack(alignment: .leading, spacing: 8) {
+                                            Text("How it works:")
+                                                .font(.subheadline)
+                                                .foregroundColor(.white)
+                                            
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                HStack {
+                                                    Image(systemName: "checkmark.circle.fill")
+                                                        .foregroundColor(.green)
+                                                        .font(.caption)
+                                                    Text("Detects when you slouch or lean")
+                                                        .font(.caption)
+                                                        .foregroundColor(.secondary)
+                                                }
+                                                
+                                                HStack {
+                                                    Image(systemName: "checkmark.circle.fill")
+                                                        .foregroundColor(.green)
+                                                        .font(.caption)
+                                                    Text("Sends notifications after poor posture duration")
+                                                        .font(.caption)
+                                                        .foregroundColor(.secondary)
+                                                }
+                                                
+                                                HStack {
+                                                    Image(systemName: "checkmark.circle.fill")
+                                                        .foregroundColor(.green)
+                                                        .font(.caption)
+                                                    Text("Shows real-time posture status in menu bar")
+                                                        .font(.caption)
+                                                        .foregroundColor(.secondary)
+                                                }
+                                            }
+                                            .padding(.leading, 20)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        .padding(16)
+                        .background(Color(red: 0.16, green: 0.16, blue: 0.18))
+                        .cornerRadius(12)
+                    }
+                    
+                    Spacer()
+                    
+                    HStack {
+                        Button("Back") {
+                            currentPage = 1
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.large)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 12)
+                        
+                        Spacer()
+                        
                         Button("Get Started") {
                             savePreferences()
                             didOnboard = true
@@ -136,11 +264,10 @@ struct OnboardingView: View {
                         .controlSize(.large)
                         .padding(.horizontal, 24)
                         .padding(.vertical, 12)
-                        Spacer()
                     }
                 }
                 .padding(32)
-                .tag(1)
+                .tag(2)
             }
             .tabViewStyle(.automatic)
         }
@@ -150,7 +277,7 @@ struct OnboardingView: View {
             VStack {
                 Spacer()
                 HStack(spacing: 12) {
-                    ForEach(0..<2, id: \.self) { index in
+                    ForEach(0..<3, id: \.self) { index in
                         Circle()
                             .fill(currentPage == index ? Color(red: 0.2, green: 0.4, blue: 0.9) : Color.gray.opacity(0.4))
                             .frame(width: 12, height: 12)
@@ -177,6 +304,9 @@ struct OnboardingView: View {
         // Check calendar permission
         let calendarService = CalendarService()
         calendarGranted = calendarService.isAuthorized
+        
+        // Check posture permission
+        postureGranted = postureService.isAuthorized
     }
     
     private func requestNotificationPermission() {
@@ -197,10 +327,31 @@ struct OnboardingView: View {
         }
     }
     
+    private func requestPosturePermission() {
+        Task {
+            let granted = await postureService.requestAccess()
+            DispatchQueue.main.async {
+                postureGranted = granted
+            }
+        }
+    }
+    
     private func savePreferences() {
         userPrefs.maxStandMinutes = standGoal
         userPrefs.maxSitMinutes = maxSitBlock
         userPrefs.calendarFilter = calendarGranted
+        userPrefs.postureMonitoringEnabledValue = postureEnabled && postureGranted
+        
+        // Set up posture service if enabled
+        if userPrefs.postureMonitoringEnabledValue {
+            userPrefs.poorPostureThresholdSecondsValue = 30
+            userPrefs.postureSensitivityDegreesValue = 15.0
+            postureService.setPoorPostureThreshold(30)
+            postureService.setPitchThreshold(15.0)
+            postureService.setRollThreshold(15.0)
+            postureService.startMonitoring()
+        }
+        
         try? ctx.save()
         
         // Send congratulatory notification

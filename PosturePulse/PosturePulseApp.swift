@@ -6,6 +6,7 @@ import Combine
 @main
 struct PosturePulseApp: App {
     @StateObject private var scheduler = Scheduler()
+    private var postureService = PostureService()
     @State private var updateCounter = 0
     @State private var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -15,10 +16,10 @@ struct PosturePulseApp: App {
 
     var body: some Scene {
         MenuBarExtra {
-            AppContentView(scheduler: scheduler)
+            AppContentView(scheduler: scheduler, postureService: postureService)
                 .modelContainer(for: UserPrefs.self)
         } label: {
-            MenuBarLabelView(scheduler: scheduler)
+            MenuBarLabelView(scheduler: scheduler, postureService: postureService)
                 .modelContainer(for: UserPrefs.self)
         }
         .menuBarExtraStyle(.window)
@@ -39,13 +40,16 @@ struct AppContentView: View {
     @State private var onboardingWindowController: NSWindowController?
     @AppStorage("didOnboard") private var didOnboard = false
     let scheduler: Scheduler
+    let postureService: PostureService
     
     var body: some View {
         MenuBarView(
             scheduler: scheduler,
+            postureService: postureService,
             onOpenSettings: showSettingsWindow,
             onQuit: {
                 scheduler.stop()
+                postureService.stopMonitoring()
                 NSApp.terminate(nil)
             }
         )
@@ -85,7 +89,7 @@ struct AppContentView: View {
     
     private func showSettingsWindow() {
         if settingsWindowController == nil {
-            let settingsView = SettingsView(scheduler: scheduler)
+            let settingsView = SettingsView(scheduler: scheduler, postureService: postureService)
                 .modelContainer(for: UserPrefs.self)
             
             let window = NSWindow(
