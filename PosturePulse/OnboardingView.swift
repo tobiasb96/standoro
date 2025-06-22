@@ -202,6 +202,34 @@ struct OnboardingView: View {
         userPrefs.maxSitMinutes = maxSitBlock
         userPrefs.calendarFilter = calendarGranted
         try? ctx.save()
+        
+        // Send congratulatory notification
+        sendCongratulatoryNotification()
+    }
+    
+    private func sendCongratulatoryNotification() {
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            if settings.authorizationStatus == .authorized {
+                let content = UNMutableNotificationContent()
+                content.title = "🎉 Welcome to PosturePulse!"
+                content.body = "Great decision to work on your posture! Your first reminder will come in \(maxSitBlock) minutes."
+                content.sound = .default
+                
+                let req = UNNotificationRequest(
+                    identifier: "onboarding-complete",
+                    content: content,
+                    trigger: nil
+                )
+                
+                UNUserNotificationCenter.current().add(req) { error in
+                    if let error = error {
+                        print("🔔 Congratulatory notification error: \(error)")
+                    } else {
+                        print("🔔 Congratulatory notification sent successfully")
+                    }
+                }
+            }
+        }
     }
 }
 
