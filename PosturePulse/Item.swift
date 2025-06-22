@@ -9,10 +9,16 @@ import Foundation
 import SwiftData
 
 @Model
-final class Item {
-    var timestamp: Date
+class UserPrefs {
+    var maxSitMinutes: Int
+    var maxStandMinutes: Int
+    var calendarFilter: Bool
+    var showMenuBarCountdown: Bool
     
-    init(timestamp: Date) {
-        self.timestamp = timestamp
+    init(maxSitMinutes: Int = 45, maxStandMinutes: Int = 15, calendarFilter: Bool = true, showMenuBarCountdown: Bool = false) {
+        self.maxSitMinutes = maxSitMinutes
+        self.maxStandMinutes = maxStandMinutes
+        self.calendarFilter = calendarFilter
+        self.showMenuBarCountdown = showMenuBarCountdown
     }
 }
