@@ -178,8 +178,10 @@ class Scheduler: ObservableObject {
         
         print("🔔 Sending notification")
         
-        // Capture current phase before the closure to avoid MainActor isolation issues
+        // Capture values before the closure to avoid MainActor isolation issues
         let currentPhase = self.currentPhase
+        let sittingMinutes = Int(sittingInterval / 60)
+        let standingMinutes = Int(standingInterval / 60)
         
         // Check notification authorization first
         UNUserNotificationCenter.current().getNotificationSettings { settings in
@@ -191,11 +193,13 @@ class Scheduler: ObservableObject {
                 // Set notification based on current phase
                 switch currentPhase {
                 case .sitting:
-                    content.title = "Stand-up break"
-                    content.body = "Time to raise your desk!"
+                    content.title = "Time to Stand Up!"
+                    content.subtitle = "You've been sitting for \(sittingMinutes) minutes."
+                    content.body = "A quick stretch will do you good."
                 case .standing:
-                    content.title = "Sit-down break"
-                    content.body = "Time to sit back down!"
+                    content.title = "Time to Sit Down"
+                    content.subtitle = "You've been standing for \(standingMinutes) minutes."
+                    content.body = "Time to relax for a bit."
                 }
                 
                 content.sound = .default

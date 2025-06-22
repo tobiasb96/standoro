@@ -24,7 +24,5 @@
 	<string>Copyright © 2024. All rights reserved.</string>
 	<key>NSCalendarsUsageDescription</key>
 	<string>PosturePulse needs access to your calendar to mute posture reminders during meetings and calls.</string>
-	<key>NSMotionUsageDescription</key>
-	<string>PosturePulse uses motion data from your AirPods to detect your posture and remind you to sit up straight.</string>
 </dict>
 </plist> 
