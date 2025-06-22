@@ -19,6 +19,8 @@ class Scheduler: ObservableObject {
     private var _standingInterval: TimeInterval = 5 * 60 // Default 5 minutes
     private var pauseStartTime: Date?
     private var remainingTimeWhenPaused: TimeInterval = 0
+    private var calendarService: CalendarService?
+    private var shouldCheckCalendar: Bool = false
     
     var sittingInterval: TimeInterval {
         get { _sittingInterval }
@@ -61,6 +63,12 @@ class Scheduler: ObservableObject {
         } else {
             return nextFire.timeIntervalSinceNow
         }
+    }
+    
+    func setCalendarService(_ calendarService: CalendarService, shouldCheck: Bool) {
+        self.calendarService = calendarService
+        self.shouldCheckCalendar = shouldCheck
+        print("🔔 Scheduler - Calendar service set, should check: \(shouldCheck)")
     }
 
     func start(sittingInterval: TimeInterval? = nil, standingInterval: TimeInterval? = nil) {
@@ -156,7 +164,19 @@ class Scheduler: ObservableObject {
     }
 
     private func fire() {
-        print("🔔 Timer fired - sending notification")
+        print("🔔 Timer fired - checking if should send notification")
+        
+        // Check if we should skip notification due to calendar meetings
+        if shouldCheckCalendar, let calendarService = calendarService {
+            if calendarService.isInMeeting() {
+                print("🔔 Skipping notification - user is currently in a meeting")
+                // Still switch phases but don't send notification
+                switchPhase()
+                return
+            }
+        }
+        
+        print("🔔 Sending notification")
         
         // Check notification authorization first
         UNUserNotificationCenter.current().getNotificationSettings { settings in
@@ -196,6 +216,10 @@ class Scheduler: ObservableObject {
         }
         
         // Switch to next phase
+        switchPhase()
+    }
+    
+    private func switchPhase() {
         switch currentPhase {
         case .sitting:
             currentPhase = .standing
