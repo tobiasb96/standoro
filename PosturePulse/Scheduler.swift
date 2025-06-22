@@ -131,7 +131,7 @@ class Scheduler: ObservableObject {
     }
     
     func resume() {
-        guard isRunning, isPaused, let pauseStart = pauseStartTime else { return }
+        guard isRunning, isPaused, let _ = pauseStartTime else { return }
         
         // Calculate new next fire time based on remaining time when paused
         nextFire = Date().addingTimeInterval(remainingTimeWhenPaused)
@@ -178,6 +178,9 @@ class Scheduler: ObservableObject {
         
         print("🔔 Sending notification")
         
+        // Capture current phase before the closure to avoid MainActor isolation issues
+        let currentPhase = self.currentPhase
+        
         // Check notification authorization first
         UNUserNotificationCenter.current().getNotificationSettings { settings in
             print("🔔 Notification settings: \(settings.authorizationStatus.rawValue)")
@@ -186,7 +189,7 @@ class Scheduler: ObservableObject {
                 let content = UNMutableNotificationContent()
                 
                 // Set notification based on current phase
-                switch self.currentPhase {
+                switch currentPhase {
                 case .sitting:
                     content.title = "Stand-up break"
                     content.body = "Time to raise your desk!"

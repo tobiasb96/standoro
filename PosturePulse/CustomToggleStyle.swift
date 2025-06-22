@@ -9,7 +9,7 @@ struct CustomToggleStyle: ToggleStyle {
             ZStack {
                 RoundedRectangle(cornerRadius: 16)
                     .frame(width: 50, height: 30)
-                    .foregroundColor(configuration.isOn ? Color.accentColor : Color.gray.opacity(0.5))
+                    .foregroundColor(configuration.isOn ? Color(red: 0.2, green: 0.4, blue: 0.9) : Color(red: 0.16, green: 0.16, blue: 0.18))
                 
                 Circle()
                     .frame(width: 26, height: 26)

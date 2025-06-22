@@ -8,7 +8,7 @@ struct IntervalSliderView: View {
     let context: ModelContext
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Text(label)
                     .font(.headline)
@@ -18,9 +18,9 @@ struct IntervalSliderView: View {
                     .font(.headline)
                     .foregroundColor(.white)
                     .padding(.horizontal, 12)
-                    .padding(.vertical, 4)
-                    .background(Color.black.opacity(0.2))
-                    .cornerRadius(8)
+                    .padding(.vertical, 6)
+                    .background(Color(red: 0.2, green: 0.4, blue: 0.9))
+                    .cornerRadius(10)
             }
             
             Slider(value: Binding(
@@ -31,20 +31,22 @@ struct IntervalSliderView: View {
                 }
             ), in: 5...90, step: 1)
             .tint(Color(red: 0.2, green: 0.4, blue: 0.9))
+            .controlSize(.large)
 
-            HStack(spacing: 12) {
+            HStack(spacing: 8) {
                 ForEach(quickOptions, id: \.self) { option in
                     Button("\(option) min") {
                         minutes = option
                         try? context.save()
                     }
                     .buttonStyle(.plain)
-                    .foregroundColor(minutes == option ? .white : .gray)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(minutes == option ? Color.accentColor.opacity(0.4) : Color.black.opacity(0.2))
+                    .foregroundColor(minutes == option ? .white : .secondary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(minutes == option ? Color(red: 0.2, green: 0.4, blue: 0.9) : Color(red: 0.16, green: 0.16, blue: 0.18))
                     .cornerRadius(8)
-                    .font(.caption)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
                 }
             }
         }

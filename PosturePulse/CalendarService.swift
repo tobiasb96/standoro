@@ -73,29 +73,24 @@ class CalendarService: ObservableObject {
             return false
         }
         
-        do {
-            let predicate = store.predicateForEvents(withStart: now, end: end, calendars: nil)
-            let events = store.events(matching: predicate)
-            
-            // Filter for events that are currently happening and have attendees (meetings)
-            let currentMeetings = events.filter { event in
-                let isCurrentlyHappening = event.startDate <= now && event.endDate > now
-                let hasAttendees = event.hasAttendees
-                return isCurrentlyHappening && hasAttendees
-            }
-            
-            let inMeeting = !currentMeetings.isEmpty
-            if inMeeting {
-                print("🔔 CalendarService - Currently in meeting: \(currentMeetings.map { $0.title ?? "Untitled" })")
-            } else {
-                print("🔔 CalendarService - Not currently in any meetings")
-            }
-            
-            return inMeeting
-        } catch {
-            print("🔔 CalendarService - Error checking meetings: \(error)")
-            return false
+        let predicate = store.predicateForEvents(withStart: now, end: end, calendars: nil)
+        let events = store.events(matching: predicate)
+        
+        // Filter for events that are currently happening and have attendees (meetings)
+        let currentMeetings = events.filter { event in
+            let isCurrentlyHappening = event.startDate <= now && event.endDate > now
+            let hasAttendees = event.hasAttendees
+            return isCurrentlyHappening && hasAttendees
         }
+        
+        let inMeeting = !currentMeetings.isEmpty
+        if inMeeting {
+            print("🔔 CalendarService - Currently in meeting: \(currentMeetings.map { $0.title ?? "Untitled" })")
+        } else {
+            print("🔔 CalendarService - Not currently in any meetings")
+        }
+        
+        return inMeeting
     }
     
     func getUpcomingMeetings(hoursToCheck: Int = 4) -> [EKEvent] {
@@ -110,19 +105,14 @@ class CalendarService: ObservableObject {
             return []
         }
         
-        do {
-            let predicate = store.predicateForEvents(withStart: now, end: end, calendars: nil)
-            let events = store.events(matching: predicate)
-            
-            // Filter for events with attendees (meetings)
-            let meetings = events.filter { $0.hasAttendees }
-            
-            print("🔔 CalendarService - Found \(meetings.count) upcoming meetings in next \(hoursToCheck) hours")
-            return meetings
-        } catch {
-            print("🔔 CalendarService - Error fetching meetings: \(error)")
-            return []
-        }
+        let predicate = store.predicateForEvents(withStart: now, end: end, calendars: nil)
+        let events = store.events(matching: predicate)
+        
+        // Filter for events with attendees (meetings)
+        let meetings = events.filter { $0.hasAttendees }
+        
+        print("🔔 CalendarService - Found \(meetings.count) upcoming meetings in next \(hoursToCheck) hours")
+        return meetings
     }
     
     func getAuthorizationStatusText() -> String {

@@ -59,12 +59,12 @@ struct SettingsView: View {
                         context: ctx
                     )
 
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 12) {
                         Text("Integrations")
                             .font(.headline)
                             .foregroundColor(.white)
                         
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: 8) {
                             Toggle("Mute alerts during calendar meetings",
                                    isOn: Binding(
                                        get: { self.userPrefs.calendarFilter },
@@ -86,7 +86,7 @@ struct SettingsView: View {
                                    .toggleStyle(CustomToggleStyle())
                             
                             if userPrefs.calendarFilter {
-                                VStack(alignment: .leading, spacing: 4) {
+                                VStack(alignment: .leading, spacing: 6) {
                                     HStack {
                                         Image(systemName: calendarService.isAuthorized ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                                             .foregroundColor(calendarService.isAuthorized ? .green : .orange)
@@ -127,7 +127,7 @@ struct SettingsView: View {
                         }
                     }
 
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 12) {
                         Text("Menu Bar Display")
                             .font(.headline)
                             .foregroundColor(.white)
@@ -141,11 +141,22 @@ struct SettingsView: View {
                                ))
                                .toggleStyle(CustomToggleStyle())
                     }
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Development")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                        Button("Reset Onboarding") {
+                            UserDefaults.standard.removeObject(forKey: "didOnboard")
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                    }
                 }
             }
         }
         .padding(32)
-        .frame(width: 480, height: 500)
+        .frame(width: 480, height: 600)
         .background(Color(red: 0.12, green: 0.12, blue: 0.14))
         .onAppear {
             // Set up calendar service with scheduler
