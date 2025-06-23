@@ -34,6 +34,11 @@ class MotionService: ObservableObject {
     
     // MARK: - Public Methods
     
+    func setCalendarService(_ calendarService: CalendarService, shouldCheck: Bool) {
+        notificationService.setCalendarService(calendarService, shouldCheck: shouldCheck)
+        print("🔔 MotionService - Calendar service set, should check: \(shouldCheck)")
+    }
+    
     func requestAccess() async -> Bool {
         // Request notification authorization
         let notificationAuthorized = await notificationService.requestAuthorization()

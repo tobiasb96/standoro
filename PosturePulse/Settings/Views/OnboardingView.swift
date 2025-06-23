@@ -176,6 +176,9 @@ struct OnboardingView: View {
             motionService.startMonitoring()
         }
         
+        // Set up calendar service integration
+        motionService.setCalendarService(calendarService, shouldCheck: userPrefs.calendarFilter)
+        
         // Mark onboarding as complete
         didOnboard = true
         

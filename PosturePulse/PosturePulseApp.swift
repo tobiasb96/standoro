@@ -6,7 +6,8 @@ import Combine
 @main
 struct PosturePulseApp: App {
     @StateObject private var scheduler = Scheduler()
-    private var motionService = MotionService()
+    @StateObject private var motionService = MotionService()
+    @StateObject private var calendarService = CalendarService()
     @State private var updateCounter = 0
     @State private var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -16,7 +17,7 @@ struct PosturePulseApp: App {
 
     var body: some Scene {
         MenuBarExtra {
-            AppContentView(scheduler: scheduler, motionService: motionService)
+            AppContentView(scheduler: scheduler, motionService: motionService, calendarService: calendarService)
                 .modelContainer(for: UserPrefs.self)
         } label: {
             MenuBarLabelView(scheduler: scheduler, motionService: motionService)
@@ -41,6 +42,7 @@ struct AppContentView: View {
     @AppStorage("didOnboard") private var didOnboard = false
     let scheduler: Scheduler
     let motionService: MotionService
+    let calendarService: CalendarService
     
     var body: some View {
         MenuBarView(

@@ -96,6 +96,27 @@ struct GeneralSettingsContentView: View {
                                     .foregroundColor(.blue)
                                 }
                             }
+                            
+                            // Show error message if there's one
+                            if let errorMessage = calendarService.errorMessage {
+                                Text(errorMessage)
+                                    .font(.caption)
+                                    .foregroundColor(.red)
+                                    .padding(.leading, 20)
+                            }
+                            
+                            // Show current meeting status if authorized
+                            if calendarService.isAuthorized {
+                                HStack {
+                                    Image(systemName: calendarService.isInMeeting ? "bell.slash.fill" : "bell.fill")
+                                        .foregroundColor(calendarService.isInMeeting ? .orange : .green)
+                                        .font(.caption)
+                                    
+                                    Text(calendarService.isInMeeting ? "Currently in a meeting - notifications muted" : "No current meetings - notifications active")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
                         }
                         .padding(.leading, 20)
                     }

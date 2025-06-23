@@ -6,9 +6,17 @@ import Combine
 @MainActor
 class NotificationService: ObservableObject {
     @Published var isAuthorized = false
+    private var calendarService: CalendarService?
+    private var shouldCheckCalendar: Bool = false
     
     init() {
         checkAuthorizationStatus()
+    }
+    
+    func setCalendarService(_ calendarService: CalendarService, shouldCheck: Bool) {
+        self.calendarService = calendarService
+        self.shouldCheckCalendar = shouldCheck
+        print("🔔 NotificationService - Calendar service set, should check: \(shouldCheck)")
     }
     
     func requestAuthorization() async -> Bool {
@@ -26,9 +34,24 @@ class NotificationService: ObservableObject {
         }
     }
     
+    private func shouldSendNotification() -> Bool {
+        // Check if we should mute due to calendar meetings
+        if shouldCheckCalendar, let calendarService = calendarService {
+            if calendarService.isCurrentlyBusy() {
+                print("🔔 NotificationService - Skipping notification - user is currently busy")
+                return false
+            }
+        }
+        return true
+    }
+    
     func sendPostureNotification() {
         guard isAuthorized else {
             print("🔔 NotificationService - Notifications not authorized")
+            return
+        }
+        
+        guard shouldSendNotification() else {
             return
         }
         
@@ -55,6 +78,10 @@ class NotificationService: ObservableObject {
     func sendStandupNotification() {
         guard isAuthorized else {
             print("🔔 NotificationService - Notifications not authorized")
+            return
+        }
+        
+        guard shouldSendNotification() else {
             return
         }
         

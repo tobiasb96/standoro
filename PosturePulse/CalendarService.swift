@@ -8,9 +8,34 @@ class CalendarService: ObservableObject {
     @Published var isAuthorized = false
     @Published var authorizationStatus: EKAuthorizationStatus = .notDetermined
     @Published var errorMessage: String?
+    @Published var isInMeeting = false
+    @Published var currentMeetingTitle: String?
+    
+    // Busy ranges caching
+    private var busyRanges: [DateInterval] = []
+    private var lastCacheUpdate: Date?
+    private var cacheTimer: Timer?
+    private let cacheRefreshInterval: TimeInterval = 15 * 60 // 15 minutes
     
     init() {
         checkAuthorizationStatus()
+        startCacheTimer()
+        
+        // Log sandbox status for debugging
+        if isRunningInSandbox() {
+            print("🔔 CalendarService - App is running in sandbox mode")
+        } else {
+            print("🔔 CalendarService - App is running outside sandbox mode")
+        }
+    }
+    
+    deinit {
+        cacheTimer?.invalidate()
+    }
+    
+    private func isRunningInSandbox() -> Bool {
+        return Bundle.main.appStoreReceiptURL != nil || 
+               ProcessInfo.processInfo.environment["APP_SANDBOX_CONTAINER_ID"] != nil
     }
     
     func checkAuthorizationStatus() {
@@ -21,6 +46,10 @@ class CalendarService: ObservableObject {
         // Clear error message if we have proper authorization
         if isAuthorized {
             errorMessage = nil
+            // Refresh cache immediately when authorized
+            Task {
+                await refreshBusyRanges()
+            }
         }
     }
     
@@ -38,6 +67,12 @@ class CalendarService: ObservableObject {
                 }
             }
             print("🔔 CalendarService - Access granted: \(granted)")
+            
+            // Refresh cache if access was granted
+            if granted {
+                await refreshBusyRanges()
+            }
+            
             return granted
         } catch {
             print("🔔 CalendarService - Error requesting access: \(error)")
@@ -49,7 +84,7 @@ class CalendarService: ObservableObject {
                 if let nsError = error as NSError? {
                     switch nsError.code {
                     case 4099: // Sandbox restriction
-                        self.errorMessage = "Calendar access requires app sandbox configuration. Please contact the developer or try running the app outside of sandbox mode."
+                        self.errorMessage = "Calendar access requires proper app permissions. Please ensure the app has calendar access enabled in System Preferences > Privacy & Security > Calendars, or try running the app outside of sandbox mode for development."
                     default:
                         self.errorMessage = "Failed to access calendar: \(nsError.localizedDescription)"
                     }
@@ -61,36 +96,73 @@ class CalendarService: ObservableObject {
         }
     }
     
-    func isInMeeting(hoursToCheck: Int = 4) -> Bool {
+    private func startCacheTimer() {
+        cacheTimer?.invalidate()
+        cacheTimer = Timer.scheduledTimer(withTimeInterval: cacheRefreshInterval, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                await self?.refreshBusyRanges()
+            }
+        }
+    }
+    
+    private func refreshBusyRanges() async {
         guard isAuthorized else {
-            print("🔔 CalendarService - Not authorized, skipping meeting check")
-            return false
+            print("🔔 CalendarService - Not authorized, skipping busy ranges refresh")
+            return
         }
         
+        print("🔔 CalendarService - Refreshing busy ranges...")
+        
         let now = Date()
-        guard let end = Calendar.current.date(byAdding: .hour, value: hoursToCheck, to: now) else {
+        guard let end = Calendar.current.date(byAdding: .hour, value: 4, to: now) else {
             print("🔔 CalendarService - Could not calculate end date")
-            return false
+            return
         }
         
         let predicate = store.predicateForEvents(withStart: now, end: end, calendars: nil)
         let events = store.events(matching: predicate)
         
-        // Filter for events that are currently happening and have attendees (meetings)
-        let currentMeetings = events.filter { event in
-            let isCurrentlyHappening = event.startDate <= now && event.endDate > now
-            let hasAttendees = event.hasAttendees
-            return isCurrentlyHappening && hasAttendees
+        // Filter for non-all-day events and create date intervals manually
+        busyRanges = events
+            .filter { !$0.isAllDay }
+            .map { DateInterval(start: $0.startDate, end: $0.endDate) }
+        
+        lastCacheUpdate = now
+        
+        // Update current meeting status
+        updateCurrentMeetingStatus()
+        
+        print("🔔 CalendarService - Cached \(busyRanges.count) busy ranges, next refresh in \(cacheRefreshInterval/60) minutes")
+    }
+    
+    private func updateCurrentMeetingStatus() {
+        let now = Date()
+        
+        // Find current meeting
+        let currentMeeting = busyRanges.first { range in
+            range.contains(now)
         }
         
-        let inMeeting = !currentMeetings.isEmpty
-        if inMeeting {
-            print("🔔 CalendarService - Currently in meeting: \(currentMeetings.map { $0.title ?? "Untitled" })")
+        isInMeeting = currentMeeting != nil
+        currentMeetingTitle = currentMeeting?.description ?? nil
+        
+        if isInMeeting {
+            print("🔔 CalendarService - Currently in meeting")
         } else {
             print("🔔 CalendarService - Not currently in any meetings")
         }
-        
-        return inMeeting
+    }
+    
+    func isInMeeting(hoursToCheck: Int = 4) -> Bool {
+        // Use cached busy ranges for better performance
+        let now = Date()
+        return busyRanges.contains { range in
+            range.contains(now)
+        }
+    }
+    
+    func isCurrentlyBusy() -> Bool {
+        return isInMeeting
     }
     
     func getUpcomingMeetings(hoursToCheck: Int = 4) -> [EKEvent] {
@@ -132,5 +204,10 @@ class CalendarService: ObservableObject {
         @unknown default:
             return "Unknown"
         }
+    }
+    
+    // Force refresh for immediate updates (e.g., when settings change)
+    func forceRefresh() async {
+        await refreshBusyRanges()
     }
 } 

@@ -7,6 +7,7 @@ struct MenuBarView: View {
     @Query private var prefs: [UserPrefs]
     @ObservedObject var scheduler: Scheduler
     @ObservedObject var motionService: MotionService
+    @StateObject private var calendarService = CalendarService()
     var onOpenSettings: () -> Void
     var onQuit: () -> Void
 
@@ -44,9 +45,27 @@ struct MenuBarView: View {
     private var playPauseIcon: String {
         return scheduler.isRunning && !scheduler.isPaused ? "pause.circle.fill" : "play.circle.fill"
     }
+    
+    private var shouldShowCalendarMute: Bool {
+        guard let prefs = prefs.first else { return false }
+        return prefs.calendarFilter && calendarService.isAuthorized && calendarService.isInMeeting
+    }
 
     var body: some View {
         VStack(spacing: 0) {
+            // Calendar mute indicator in top right
+            HStack {
+                Spacer()
+                if shouldShowCalendarMute {
+                    Image(systemName: "bell.slash.fill")
+                        .foregroundColor(.orange)
+                        .font(.system(size: 16))
+                        .help("Notifications muted - you're currently in a meeting")
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            
             VStack {
                 Spacer(minLength: 20)
 
@@ -147,6 +166,10 @@ struct MenuBarView: View {
                     motionService.stopMonitoring()
                 }
                 
+                // Update calendar service integration
+                scheduler.setCalendarService(calendarService, shouldCheck: p.calendarFilter)
+                motionService.setCalendarService(calendarService, shouldCheck: p.calendarFilter)
+                
                 // Force UI update to reflect the new setting
                 updateCounter += 1
             }
@@ -155,6 +178,12 @@ struct MenuBarView: View {
             // Enable high frequency mode when popup is opened
             if prefs.first?.postureMonitoringEnabledValue == true && motionService.isAuthorized {
                 motionService.enablePostureHighFrequencyMode()
+            }
+            
+            // Set up calendar service integration
+            if let p = prefs.first {
+                scheduler.setCalendarService(calendarService, shouldCheck: p.calendarFilter)
+                motionService.setCalendarService(calendarService, shouldCheck: p.calendarFilter)
             }
         }
         .onDisappear {
