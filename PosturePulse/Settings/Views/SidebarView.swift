@@ -16,7 +16,7 @@ struct SidebarView: View {
                         .padding(.bottom, 2)
                         .padding(.leading, 4)
                     sidebarButton(item: .general, label: "General", icon: "gearshape")
-                    sidebarButton(item: .standing, label: "Standing", icon: "figure.stand")
+                    sidebarButton(item: .focus, label: "Focus", icon: "timer")
                     sidebarButton(item: .posture, label: "Posture", icon: "airpods")
                 }
                 .padding(.top, 24)

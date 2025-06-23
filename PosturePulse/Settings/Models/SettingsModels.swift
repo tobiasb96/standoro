@@ -19,7 +19,14 @@ class UserPrefs {
     var postureSensitivityDegrees: Double?
     var autoStartEnabled: Bool?
     
-    init(maxSitMinutes: Int = 45, maxStandMinutes: Int = 15, calendarFilter: Bool = true, showMenuBarCountdown: Bool = false, postureMonitoringEnabled: Bool = false, poorPostureThresholdSeconds: Int = 30, postureSensitivityDegrees: Double = 15.0, autoStartEnabled: Bool = true) {
+    // Pomodoro settings
+    var pomodoroModeEnabled: Bool?
+    var focusIntervalMinutes: Int?
+    var shortBreakMinutes: Int?
+    var longBreakMinutes: Int?
+    var intervalsBeforeLongBreak: Int?
+    
+    init(maxSitMinutes: Int = 45, maxStandMinutes: Int = 15, calendarFilter: Bool = true, showMenuBarCountdown: Bool = false, postureMonitoringEnabled: Bool = false, poorPostureThresholdSeconds: Int = 30, postureSensitivityDegrees: Double = 15.0, autoStartEnabled: Bool = true, pomodoroModeEnabled: Bool = false, focusIntervalMinutes: Int = 25, shortBreakMinutes: Int = 5, longBreakMinutes: Int = 15, intervalsBeforeLongBreak: Int = 4) {
         self.maxSitMinutes = maxSitMinutes
         self.maxStandMinutes = maxStandMinutes
         self.calendarFilter = calendarFilter
@@ -28,6 +35,11 @@ class UserPrefs {
         self.poorPostureThresholdSeconds = poorPostureThresholdSeconds
         self.postureSensitivityDegrees = postureSensitivityDegrees
         self.autoStartEnabled = autoStartEnabled
+        self.pomodoroModeEnabled = pomodoroModeEnabled
+        self.focusIntervalMinutes = focusIntervalMinutes
+        self.shortBreakMinutes = shortBreakMinutes
+        self.longBreakMinutes = longBreakMinutes
+        self.intervalsBeforeLongBreak = intervalsBeforeLongBreak
     }
     
     // Computed properties to provide default values
@@ -49,5 +61,31 @@ class UserPrefs {
     var autoStartEnabledValue: Bool {
         get { autoStartEnabled ?? true }
         set { autoStartEnabled = newValue }
+    }
+    
+    // Pomodoro computed properties
+    var pomodoroModeEnabledValue: Bool {
+        get { pomodoroModeEnabled ?? false }
+        set { pomodoroModeEnabled = newValue }
+    }
+    
+    var focusIntervalMinutesValue: Int {
+        get { focusIntervalMinutes ?? 25 }
+        set { focusIntervalMinutes = newValue }
+    }
+    
+    var shortBreakMinutesValue: Int {
+        get { shortBreakMinutes ?? 5 }
+        set { shortBreakMinutes = newValue }
+    }
+    
+    var longBreakMinutesValue: Int {
+        get { longBreakMinutes ?? 15 }
+        set { longBreakMinutes = newValue }
+    }
+    
+    var intervalsBeforeLongBreakValue: Int {
+        get { intervalsBeforeLongBreak ?? 4 }
+        set { intervalsBeforeLongBreak = newValue }
     }
 } 

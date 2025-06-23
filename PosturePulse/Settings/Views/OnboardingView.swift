@@ -91,7 +91,7 @@ struct OnboardingView: View {
                             .foregroundColor(.secondary)
                     }
                     
-                    StandingRemindersContentView(
+                    FocusSettingsContentView(
                         userPrefs: userPrefs,
                         scheduler: Scheduler(), // Dummy scheduler for onboarding
                         ctx: ctx,

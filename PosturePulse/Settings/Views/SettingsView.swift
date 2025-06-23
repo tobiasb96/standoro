@@ -13,7 +13,7 @@ struct SettingsView: View {
     @State private var selection: SidebarItem? = .general
     
     enum SidebarItem: Hashable {
-        case stats, general, standing, posture, about
+        case stats, general, focus, posture, about
     }
     
     private var userPrefs: UserPrefs {
@@ -70,8 +70,8 @@ struct SettingsView: View {
                                 ctx: ctx,
                                 showExplanations: false
                             )
-                        case .standing:
-                            StandingRemindersContentView(
+                        case .focus:
+                            FocusSettingsContentView(
                                 userPrefs: userPrefs,
                                 scheduler: scheduler,
                                 ctx: ctx,
@@ -152,8 +152,8 @@ struct SettingsView: View {
             return "Stats"
         case .general:
             return "General Settings"
-        case .standing:
-            return "Standing Reminders"
+        case .focus:
+            return "Focus"
         case .posture:
             return "Posture Tracking"
         case .about:
@@ -166,8 +166,8 @@ struct SettingsView: View {
         switch item {
         case .general:
             return "Customize how PosturePulse behaves and integrates with your system."
-        case .standing:
-            return "Set your standing goals and maximum sitting time for healthier habits."
+        case .focus:
+            return "Configure your focus settings."
         case .posture:
             return "Configure posture monitoring and advanced AirPods tracking."
         default:

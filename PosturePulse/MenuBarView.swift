@@ -32,18 +32,40 @@ struct MenuBarView: View {
     private var phaseText: String {
         if scheduler.isRunning {
             if scheduler.isPaused {
-                switch scheduler.currentPhase {
-                case .sitting:
-                    return "Sitting (Paused)"
-                case .standing:
-                    return "Standing (Paused)"
+                if scheduler.pomodoroModeEnabled {
+                    switch scheduler.currentSessionType {
+                    case .focus:
+                        return "Focus (\(scheduler.currentPhase == .sitting ? "Sitting" : "Standing")) (Paused)"
+                    case .shortBreak:
+                        return "Short Break (Paused)"
+                    case .longBreak:
+                        return "Long Break (Paused)"
+                    }
+                } else {
+                    switch scheduler.currentPhase {
+                    case .sitting:
+                        return "Sitting (Paused)"
+                    case .standing:
+                        return "Standing (Paused)"
+                    }
                 }
             } else {
-                switch scheduler.currentPhase {
-                case .sitting:
-                    return "Sitting"
-                case .standing:
-                    return "Standing"
+                if scheduler.pomodoroModeEnabled {
+                    switch scheduler.currentSessionType {
+                    case .focus:
+                        return "Focus (\(scheduler.currentPhase == .sitting ? "Sitting" : "Standing"))"
+                    case .shortBreak:
+                        return "Short Break"
+                    case .longBreak:
+                        return "Long Break"
+                    }
+                } else {
+                    switch scheduler.currentPhase {
+                    case .sitting:
+                        return "Sitting"
+                    case .standing:
+                        return "Standing"
+                    }
                 }
             }
         } else {
@@ -178,6 +200,13 @@ struct MenuBarView: View {
                 scheduler.sittingInterval = TimeInterval(p.maxSitMinutes * 60)
                 scheduler.standingInterval = TimeInterval(p.maxStandMinutes * 60)
                 
+                // Update Pomodoro settings
+                scheduler.setPomodoroMode(p.pomodoroModeEnabledValue)
+                scheduler.focusInterval = TimeInterval(p.focusIntervalMinutesValue * 60)
+                scheduler.shortBreakInterval = TimeInterval(p.shortBreakMinutesValue * 60)
+                scheduler.longBreakInterval = TimeInterval(p.longBreakMinutesValue * 60)
+                scheduler.intervalsBeforeLongBreak = p.intervalsBeforeLongBreakValue
+                
                 // Update auto-start setting
                 scheduler.setAutoStartEnabled(p.autoStartEnabledValue)
                 
@@ -223,10 +252,24 @@ struct MenuBarView: View {
             scheduler.sittingInterval = TimeInterval(newPrefs.maxSitMinutes * 60)
             scheduler.standingInterval = TimeInterval(newPrefs.maxStandMinutes * 60)
             scheduler.setAutoStartEnabled(newPrefs.autoStartEnabledValue)
+            
+            // Set up Pomodoro settings
+            scheduler.setPomodoroMode(newPrefs.pomodoroModeEnabledValue)
+            scheduler.focusInterval = TimeInterval(newPrefs.focusIntervalMinutesValue * 60)
+            scheduler.shortBreakInterval = TimeInterval(newPrefs.shortBreakMinutesValue * 60)
+            scheduler.longBreakInterval = TimeInterval(newPrefs.longBreakMinutesValue * 60)
+            scheduler.intervalsBeforeLongBreak = newPrefs.intervalsBeforeLongBreakValue
         } else if let p = prefs.first {
             scheduler.sittingInterval = TimeInterval(p.maxSitMinutes * 60)
             scheduler.standingInterval = TimeInterval(p.maxStandMinutes * 60)
             scheduler.setAutoStartEnabled(p.autoStartEnabledValue)
+            
+            // Set up Pomodoro settings
+            scheduler.setPomodoroMode(p.pomodoroModeEnabledValue)
+            scheduler.focusInterval = TimeInterval(p.focusIntervalMinutesValue * 60)
+            scheduler.shortBreakInterval = TimeInterval(p.shortBreakMinutesValue * 60)
+            scheduler.longBreakInterval = TimeInterval(p.longBreakMinutesValue * 60)
+            scheduler.intervalsBeforeLongBreak = p.intervalsBeforeLongBreakValue
             
             // Set up motion service if enabled
             if p.postureMonitoringEnabledValue {

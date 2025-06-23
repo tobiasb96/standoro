@@ -7,12 +7,19 @@ enum PosturePhase {
     case standing
 }
 
+enum SessionType {
+    case focus
+    case shortBreak
+    case longBreak
+}
+
 @MainActor
 class Scheduler: ObservableObject {
     @Published var nextFire = Date()
     @Published var isRunning = false
     @Published var isPaused = false
     @Published var currentPhase: PosturePhase = .sitting
+    @Published var currentSessionType: SessionType = .focus
     
     private var timer: Timer?
     private var _sittingInterval: TimeInterval = 25 * 60 // Default 25 minutes
@@ -22,6 +29,14 @@ class Scheduler: ObservableObject {
     private var calendarService: CalendarService?
     private var shouldCheckCalendar: Bool = false
     private var autoStartEnabled: Bool = true // Default to true
+    
+    // Pomodoro tracking
+    private var completedFocusSessions: Int = 0
+    @Published var pomodoroModeEnabled: Bool = false
+    private var _focusInterval: TimeInterval = 25 * 60 // Default 25 minutes for Pomodoro
+    private var _shortBreakInterval: TimeInterval = 5 * 60 // Default 5 minutes
+    private var _longBreakInterval: TimeInterval = 15 * 60 // Default 15 minutes
+    private var _intervalsBeforeLongBreak: Int = 4 // Default 4 focus sessions
     
     var sittingInterval: TimeInterval {
         get { _sittingInterval }
@@ -33,12 +48,44 @@ class Scheduler: ObservableObject {
         set { _standingInterval = newValue }
     }
     
+    // Pomodoro intervals
+    var focusInterval: TimeInterval {
+        get { _focusInterval }
+        set { _focusInterval = newValue }
+    }
+    
+    var shortBreakInterval: TimeInterval {
+        get { _shortBreakInterval }
+        set { _shortBreakInterval = newValue }
+    }
+    
+    var longBreakInterval: TimeInterval {
+        get { _longBreakInterval }
+        set { _longBreakInterval = newValue }
+    }
+    
+    var intervalsBeforeLongBreak: Int {
+        get { _intervalsBeforeLongBreak }
+        set { _intervalsBeforeLongBreak = newValue }
+    }
+    
     var currentInterval: TimeInterval {
-        switch currentPhase {
-        case .sitting:
-            return sittingInterval
-        case .standing:
-            return standingInterval
+        if pomodoroModeEnabled {
+            switch currentSessionType {
+            case .focus:
+                return focusInterval
+            case .shortBreak:
+                return shortBreakInterval
+            case .longBreak:
+                return longBreakInterval
+            }
+        } else {
+            switch currentPhase {
+            case .sitting:
+                return sittingInterval
+            case .standing:
+                return standingInterval
+            }
         }
     }
 
@@ -74,6 +121,15 @@ class Scheduler: ObservableObject {
     func setAutoStartEnabled(_ enabled: Bool) {
         self.autoStartEnabled = enabled
     }
+    
+    func setPomodoroMode(_ enabled: Bool) {
+        self.pomodoroModeEnabled = enabled
+        if enabled {
+            // Reset Pomodoro tracking when enabling
+            completedFocusSessions = 0
+            currentSessionType = .focus
+        }
+    }
 
     func start(sittingInterval: TimeInterval? = nil, standingInterval: TimeInterval? = nil) {
         if let sittingInterval = sittingInterval {
@@ -95,8 +151,15 @@ class Scheduler: ObservableObject {
         pauseStartTime = nil
         remainingTimeWhenPaused = 0
         
-        // Start with sitting phase
-        currentPhase = .sitting
+        // Initialize based on mode
+        if pomodoroModeEnabled {
+            currentSessionType = .focus
+            currentPhase = .sitting // Start with sitting for focus
+            nextFire = Date().addingTimeInterval(self.focusInterval)
+        } else {
+            currentPhase = .sitting
+            nextFire = Date().addingTimeInterval(self.sittingInterval)
+        }
         
         // Create new timer
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
@@ -105,7 +168,6 @@ class Scheduler: ObservableObject {
             }
         }
         
-        nextFire = Date().addingTimeInterval(self.sittingInterval)
         isRunning = true
         isPaused = false
     }
@@ -116,6 +178,8 @@ class Scheduler: ObservableObject {
         isRunning = false
         isPaused = false
         currentPhase = .sitting
+        currentSessionType = .focus
+        completedFocusSessions = 0
         pauseStartTime = nil
         remainingTimeWhenPaused = 0
     }
@@ -183,25 +247,62 @@ class Scheduler: ObservableObject {
         
         // Capture values before the closure to avoid MainActor isolation issues
         let currentPhase = self.currentPhase
-        let sittingMinutes = Int(sittingInterval / 60)
-        let standingMinutes = Int(standingInterval / 60)
+        let currentSessionType = self.currentSessionType
         let autoStartEnabled = self.autoStartEnabled
+        let pomodoroModeEnabled = self.pomodoroModeEnabled
+        
+        // Capture Pomodoro intervals before the closure
+        let focusInterval = self.focusInterval
+        let shortBreakInterval = self.shortBreakInterval
+        let longBreakInterval = self.longBreakInterval
+        let completedFocusSessions = self.completedFocusSessions
+        
+        // Capture normal intervals before the closure
+        let sittingInterval = self.sittingInterval
+        let standingInterval = self.standingInterval
         
         // Check notification authorization first
         UNUserNotificationCenter.current().getNotificationSettings { settings in
             if settings.authorizationStatus == .authorized {
                 let content = UNMutableNotificationContent()
                 
-                // Set notification based on current phase
-                switch currentPhase {
-                case .sitting:
-                    content.title = "Time to Stand Up!"
-                    content.subtitle = "You've been sitting for \(sittingMinutes) minutes."
-                    content.body = autoStartEnabled ? "A quick stretch will do you good." : "A quick stretch will do you good. Open the menu to start your standing session."
-                case .standing:
-                    content.title = "Time to Sit Down"
-                    content.subtitle = "You've been standing for \(standingMinutes) minutes."
-                    content.body = autoStartEnabled ? "Time to relax for a bit." : "Time to relax for a bit. Open the menu to start your sitting session."
+                if pomodoroModeEnabled {
+                    // Use captured values to avoid MainActor isolation issues
+                    let focusMinutes = Int(focusInterval / 60)
+                    let shortBreakMinutes = Int(shortBreakInterval / 60)
+                    let longBreakMinutes = Int(longBreakInterval / 60)
+                    let completedSessions = completedFocusSessions
+                    
+                    // Pomodoro mode notifications
+                    switch currentSessionType {
+                    case .focus:
+                        content.title = "Focus Session Complete!"
+                        content.subtitle = "You've been \(currentPhase == .sitting ? "sitting" : "standing") for \(focusMinutes) minutes."
+                        content.body = autoStartEnabled ? "Time for a break." : "Time for a break. Open the menu to start your break."
+                    case .shortBreak:
+                        content.title = "Break Complete!"
+                        content.subtitle = "You've rested for \(shortBreakMinutes) minutes."
+                        content.body = autoStartEnabled ? "Ready for your next focus session?" : "Ready for your next focus session? Open the menu to start."
+                    case .longBreak:
+                        content.title = "Long Break Complete!"
+                        content.subtitle = "You've completed \(completedSessions) focus sessions."
+                        content.body = autoStartEnabled ? "Great work! Ready for more?" : "Great work! Ready for more? Open the menu to start."
+                    }
+                } else {
+                    // Normal mode notifications (existing logic)
+                    let sittingMinutes = Int(sittingInterval / 60)
+                    let standingMinutes = Int(standingInterval / 60)
+                    
+                    switch currentPhase {
+                    case .sitting:
+                        content.title = "Time to Stand Up!"
+                        content.subtitle = "You've been sitting for \(sittingMinutes) minutes."
+                        content.body = autoStartEnabled ? "A quick stretch will do you good." : "A quick stretch will do you good. Open the menu to start your standing session."
+                    case .standing:
+                        content.title = "Time to Sit Down"
+                        content.subtitle = "You've been standing for \(standingMinutes) minutes."
+                        content.body = autoStartEnabled ? "Time to relax for a bit." : "Time to relax for a bit. Open the menu to start your sitting session."
+                    }
                 }
                 
                 content.sound = .default
@@ -231,13 +332,33 @@ class Scheduler: ObservableObject {
     }
     
     private func switchPhase() {
-        switch currentPhase {
-        case .sitting:
-            currentPhase = .standing
-            nextFire = Date().addingTimeInterval(self.standingInterval)
-        case .standing:
-            currentPhase = .sitting
-            nextFire = Date().addingTimeInterval(self.sittingInterval)
+        if pomodoroModeEnabled {
+            switch currentSessionType {
+            case .focus:
+                completedFocusSessions += 1
+                if completedFocusSessions % intervalsBeforeLongBreak == 0 {
+                    currentSessionType = .longBreak
+                    nextFire = Date().addingTimeInterval(self.longBreakInterval)
+                } else {
+                    currentSessionType = .shortBreak
+                    nextFire = Date().addingTimeInterval(self.shortBreakInterval)
+                }
+            case .shortBreak, .longBreak:
+                currentSessionType = .focus
+                // Toggle sitting/standing for variety in focus sessions
+                currentPhase = (currentPhase == .sitting) ? .standing : .sitting
+                nextFire = Date().addingTimeInterval(self.focusInterval)
+            }
+        } else {
+            // Existing logic for normal mode
+            switch currentPhase {
+            case .sitting:
+                currentPhase = .standing
+                nextFire = Date().addingTimeInterval(self.standingInterval)
+            case .standing:
+                currentPhase = .sitting
+                nextFire = Date().addingTimeInterval(self.sittingInterval)
+            }
         }
     }
 } 
