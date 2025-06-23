@@ -22,6 +22,11 @@ class PostureService: NSObject, ObservableObject, CMHeadphoneMotionManagerDelega
     private var pitchThreshold: Double = 15.0 // Degrees from upright
     private var rollThreshold: Double = 15.0 // Degrees from upright
     
+    // Update frequency control
+    private var updateFrequency: TimeInterval = 5.0 // Default 5 seconds for normal mode
+    private var lastUpdateTime = Date()
+    private var isHighFrequencyMode = false
+    
     // Logging throttling variables
     private var lastLogTime = Date()
     private var lastDurationLog = Date()
@@ -50,6 +55,23 @@ class PostureService: NSObject, ObservableObject, CMHeadphoneMotionManagerDelega
     }
     
     // MARK: - Public Methods
+    
+    func setUpdateFrequency(_ frequency: TimeInterval) {
+        updateFrequency = frequency
+        print("🔔 PostureService - Update frequency set to \(frequency) seconds")
+    }
+    
+    func enableHighFrequencyMode() {
+        isHighFrequencyMode = true
+        updateFrequency = 1.0
+        print("🔔 PostureService - High frequency mode enabled (1 second updates)")
+    }
+    
+    func disableHighFrequencyMode() {
+        isHighFrequencyMode = false
+        updateFrequency = 5.0
+        print("🔔 PostureService - High frequency mode disabled (5 second updates)")
+    }
     
     func requestAccess() async -> Bool {
         // Check if headphone motion is available (AirPods)
@@ -232,6 +254,13 @@ class PostureService: NSObject, ObservableObject, CMHeadphoneMotionManagerDelega
             return
         }
         
+        // Check if enough time has passed since last update
+        let now = Date()
+        if now.timeIntervalSince(lastUpdateTime) < updateFrequency {
+            return // Skip this update
+        }
+        lastUpdateTime = now
+        
         // Convert quaternion to Euler angles
         let (pitch, roll) = quaternionToEulerAngles(motion.attitude.quaternion)
         
@@ -259,7 +288,7 @@ class PostureService: NSObject, ObservableObject, CMHeadphoneMotionManagerDelega
         
         // Log current status every few seconds (throttled to avoid spam)
         if Date().timeIntervalSince(lastLogTime) > 2.0 {
-            print("🔔 PostureService - Current: pitch=\(String(format: "%.1f", pitch))°, roll=\(String(format: "%.1f", roll))° | Deviations: pitch=\(String(format: "%.1f", pitchDev))°, roll=\(String(format: "%.1f", rollDev))° | Thresholds: pitch=\(String(format: "%.1f", pitchThreshold))°, roll=\(String(format: "%.1f", rollThreshold))° | Good posture: \(isGoodPosture)")
+            print("🔔 PostureService - Current: pitch=\(String(format: "%.1f", pitch))°, roll=\(String(format: "%.1f", roll))° | Deviations: pitch=\(String(format: "%.1f", pitchDev))°, roll=\(String(format: "%.1f", rollDev))° | Thresholds: pitch=\(String(format: "%.1f", pitchThreshold))°, roll=\(String(format: "%.1f", rollThreshold))° | Good posture: \(isGoodPosture) | Update freq: \(updateFrequency)s")
             lastLogTime = Date()
         }
         

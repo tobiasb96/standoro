@@ -142,6 +142,18 @@ struct MenuBarView: View {
                 updateCounter += 1
             }
         }
+        .onAppear {
+            // Enable high frequency mode when popup is opened
+            if prefs.first?.postureMonitoringEnabledValue == true && postureService.isAuthorized {
+                postureService.enableHighFrequencyMode()
+            }
+        }
+        .onDisappear {
+            // Disable high frequency mode when popup is closed
+            if prefs.first?.postureMonitoringEnabledValue == true && postureService.isAuthorized {
+                postureService.disableHighFrequencyMode()
+            }
+        }
     }
 
     private func setupInitialState() {

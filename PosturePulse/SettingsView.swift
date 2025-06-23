@@ -69,10 +69,32 @@ struct SettingsView: View {
                 postureService.setPitchThreshold(userPrefs.postureSensitivityDegreesValue)
                 postureService.setRollThreshold(userPrefs.postureSensitivityDegreesValue)
             }
+            
+            // Always enable high frequency mode when settings are opened
+            // This allows users to see real-time angles even if posture monitoring is disabled
+            if postureService.isAuthorized {
+                postureService.enableHighFrequencyMode()
+                
+                // Start monitoring if not already active, so we can show real-time angles
+                if !postureService.isMonitoring {
+                    postureService.startMonitoring()
+                }
+            }
         }
         .onDisappear {
             // Save context when the window is closed
             try? ctx.save()
+            
+            // Always disable high frequency mode when settings are closed
+            if postureService.isAuthorized {
+                postureService.disableHighFrequencyMode()
+                
+                // Stop monitoring if it was started just for the settings window
+                // and posture monitoring is disabled in preferences
+                if postureService.isMonitoring && !userPrefs.postureMonitoringEnabledValue {
+                    postureService.stopMonitoring()
+                }
+            }
         }
     }
 }
@@ -256,7 +278,7 @@ struct PostureTabView: View {
     let ctx: ModelContext
     @State private var showAdvancedSettings = false
     @State private var updateCounter = 0
-    @State private var timer = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
+    @State private var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
     var body: some View {
         ScrollView {
@@ -316,7 +338,7 @@ struct PostureTabView: View {
                                         .padding(.leading, 20)
                                 }
                                 
-                                if postureService.isMonitoring {
+                                if postureService.isAuthorized {
                                     VStack(alignment: .leading, spacing: 4) {
                                         HStack {
                                             Image(systemName: postureService.currentPosture == .good ? "checkmark.circle.fill" : 
@@ -492,8 +514,8 @@ struct PostureTabView: View {
             .padding()
         }
         .onReceive(timer) { _ in
-            // Force UI update every 0.5 seconds to show live angles
-            if postureService.isMonitoring {
+            // Force UI update every 1 second to show live angles
+            if postureService.isAuthorized {
                 updateCounter += 1
             }
         }

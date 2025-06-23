@@ -9,7 +9,7 @@ struct MenuBarLabelView: View {
     @ObservedObject var postureService: PostureService
     
     @State private var updateCounter = 0
-    @State private var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    @State private var timer = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
     
     private var userPrefs: UserPrefs {
         if let p = prefs.first {
@@ -79,6 +79,10 @@ struct MenuBarLabelView: View {
         }
         .onReceive(timer) { _ in
             if scheduler.isRunning && !scheduler.isPaused {
+                updateCounter += 1
+            }
+            // Also update when posture monitoring is enabled to show emoji changes
+            if userPrefs.postureMonitoringEnabledValue && postureService.isAuthorized {
                 updateCounter += 1
             }
         }
