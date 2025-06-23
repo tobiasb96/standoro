@@ -4,7 +4,7 @@ import CoreMotion
 
 /// Detects when user stands up from sitting position
 @MainActor
-class StandupDetector: BaseAnalyzer {
+class StandupDetector: BaseAnalyzer, ObservableObject {
     @Published var isStanding = false
     @Published var lastStandupTime: Date?
     @Published var lastSitTime: Date?

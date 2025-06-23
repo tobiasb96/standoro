@@ -3,7 +3,7 @@ import Combine
 
 /// Analyzes motion data for posture detection
 @MainActor
-class PostureAnalyzer: BaseAnalyzer {
+class PostureAnalyzer: BaseAnalyzer, ObservableObject {
     @Published var currentPosture: PostureStatus = .unknown
     @Published var currentPitch: Double = 0.0
     @Published var currentRoll: Double = 0.0

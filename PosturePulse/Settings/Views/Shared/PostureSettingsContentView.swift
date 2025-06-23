@@ -410,7 +410,7 @@ struct PostureSettingsContentView: View {
         let granted = await motionService.requestAccess()
         if granted {
             // Start monitoring if posture monitoring is enabled
-            if let prefs = prefs.first, prefs.postureMonitoringEnabledValue {
+            if userPrefs.postureMonitoringEnabledValue {
                 motionService.startMonitoring()
             }
         }
