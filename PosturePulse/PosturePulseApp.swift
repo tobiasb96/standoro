@@ -105,12 +105,15 @@ struct AppContentView: View {
                 .modelContainer(for: UserPrefs.self)
             
             let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 700, height: 500),
+                contentRect: NSRect(x: 0, y: 0, width: 1000, height: 687),
                 styleMask: [.titled, .closable, .miniaturizable],
                 backing: .buffered,
                 defer: false
             )
             window.title = ""
+            window.titleVisibility = .hidden
+            window.titlebarAppearsTransparent = true
+            window.styleMask.remove(.titled)
             window.contentView = NSHostingView(rootView: settingsView)
             window.center()
             

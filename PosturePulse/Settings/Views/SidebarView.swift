@@ -9,6 +9,12 @@ struct SidebarView: View {
             VStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: 2) {
                     sidebarButton(item: .stats, label: "Stats", icon: "chart.bar.xaxis")
+                    Text("Settings")
+                        .font(.system(size: 12))
+                        .foregroundColor(.settingsSubheader)
+                        .padding(.top, 18)
+                        .padding(.bottom, 2)
+                        .padding(.leading, 4)
                     sidebarButton(item: .general, label: "General", icon: "gearshape")
                     sidebarButton(item: .standing, label: "Standing", icon: "figure.stand")
                     sidebarButton(item: .posture, label: "Posture", icon: "airpods")
@@ -16,11 +22,18 @@ struct SidebarView: View {
                 .padding(.top, 24)
                 .padding(.horizontal, 8)
                 Spacer()
-                Divider().background(Color.settingsSidebarDivider)
                 VStack {
-                    sidebarButton(item: .about, label: "About", icon: "info.circle")
+                    Button(action: { selection = .about }) {
+                        Text("About")
+                            .font(.system(size: 13))
+                            .foregroundColor(.settingsSubheader)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
-                .padding(.vertical, 12)
+                .frame(maxWidth: .infinity)
+                .padding(.bottom, 16)
             }
         }
     }
@@ -30,14 +43,16 @@ struct SidebarView: View {
         Button(action: { selection = item }) {
             HStack(spacing: 12) {
                 Image(systemName: icon)
-                    .font(.system(size: 18, weight: .medium))
+                    .font(.system(size: 16, weight: .regular))
                     .foregroundColor(item == selection ? .settingsAccentBlue : .settingsText)
+                    .frame(width: 22, alignment: .center)
                 Text(label)
-                    .font(.system(size: 15, weight: .medium))
+                    .font(.system(size: 14))
                     .foregroundColor(item == selection ? .settingsAccentBlue : .settingsText)
+                    .frame(alignment: .leading)
                 Spacer()
             }
-            .padding(.vertical, 8)
+            .padding(.vertical, 7)
             .padding(.horizontal, 8)
             .background(item == selection ? Color.settingsCard.opacity(0.7) : Color.clear)
             .cornerRadius(8)

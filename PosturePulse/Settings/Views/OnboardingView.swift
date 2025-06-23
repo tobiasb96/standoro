@@ -38,32 +38,31 @@ struct OnboardingView: View {
                     
                     // Logo and Welcome
                     VStack(spacing: 24) {
-                        // App Icon/Logo placeholder
                         Image(systemName: "figure.stand.line.dotted.figure.stand")
-                            .font(.system(size: 80))
-                            .foregroundColor(.blue)
+                            .font(.system(size: 90))
+                            .foregroundColor(.settingsAccentBlue)
                         
                         Text("Welcome to PosturePulse")
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
+                            .font(.system(size: 28, weight: .semibold))
+                            .foregroundColor(.settingsHeader)
                     }
                     
                     // Explanation paragraphs
                     VStack(spacing: 20) {
-                        Text("PosturePulse is your intelligent posture companion that helps you maintain healthy sitting habits and reduce the physical strain of long work sessions.")
-                            .font(.title3)
-                            .foregroundColor(.secondary)
+                        Text("PosturePulse is your intelligent posture companion, designed to help you build healthier work habits and reduce the aches and fatigue that come from long hours at your desk. Modern work often means sitting for extended periods, which can lead to back pain, neck strain, and decreased energy.")
+                            .font(.system(size: 16))
+                            .foregroundColor(.settingsSubheader)
                             .multilineTextAlignment(.center)
-                            .lineLimit(nil)
-                        
-                        Text("With smart reminders to stand up regularly and real-time posture monitoring using your AirPods, PosturePulse helps you build better habits for long-term health and comfort.")
-                            .font(.title3)
-                            .foregroundColor(.secondary)
+                        Text("With PosturePulse, you'll receive gentle reminders to stand up and move, as well as real-time posture feedback using your AirPods' motion sensors. Our goal is to help you stay active, maintain good posture, and feel your best throughout the day.")
+                            .font(.system(size: 16))
+                            .foregroundColor(.settingsSubheader)
                             .multilineTextAlignment(.center)
-                            .lineLimit(nil)
+                        Text("In the next steps, you'll set your standing and sitting goals, configure posture monitoring, and grant the necessary permissions. Let's get started on your journey to a healthier, more comfortable workday!")
+                            .font(.system(size: 16))
+                            .foregroundColor(.settingsSubheader)
+                            .multilineTextAlignment(.center)
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, 32)
                     
                     Spacer()
                     
@@ -76,7 +75,7 @@ struct OnboardingView: View {
                     .padding(.horizontal, 32)
                     .padding(.vertical, 16)
                 }
-                .padding(40)
+                .padding(60)
                 .tag(0)
                 
                 // Page 1: Standing Reminders Setup (previously page 0)
@@ -217,7 +216,8 @@ struct OnboardingView: View {
             }
             .tabViewStyle(.automatic)
         }
-        .background(Color(red: 0.1, green: 0.1, blue: 0.15))
+        .background(Color.settingsBackground)
+        .frame(minWidth: 875, idealWidth: 1000, minHeight: 700, idealHeight: 800)
         .onAppear {
             permissionManager.checkAllPermissions()
         }

@@ -38,66 +38,69 @@ struct SettingsView: View {
             VStack(spacing: 0) {
                 // Header
                 if let sectionTitle = title(for: selection), !sectionTitle.isEmpty {
-                    VStack(spacing: 2) {
+                    VStack(spacing: 8) {
                         Text(sectionTitle)
-                            .font(.system(size: 20, weight: .semibold))
+                            .font(.system(size: 17, weight: .semibold))
                             .foregroundColor(.settingsHeader)
                             .frame(maxWidth: .infinity, alignment: .center)
                         if let subheader = subheader(for: selection) {
                             Text(subheader)
-                                .font(.system(size: 14))
+                                .font(.system(size: 13))
                                 .foregroundColor(.settingsSubheader)
                                 .multilineTextAlignment(.center)
                                 .frame(maxWidth: .infinity)
-                                .padding(.bottom, 8)
+                                .padding(.bottom, 18)
                         }
                     }
                     .padding(.top, 16)
                 }
                 // Content
-                ZStack {
-                    switch selection {
-                    case .stats:
-                        Text("Stats (Coming Soon)")
-                            .font(.body)
-                            .foregroundColor(.settingsSubheader)
-                    case .general:
-                        GeneralSettingsContentView(
-                            userPrefs: userPrefs,
-                            calendarService: calendarService,
-                            scheduler: scheduler,
-                            ctx: ctx,
-                            showExplanations: false
-                        )
-                    case .standing:
-                        StandingRemindersContentView(
-                            userPrefs: userPrefs,
-                            scheduler: scheduler,
-                            ctx: ctx,
-                            showExplanations: false
-                        )
-                    case .posture:
-                        PostureSettingsContentView(
-                            userPrefs: userPrefs,
-                            motionService: motionService,
-                            ctx: ctx,
-                            showExplanations: false
-                        )
-                    case .about:
-                        Text("About PosturePulse (Coming Soon)")
-                            .font(.body)
-                            .foregroundColor(.settingsSubheader)
-                    case nil:
-                        Text("Select a category")
-                            .font(.body)
-                            .foregroundColor(.settingsSubheader)
+                ScrollView {
+                    ZStack {
+                        switch selection {
+                        case .stats:
+                            Text("Stats (Coming Soon)")
+                                .font(.body)
+                                .foregroundColor(.settingsSubheader)
+                        case .general:
+                            GeneralSettingsContentView(
+                                userPrefs: userPrefs,
+                                calendarService: calendarService,
+                                scheduler: scheduler,
+                                ctx: ctx,
+                                showExplanations: false
+                            )
+                        case .standing:
+                            StandingRemindersContentView(
+                                userPrefs: userPrefs,
+                                scheduler: scheduler,
+                                ctx: ctx,
+                                showExplanations: false
+                            )
+                        case .posture:
+                            PostureSettingsContentView(
+                                userPrefs: userPrefs,
+                                motionService: motionService,
+                                ctx: ctx,
+                                showExplanations: false
+                            )
+                        case .about:
+                            Text("About PosturePulse (Coming Soon)")
+                                .font(.body)
+                                .foregroundColor(.settingsSubheader)
+                        case nil:
+                            Text("Select a category")
+                                .font(.body)
+                                .foregroundColor(.settingsSubheader)
+                        }
                     }
+                    .padding(.top, 8)
+                    .padding(.horizontal)
+                    .frame(maxWidth: .infinity, alignment: .top)
                 }
-                .padding()
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
         }
-        .frame(minWidth: 700, idealWidth: 800, minHeight: 450, idealHeight: 550)
+        .frame(minWidth: 875, idealWidth: 1000, minHeight: 562, idealHeight: 687)
         .background(Color(red: 0.1, green: 0.1, blue: 0.15))
         .foregroundColor(.white)
         .onAppear {

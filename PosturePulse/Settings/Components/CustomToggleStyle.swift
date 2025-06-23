@@ -4,17 +4,19 @@ struct CustomToggleStyle: ToggleStyle {
     func makeBody(configuration: Configuration) -> some View {
         HStack {
             configuration.label
-                .foregroundColor(.white)
             Spacer()
             ZStack {
-                RoundedRectangle(cornerRadius: 16)
-                    .frame(width: 50, height: 30)
-                    .foregroundColor(configuration.isOn ? Color(red: 0.2, green: 0.4, blue: 0.9) : Color(red: 0.16, green: 0.16, blue: 0.18))
-                
+                RoundedRectangle(cornerRadius: 12)
+                    .frame(width: 36, height: 20)
+                    .foregroundColor(configuration.isOn ? Color.settingsAccentBlue : Color(red: 60/255, green: 62/255, blue: 66/255))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.settingsCardBorder, lineWidth: 1)
+                    )
                 Circle()
-                    .frame(width: 26, height: 26)
+                    .frame(width: 16, height: 16)
                     .foregroundColor(.white)
-                    .offset(x: configuration.isOn ? 10 : -10)
+                    .offset(x: configuration.isOn ? 8 : -8)
                     .animation(.easeInOut(duration: 0.2), value: configuration.isOn)
             }
             .onTapGesture {

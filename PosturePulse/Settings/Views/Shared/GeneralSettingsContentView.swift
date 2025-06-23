@@ -112,14 +112,17 @@ struct GeneralSettingsContentView: View {
                 icon: "hammer",
                 header: "Development",
                 subheader: "Debug and development tools.",
-                iconColor: .gray
+                iconColor: .gray,
+                trailing: AnyView(
+                    Button("Reset Onboarding") {
+                        UserDefaults.standard.set(false, forKey: "didOnboard")
+                        NotificationCenter.default.post(name: NSNotification.Name("ResetOnboarding"), object: nil)
+                    }
+                    .buttonStyle(.bordered)
+                    .foregroundColor(.orange)
+                )
             ) {
-                Button("Reset Onboarding") {
-                    UserDefaults.standard.set(false, forKey: "didOnboard")
-                    NotificationCenter.default.post(name: NSNotification.Name("ResetOnboarding"), object: nil)
-                }
-                .buttonStyle(.bordered)
-                .foregroundColor(.orange)
+                EmptyView()
             }
             #endif
         }
