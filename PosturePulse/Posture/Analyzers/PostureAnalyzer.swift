@@ -3,7 +3,7 @@ import Combine
 
 /// Analyzes motion data for posture detection
 @MainActor
-class PostureAnalyzer: ObservableObject {
+class PostureAnalyzer: BaseAnalyzer {
     @Published var currentPosture: PostureStatus = .unknown
     @Published var currentPitch: Double = 0.0
     @Published var currentRoll: Double = 0.0
@@ -15,11 +15,6 @@ class PostureAnalyzer: ObservableObject {
     private var poorPostureThreshold: TimeInterval = 30
     private var pitchThreshold: Double = 15.0
     private var rollThreshold: Double = 15.0
-    
-    // Update frequency control
-    private var updateFrequency: TimeInterval = 5.0
-    private var lastUpdateTime = Date()
-    private var isHighFrequencyMode = false
     
     // Logging throttling
     private var lastLogTime = Date()
@@ -33,21 +28,14 @@ class PostureAnalyzer: ObservableObject {
         case noData
     }
     
-    func setUpdateFrequency(_ frequency: TimeInterval) {
-        updateFrequency = frequency
-        print("🔔 PostureAnalyzer - Update frequency set to \(frequency) seconds")
-    }
-    
-    func enableHighFrequencyMode() {
-        isHighFrequencyMode = true
+    override func enableHighFrequencyMode() {
+        super.enableHighFrequencyMode()
         updateFrequency = 1.0
-        print("🔔 PostureAnalyzer - High frequency mode enabled")
     }
     
-    func disableHighFrequencyMode() {
-        isHighFrequencyMode = false
+    override func disableHighFrequencyMode() {
+        super.disableHighFrequencyMode()
         updateFrequency = 5.0
-        print("🔔 PostureAnalyzer - High frequency mode disabled")
     }
     
     func startCalibration() {
@@ -64,31 +52,25 @@ class PostureAnalyzer: ObservableObject {
     
     func setPoorPostureThreshold(_ seconds: TimeInterval) {
         poorPostureThreshold = seconds
-        print("🔔 PostureAnalyzer - Poor posture threshold set to \(seconds) seconds")
     }
     
     func setPitchThreshold(_ degrees: Double) {
         pitchThreshold = degrees
-        print("🔔 PostureAnalyzer - Pitch threshold set to \(degrees) degrees")
     }
     
     func setRollThreshold(_ degrees: Double) {
         rollThreshold = degrees
-        print("🔔 PostureAnalyzer - Roll threshold set to \(rollThreshold) degrees")
     }
     
     func setNoData() {
         currentPosture = .noData
-        print("🔔 PostureAnalyzer - No motion data available")
     }
     
     func processMotionData(_ motionData: MotionData) {
         // Check if enough time has passed since last update
-        let now = Date()
-        if now.timeIntervalSince(lastUpdateTime) < updateFrequency {
+        if !shouldUpdate() {
             return
         }
-        lastUpdateTime = now
         
         // Update current values
         currentPitch = motionData.pitch
@@ -127,7 +109,6 @@ class PostureAnalyzer: ObservableObject {
                 print("🔔 PostureAnalyzer - ✅ Calibration complete")
             } else if currentPosture == .noData {
                 currentPosture = .good
-                print("🔔 PostureAnalyzer - ✅ Data received, posture good")
             }
         } else {
             if currentPosture == .good || currentPosture == .calibrating || currentPosture == .noData {
@@ -138,9 +119,6 @@ class PostureAnalyzer: ObservableObject {
                 checkPoorPostureDuration()
             }
         }
-        
-        // Debug: Log posture status changes
-        print("🔔 PostureAnalyzer - Status: \(currentPosture), Pitch: \(String(format: "%.1f", motionData.pitch))°, Roll: \(String(format: "%.1f", motionData.roll))°")
     }
     
     private func checkPoorPostureDuration() {

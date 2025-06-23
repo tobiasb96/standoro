@@ -41,17 +41,13 @@ class MotionService: ObservableObject {
     
     func setCalendarService(_ calendarService: CalendarService, shouldCheck: Bool) {
         notificationService.setCalendarService(calendarService, shouldCheck: shouldCheck)
-        print("🔔 MotionService - Calendar service set, should check: \(shouldCheck)")
     }
     
     func requestAccess() async -> Bool {
         // If already authorized, don't request again
         if isAuthorized {
-            print("🔔 MotionService - Already authorized, skipping request")
             return true
         }
-        
-        print("🔔 MotionService - Requesting system-level access...")
         
         // Request notification authorization
         let notificationAuthorized = await notificationService.requestAuthorization()
@@ -75,25 +71,18 @@ class MotionService: ObservableObject {
             errorMessage = nil
         }
         
-        print("🔔 MotionService - System access result: authorized=\(isAuthorized), notification=\(notificationAuthorized), motion=\(motionAuthorized)")
-        print("🔔 MotionService - Note: Device connection and data availability are handled separately")
-        
         return isAuthorized
     }
     
     func startMonitoring() {
         guard isAuthorized else {
-            print("🔔 MotionService - Not authorized to monitor")
             return
         }
         
         // Prevent multiple starts
         if isMonitoring {
-            print("🔔 MotionService - Already monitoring, skipping start")
             return
         }
-        
-        print("🔔 MotionService - Starting monitoring...")
         
         // Start all motion providers
         for provider in motionProviders {
@@ -107,11 +96,8 @@ class MotionService: ObservableObject {
     func stopMonitoring() {
         // Prevent multiple stops
         if !isMonitoring {
-            print("🔔 MotionService - Not monitoring, skipping stop")
             return
         }
-        
-        print("🔔 MotionService - Stopping monitoring...")
         
         // Stop all motion providers
         for provider in motionProviders {
@@ -126,7 +112,6 @@ class MotionService: ObservableObject {
     
     func startPostureCalibration() {
         guard isDeviceReceivingData else {
-            print("🔔 MotionService - Cannot start calibration: no device data available")
             return
         }
         postureAnalyzer.startCalibration()
@@ -190,7 +175,6 @@ class MotionService: ObservableObject {
             airPodsProvider.$isAvailable
                 .sink { [weak self] available in
                     self?.isDeviceAvailable = available
-                    print("🔔 MotionService - Device available changed: \(available)")
                     // Clear error message when device becomes available
                     if available {
                         self?.errorMessage = nil
@@ -201,7 +185,6 @@ class MotionService: ObservableObject {
             airPodsProvider.$isConnected
                 .sink { [weak self] connected in
                     self?.isDeviceConnected = connected
-                    print("🔔 MotionService - Device connected changed: \(connected)")
                     // Clear error message when device connects (assuming it's a connection issue)
                     if connected {
                         self?.errorMessage = nil
@@ -212,7 +195,6 @@ class MotionService: ObservableObject {
             airPodsProvider.$isReceivingData
                 .sink { [weak self] receivingData in
                     self?.isDeviceReceivingData = receivingData
-                    print("🔔 MotionService - Device receiving data changed: \(receivingData)")
                     if !receivingData {
                         // Set posture to noData when not receiving data
                         self?.postureAnalyzer.setNoData()
@@ -241,10 +223,7 @@ class MotionService: ObservableObject {
     private func setupPropertyBindings() {
         // Bind posture analyzer properties to published properties
         postureAnalyzer.$currentPosture
-            .sink { [weak self] newPosture in
-                print("🔔 MotionService - Posture changed to: \(newPosture)")
-                self?.currentPosture = newPosture
-            }
+            .assign(to: \.currentPosture, on: self)
             .store(in: &cancellables)
         
         postureAnalyzer.$currentPitch

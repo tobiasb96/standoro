@@ -4,40 +4,32 @@ import CoreMotion
 
 /// Detects when user stands up from sitting position
 @MainActor
-class StandupDetector: ObservableObject {
+class StandupDetector: BaseAnalyzer {
     @Published var isStanding = false
     @Published var lastStandupTime: Date?
     @Published var lastSitTime: Date?
     
     private var accelerationThreshold: Double = 2.0 // m/s²
-    private var isHighFrequencyMode = false
-    private var updateFrequency: TimeInterval = 1.0
-    private var lastUpdateTime = Date()
     
     func setAccelerationThreshold(_ threshold: Double) {
         accelerationThreshold = threshold
-        print("🔔 StandupDetector - Acceleration threshold set to \(threshold) m/s²")
     }
     
-    func enableHighFrequencyMode() {
-        isHighFrequencyMode = true
+    override func enableHighFrequencyMode() {
+        super.enableHighFrequencyMode()
         updateFrequency = 0.5
-        print("🔔 StandupDetector - High frequency mode enabled")
     }
     
-    func disableHighFrequencyMode() {
-        isHighFrequencyMode = false
+    override func disableHighFrequencyMode() {
+        super.disableHighFrequencyMode()
         updateFrequency = 1.0
-        print("🔔 StandupDetector - High frequency mode disabled")
     }
     
     func processMotionData(_ motionData: MotionData) {
         // Check update frequency
-        let now = Date()
-        if now.timeIntervalSince(lastUpdateTime) < updateFrequency {
+        if !shouldUpdate() {
             return
         }
-        lastUpdateTime = now
         
         // Calculate vertical acceleration magnitude
         let verticalAcceleration = abs(motionData.acceleration.y)
@@ -46,7 +38,7 @@ class StandupDetector: ObservableObject {
         if verticalAcceleration > accelerationThreshold {
             if !isStanding {
                 isStanding = true
-                lastStandupTime = now
+                lastStandupTime = Date()
                 print("🔔 StandupDetector - 🚶 User stood up (acceleration: \(String(format: "%.2f", verticalAcceleration)) m/s²)")
                 
                 // Notify standup detected
@@ -55,7 +47,7 @@ class StandupDetector: ObservableObject {
         } else {
             if isStanding {
                 isStanding = false
-                lastSitTime = now
+                lastSitTime = Date()
                 print("🔔 StandupDetector - 🪑 User sat down")
                 
                 // Notify sit down detected

@@ -16,7 +16,6 @@ class NotificationService: ObservableObject {
     func setCalendarService(_ calendarService: CalendarService, shouldCheck: Bool) {
         self.calendarService = calendarService
         self.shouldCheckCalendar = shouldCheck
-        print("🔔 NotificationService - Calendar service set, should check: \(shouldCheck)")
     }
     
     func requestAuthorization() async -> Bool {
@@ -38,7 +37,6 @@ class NotificationService: ObservableObject {
         // Check if we should mute due to calendar meetings
         if shouldCheckCalendar, let calendarService = calendarService {
             if calendarService.isCurrentlyBusy() {
-                print("🔔 NotificationService - Skipping notification - user is currently busy")
                 return false
             }
         }
@@ -47,7 +45,6 @@ class NotificationService: ObservableObject {
     
     func sendPostureNotification() {
         guard isAuthorized else {
-            print("🔔 NotificationService - Notifications not authorized")
             return
         }
         
@@ -69,15 +66,12 @@ class NotificationService: ObservableObject {
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
                 print("🔔 NotificationService - Notification error: \(error)")
-            } else {
-                print("🔔 NotificationService - ✅ Posture notification sent")
             }
         }
     }
     
     func sendStandupNotification() {
         guard isAuthorized else {
-            print("🔔 NotificationService - Notifications not authorized")
             return
         }
         
@@ -99,8 +93,6 @@ class NotificationService: ObservableObject {
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
                 print("🔔 NotificationService - Notification error: \(error)")
-            } else {
-                print("🔔 NotificationService - ✅ Standup notification sent")
             }
         }
     }

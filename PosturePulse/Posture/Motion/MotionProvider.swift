@@ -40,39 +40,25 @@ class AirPodsMotionProvider: NSObject, MotionProvider, CMHeadphoneMotionManagerD
         super.init()
         motionManager.delegate = self
         checkAvailability()
-        checkInitialConnectionState()
         startDataAvailabilityMonitoring()
-        
-        // Log initial state
-        print("🔔 AirPodsMotionProvider - Initialized: available=\(isAvailable), connected=\(isConnected), receiving=\(isReceivingData)")
     }
     
     deinit {
         dataCheckTimer?.invalidate()
     }
     
-    private func checkInitialConnectionState() {
-        // Check if we're already connected (this might be called after the delegate is set)
-        // The delegate methods will be called automatically if there's an existing connection
-        print("🔔 AirPodsMotionProvider - Checking initial connection state")
-    }
-    
     func requestAccess() async -> Bool {
         // Prevent multiple simultaneous requests
         if isRequestingAccess {
-            print("🔔 AirPodsMotionProvider - Access request already in progress, skipping")
             return false
         }
         
         guard motionManager.isDeviceMotionAvailable else {
-            print("🔔 AirPodsMotionProvider - Device motion not available")
             return false
         }
         
         isRequestingAccess = true
         defer { isRequestingAccess = false }
-        
-        print("🔔 AirPodsMotionProvider - System supports AirPods motion, access granted")
         
         // Return true immediately if the system supports AirPods motion
         // The actual device connection and data availability will be handled separately
@@ -81,11 +67,9 @@ class AirPodsMotionProvider: NSObject, MotionProvider, CMHeadphoneMotionManagerD
     
     func startUpdates() {
         guard motionManager.isDeviceMotionAvailable else {
-            print("🔔 AirPodsMotionProvider - Device motion not available")
             return
         }
         
-        print("🔔 AirPodsMotionProvider - Starting motion updates")
         motionManager.startDeviceMotionUpdates(to: .main) { [weak self] motion, error in
             if let error = error {
                 print("🔔 AirPodsMotionProvider - Motion update error: \(error.localizedDescription)")
@@ -109,7 +93,6 @@ class AirPodsMotionProvider: NSObject, MotionProvider, CMHeadphoneMotionManagerD
     }
     
     func stopUpdates() {
-        print("🔔 AirPodsMotionProvider - Stopping motion updates")
         motionManager.stopDeviceMotionUpdates()
         updateDataAvailability(false)
     }
@@ -121,7 +104,6 @@ class AirPodsMotionProvider: NSObject, MotionProvider, CMHeadphoneMotionManagerD
         
         if isReceivingData != receiving {
             isReceivingData = receiving
-            print("🔔 AirPodsMotionProvider - Data availability changed: \(receiving)")
         }
     }
     
@@ -129,7 +111,6 @@ class AirPodsMotionProvider: NSObject, MotionProvider, CMHeadphoneMotionManagerD
         let newAvailability = motionManager.isDeviceMotionAvailable
         if isAvailable != newAvailability {
             isAvailable = newAvailability
-            print("🔔 AirPodsMotionProvider - Device motion available changed: \(newAvailability)")
         }
     }
     
@@ -155,13 +136,11 @@ class AirPodsMotionProvider: NSObject, MotionProvider, CMHeadphoneMotionManagerD
     // MARK: - CMHeadphoneMotionManagerDelegate
     
     func headphoneMotionManagerDidConnect(_ manager: CMHeadphoneMotionManager) {
-        print("🔔 AirPodsMotionProvider - Headphones connected.")
         isConnected = true
         checkAvailability() // Re-check availability when connection changes
     }
     
     func headphoneMotionManagerDidDisconnect(_ manager: CMHeadphoneMotionManager) {
-        print("🔔 AirPodsMotionProvider - Headphones disconnected.")
         isConnected = false
         updateDataAvailability(false)
         checkAvailability() // Re-check availability when connection changes

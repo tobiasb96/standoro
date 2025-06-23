@@ -20,13 +20,6 @@ class CalendarService: ObservableObject {
     init() {
         checkAuthorizationStatus()
         startCacheTimer()
-        
-        // Log sandbox status for debugging
-        if isRunningInSandbox() {
-            print("🔔 CalendarService - App is running in sandbox mode")
-        } else {
-            print("🔔 CalendarService - App is running outside sandbox mode")
-        }
     }
     
     deinit {
@@ -40,7 +33,6 @@ class CalendarService: ObservableObject {
     func checkAuthorizationStatus() {
         authorizationStatus = EKEventStore.authorizationStatus(for: .event)
         isAuthorized = authorizationStatus == .fullAccess
-        print("🔔 CalendarService - Authorization status: \(authorizationStatus.rawValue), isAuthorized: \(isAuthorized)")
         
         // Clear error message if we have proper authorization
         if isAuthorized {
@@ -53,7 +45,6 @@ class CalendarService: ObservableObject {
     }
     
     func requestAccess() async -> Bool {
-        print("🔔 CalendarService - Requesting calendar access...")
         errorMessage = nil
         
         do {
@@ -65,7 +56,6 @@ class CalendarService: ObservableObject {
                     self.errorMessage = "Calendar access was denied. Please enable it in System Preferences > Privacy & Security > Calendars."
                 }
             }
-            print("🔔 CalendarService - Access granted: \(granted)")
             
             // Refresh cache if access was granted
             if granted {
@@ -106,15 +96,11 @@ class CalendarService: ObservableObject {
     
     private func refreshBusyRanges() async {
         guard isAuthorized else {
-            print("🔔 CalendarService - Not authorized, skipping busy ranges refresh")
             return
         }
         
-        print("🔔 CalendarService - Refreshing busy ranges...")
-        
         let now = Date()
         guard let end = Calendar.current.date(byAdding: .hour, value: 4, to: now) else {
-            print("🔔 CalendarService - Could not calculate end date")
             return
         }
         
@@ -130,8 +116,6 @@ class CalendarService: ObservableObject {
         
         // Update current meeting status
         updateCurrentMeetingStatus()
-        
-        print("🔔 CalendarService - Cached \(busyRanges.count) busy ranges, next refresh in \(cacheRefreshInterval/60) minutes")
     }
     
     private func updateCurrentMeetingStatus() {
@@ -144,12 +128,6 @@ class CalendarService: ObservableObject {
         
         isInMeeting = currentMeeting != nil
         currentMeetingTitle = currentMeeting?.description ?? nil
-        
-        if isInMeeting {
-            print("🔔 CalendarService - Currently in meeting")
-        } else {
-            print("🔔 CalendarService - Not currently in any meetings")
-        }
     }
     
     func isInMeeting(hoursToCheck: Int = 4) -> Bool {
@@ -166,13 +144,11 @@ class CalendarService: ObservableObject {
     
     func getUpcomingMeetings(hoursToCheck: Int = 4) -> [EKEvent] {
         guard isAuthorized else {
-            print("🔔 CalendarService - Not authorized, cannot fetch meetings")
             return []
         }
         
         let now = Date()
         guard let end = Calendar.current.date(byAdding: .hour, value: hoursToCheck, to: now) else {
-            print("🔔 CalendarService - Could not calculate end date")
             return []
         }
         
@@ -182,7 +158,6 @@ class CalendarService: ObservableObject {
         // Filter for events with attendees (meetings)
         let meetings = events.filter { $0.hasAttendees }
         
-        print("🔔 CalendarService - Found \(meetings.count) upcoming meetings in next \(hoursToCheck) hours")
         return meetings
     }
     
@@ -198,15 +173,8 @@ class CalendarService: ObservableObject {
             return "Authorized"
         case .fullAccess:
             return "Full access"
-        case .writeOnly:
-            return "Write only"
         @unknown default:
             return "Unknown"
         }
-    }
-    
-    // Force refresh for immediate updates (e.g., when settings change)
-    func forceRefresh() async {
-        await refreshBusyRanges()
     }
 } 

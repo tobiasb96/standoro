@@ -91,18 +91,8 @@ struct MenuBarLabelView: View {
             }
         }
         .onChange(of: prefs) { _, newPrefs in
-            print("🔔 MenuBarLabelView - Preferences changed, count: \(newPrefs.count)")
-            if let p = newPrefs.first {
-                print("🔔 MenuBarLabelView - showMenuBarCountdown: \(p.showMenuBarCountdown)")
-            }
             // Force UI update when preferences change
             updateCounter += 1
-        }
-        .onAppear {
-            print("🔔 MenuBarLabelView - onAppear, prefs count: \(prefs.count)")
-            if let p = prefs.first {
-                print("🔔 MenuBarLabelView - showMenuBarCountdown: \(p.showMenuBarCountdown)")
-            }
         }
     }
 } 

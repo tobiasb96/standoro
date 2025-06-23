@@ -147,9 +147,7 @@ struct MenuBarView: View {
             updateCounter += 1
         }
         .onChange(of: prefs) { _, newPrefs in
-            print("🔔 Preferences changed, count: \(newPrefs.count)")
             if let p = newPrefs.first {
-                print("🔔 Setting intervals from onChange: sitting \(p.maxSitMinutes) minutes, standing \(p.maxStandMinutes) minutes")
                 scheduler.sittingInterval = TimeInterval(p.maxSitMinutes * 60)
                 scheduler.standingInterval = TimeInterval(p.maxStandMinutes * 60)
                 
@@ -187,17 +185,13 @@ struct MenuBarView: View {
     }
 
     private func setupInitialState() {
-        print("🔔 setupInitialState called, prefs count: \(prefs.count)")
-        
         if prefs.isEmpty {
-            print("🔔 Creating default preferences")
             let newPrefs = UserPrefs()
             ctx.insert(newPrefs)
             try? ctx.save()
             scheduler.sittingInterval = TimeInterval(newPrefs.maxSitMinutes * 60)
             scheduler.standingInterval = TimeInterval(newPrefs.maxStandMinutes * 60)
         } else if let p = prefs.first {
-            print("🔔 Setting intervals from preferences: sitting \(p.maxSitMinutes) minutes, standing \(p.maxStandMinutes) minutes")
             scheduler.sittingInterval = TimeInterval(p.maxSitMinutes * 60)
             scheduler.standingInterval = TimeInterval(p.maxStandMinutes * 60)
             
@@ -233,7 +227,6 @@ struct MenuBarView: View {
 
     private func handleRestart() {
         guard let p = prefs.first, p.maxSitMinutes > 0, p.maxStandMinutes > 0 else {
-            print("🔔 Cannot restart: intervals not set")
             return
         }
         scheduler.restart()

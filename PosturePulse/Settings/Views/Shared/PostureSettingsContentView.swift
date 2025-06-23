@@ -407,11 +407,12 @@ struct PostureSettingsContentView: View {
     }
     
     private func requestPostureAccess() async {
-        print("🔔 PostureSettingsContentView - Requesting posture access...")
         let granted = await motionService.requestAccess()
-        print("🔔 PostureSettingsContentView - Access granted: \(granted)")
         if granted {
-            motionService.startMonitoring()
+            // Start monitoring if posture monitoring is enabled
+            if let prefs = prefs.first, prefs.postureMonitoringEnabledValue {
+                motionService.startMonitoring()
+            }
         }
     }
     

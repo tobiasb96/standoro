@@ -68,7 +68,6 @@ class Scheduler: ObservableObject {
     func setCalendarService(_ calendarService: CalendarService, shouldCheck: Bool) {
         self.calendarService = calendarService
         self.shouldCheckCalendar = shouldCheck
-        print("🔔 Scheduler - Calendar service set, should check: \(shouldCheck)")
     }
 
     func start(sittingInterval: TimeInterval? = nil, standingInterval: TimeInterval? = nil) {
@@ -80,7 +79,6 @@ class Scheduler: ObservableObject {
         }
         
         guard self.sittingInterval > 0 && self.standingInterval > 0 else {
-            print("🔔 Cannot start timer: intervals not set")
             return
         }
         
@@ -105,8 +103,6 @@ class Scheduler: ObservableObject {
         nextFire = Date().addingTimeInterval(self.sittingInterval)
         isRunning = true
         isPaused = false
-        
-        print("🔔 Timer started: sitting \(self.sittingInterval) seconds, standing \(self.standingInterval) seconds, next fire at \(nextFire)")
     }
     
     func stop() {
@@ -117,7 +113,6 @@ class Scheduler: ObservableObject {
         currentPhase = .sitting
         pauseStartTime = nil
         remainingTimeWhenPaused = 0
-        print("🔔 Timer stopped")
     }
     
     func pause() {
@@ -126,8 +121,6 @@ class Scheduler: ObservableObject {
         pauseStartTime = Date()
         remainingTimeWhenPaused = nextFire.timeIntervalSinceNow
         isPaused = true
-        
-        print("🔔 Timer paused, remaining time: \(remainingTimeWhenPaused) seconds")
     }
     
     func resume() {
@@ -138,13 +131,10 @@ class Scheduler: ObservableObject {
         isPaused = false
         pauseStartTime = nil
         remainingTimeWhenPaused = 0
-        
-        print("🔔 Timer resumed, next fire at \(nextFire)")
     }
 
     func restart() {
         guard sittingInterval > 0 && standingInterval > 0 else {
-            print("🔔 Cannot restart: intervals not set")
             return
         }
         
@@ -154,11 +144,8 @@ class Scheduler: ObservableObject {
     
     func skipPhase() {
         guard isRunning else {
-            print("🔔 Cannot skip phase: timer not running")
             return
         }
-        
-        print("🔔 Skipping current phase")
         
         // If paused, resume first
         if isPaused {
@@ -175,25 +162,19 @@ class Scheduler: ObservableObject {
         let remaining = nextFire.timeIntervalSinceNow
         
         if remaining <= 0 {
-            print("🔔 Timer fired - sending notification")
             fire()
         }
     }
 
     private func fire() {
-        print("🔔 Timer fired - checking if should send notification")
-        
         // Check if we should skip notification due to calendar meetings
         if shouldCheckCalendar, let calendarService = calendarService {
             if calendarService.isInMeeting() {
-                print("🔔 Skipping notification - user is currently in a meeting")
                 // Still switch phases but don't send notification
                 switchPhase()
                 return
             }
         }
-        
-        print("🔔 Sending notification")
         
         // Capture values before the closure to avoid MainActor isolation issues
         let currentPhase = self.currentPhase
@@ -202,8 +183,6 @@ class Scheduler: ObservableObject {
         
         // Check notification authorization first
         UNUserNotificationCenter.current().getNotificationSettings { settings in
-            print("🔔 Notification settings: \(settings.authorizationStatus.rawValue)")
-            
             if settings.authorizationStatus == .authorized {
                 let content = UNMutableNotificationContent()
                 
@@ -229,13 +208,9 @@ class Scheduler: ObservableObject {
                 
                 UNUserNotificationCenter.current().add(req) { error in
                     if let error = error {
-                        print("🔔 Notification error: \(error)")
-                    } else {
-                        print("🔔 Notification sent successfully")
+                        print("🔔 Scheduler - Notification error: \(error)")
                     }
                 }
-            } else {
-                print("🔔 Notifications not authorized")
             }
         }
         
@@ -248,11 +223,9 @@ class Scheduler: ObservableObject {
         case .sitting:
             currentPhase = .standing
             nextFire = Date().addingTimeInterval(self.standingInterval)
-            print("🔔 Switched to standing phase, next fire at \(nextFire)")
         case .standing:
             currentPhase = .sitting
             nextFire = Date().addingTimeInterval(self.sittingInterval)
-            print("🔔 Switched to sitting phase, next fire at \(nextFire)")
         }
     }
 } 
