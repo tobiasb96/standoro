@@ -22,4 +22,16 @@ struct CustomToggleStyle: ToggleStyle {
             }
         }
     }
+}
+
+#Preview {
+    VStack(spacing: 20) {
+        Toggle("Sample Toggle", isOn: .constant(true))
+            .toggleStyle(CustomToggleStyle())
+        
+        Toggle("Another Toggle", isOn: .constant(false))
+            .toggleStyle(CustomToggleStyle())
+    }
+    .padding()
+    .background(Color(red: 0.1, green: 0.1, blue: 0.15))
 } 

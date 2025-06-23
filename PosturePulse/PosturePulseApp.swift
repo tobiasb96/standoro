@@ -58,6 +58,15 @@ struct AppContentView: View {
                 showOnboardingWindow()
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ResetOnboarding"))) { _ in
+            showOnboardingWindow()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OpenPopup"))) { _ in
+            // Focus the app and ensure the menu bar popup is visible
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                NSApp.activate(ignoringOtherApps: true)
+            }
+        }
     }
     
     private func showOnboardingWindow() {

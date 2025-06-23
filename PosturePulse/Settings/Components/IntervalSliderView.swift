@@ -51,4 +51,15 @@ struct IntervalSliderView: View {
             }
         }
     }
+}
+
+#Preview {
+    IntervalSliderView(
+        label: "Minutes",
+        minutes: .constant(15),
+        quickOptions: [5, 10, 15, 20],
+        context: try! ModelContainer(for: UserPrefs.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true)).mainContext
+    )
+    .background(Color(red: 0.0, green: 0.2, blue: 0.6))
+    .padding()
 } 

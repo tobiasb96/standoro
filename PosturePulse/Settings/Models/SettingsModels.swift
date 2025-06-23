@@ -1,5 +1,5 @@
 //
-//  Item.swift
+//  SettingsModels.swift
 //  PosturePulse
 //
 //  Created by Tobias Blanck on 22.06.25.
@@ -43,4 +43,4 @@ class UserPrefs {
         get { postureSensitivityDegrees ?? 15.0 }
         set { postureSensitivityDegrees = newValue }
     }
-}
+} 
