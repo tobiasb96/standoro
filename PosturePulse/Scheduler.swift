@@ -151,6 +151,23 @@ class Scheduler: ObservableObject {
         stop()
         start()
     }
+    
+    func skipPhase() {
+        guard isRunning else {
+            print("🔔 Cannot skip phase: timer not running")
+            return
+        }
+        
+        print("🔔 Skipping current phase")
+        
+        // If paused, resume first
+        if isPaused {
+            resume()
+        }
+        
+        // Switch to next phase immediately without sending notification
+        switchPhase()
+    }
 
     private func checkTimer() {
         guard isRunning, !isPaused else { return }

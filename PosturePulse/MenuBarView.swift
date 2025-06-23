@@ -73,12 +73,22 @@ struct MenuBarView: View {
                     }
                     .buttonStyle(.plain)
                     .disabled(!scheduler.isRunning)
+                    .help("Restart timer")
 
                     Button(action: handlePlayPause) {
                         Image(systemName: playPauseIcon)
                             .font(.system(size: 44, weight: .thin))
                     }
                     .buttonStyle(.plain)
+                    .help(scheduler.isRunning && !scheduler.isPaused ? "Pause timer" : "Start/resume timer")
+                    
+                    Button(action: handleSkipPhase) {
+                        Image(systemName: "forward.fill")
+                            .font(.system(size: 22))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!scheduler.isRunning)
+                    .help("Skip to next phase")
                 }
 
                 Spacer(minLength: 20)
@@ -88,18 +98,21 @@ struct MenuBarView: View {
                 Button(action: { /* TODO: Stats */ }) {
                     Image(systemName: "chart.bar.xaxis")
                 }.buttonStyle(.plain)
+                .help("View statistics")
                 
                 Spacer()
                 
                 Button(action: onOpenSettings) {
                     Image(systemName: "gearshape.fill")
                 }.buttonStyle(.plain)
+                .help("Open settings")
                 
                 Spacer()
                 
                 Button(action: onQuit) {
                     Image(systemName: "power")
                 }.buttonStyle(.plain)
+                .help("Quit application")
             }
             .font(.system(size: 20))
             .padding()
@@ -203,6 +216,12 @@ struct MenuBarView: View {
             return
         }
         scheduler.restart()
+    }
+
+    private func handleSkipPhase() {
+        if scheduler.isRunning {
+            scheduler.skipPhase()
+        }
     }
 
     private func formatTime(_ interval: TimeInterval) -> String {
