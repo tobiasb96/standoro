@@ -51,6 +51,14 @@ struct MenuBarView: View {
         return prefs.calendarFilter && calendarService.isAuthorized && calendarService.isInMeeting
     }
 
+    private var calendarMuteTooltip: String {
+        if let eventDetails = calendarService.getCurrentEventDetails() {
+            return "Notifications paused until \(eventDetails.endTime) after your event \"\(eventDetails.title)\""
+        } else {
+            return "Notifications muted - you're currently in a meeting"
+        }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             // Calendar mute indicator in top right
@@ -60,7 +68,7 @@ struct MenuBarView: View {
                     Image(systemName: "bell.slash.fill")
                         .foregroundColor(.orange)
                         .font(.system(size: 16))
-                        .help("Notifications muted - you're currently in a meeting")
+                        .help(calendarMuteTooltip)
                 }
             }
             .padding(.horizontal, 16)

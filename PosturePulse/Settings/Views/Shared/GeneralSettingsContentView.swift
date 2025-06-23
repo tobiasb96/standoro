@@ -112,9 +112,23 @@ struct GeneralSettingsContentView: View {
                                         .foregroundColor(calendarService.isInMeeting ? .orange : .green)
                                         .font(.caption)
                                     
-                                    Text(calendarService.isInMeeting ? "Currently in a meeting - notifications muted" : "No current meetings - notifications active")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(calendarService.isInMeeting ? "Currently in a meeting - notifications muted" : "No current meetings - notifications active")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                        
+                                        // Show detailed event information if in a meeting
+                                        if calendarService.isInMeeting, let eventDetails = calendarService.getCurrentEventDetails() {
+                                            Text("Event: \"\(eventDetails.title)\"")
+                                                .font(.caption)
+                                                .foregroundColor(.primary)
+                                                .fontWeight(.medium)
+                                            
+                                            Text("Ends at: \(eventDetails.endTime)")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                        }
+                                    }
                                 }
                             }
                         }

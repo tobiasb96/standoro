@@ -160,12 +160,13 @@ struct PostureSettingsContentView: View {
                                         .font(.caption)
                                         .foregroundColor(.blue)
                                     }
+                                    .padding(.bottom, 8)
                                 }
                                 
                                 // Show step guidance (only one at a time)
                                 if !localDeviceConnected {
                                     VStack(alignment: .leading, spacing: 8) {
-                                        Text("Step 2: Connect AirPods")
+                                        Text("Connect AirPods")
                                             .font(.subheadline)
                                             .foregroundColor(.white)
                                         
@@ -173,11 +174,10 @@ struct PostureSettingsContentView: View {
                                             .font(.caption)
                                             .foregroundColor(.secondary)
                                     }
-                                    .padding(.leading, 20)
                                     .padding(.top, 8)
                                 } else if !localDeviceReceivingData {
                                     VStack(alignment: .leading, spacing: 8) {
-                                        Text("Step 2: Wear AirPods")
+                                        Text("Wear AirPods")
                                             .font(.subheadline)
                                             .foregroundColor(.white)
                                         
@@ -185,11 +185,10 @@ struct PostureSettingsContentView: View {
                                             .font(.caption)
                                             .foregroundColor(.secondary)
                                     }
-                                    .padding(.leading, 20)
                                     .padding(.top, 8)
                                 } else if motionService.currentPosture == .noData && !showCalibrationDetails {
                                     VStack(alignment: .leading, spacing: 8) {
-                                        Text("Step 3: Calibration Required")
+                                        Text("Calibration Required")
                                             .font(.subheadline)
                                             .foregroundColor(.white)
                                         
@@ -204,7 +203,6 @@ struct PostureSettingsContentView: View {
                                         .buttonStyle(.borderedProminent)
                                         .controlSize(.small)
                                     }
-                                    .padding(.leading, 20)
                                     .padding(.top, 8)
                                 }
                                 
@@ -220,7 +218,6 @@ struct PostureSettingsContentView: View {
                                             .font(.caption2)
                                             .foregroundColor(.secondary)
                                     }
-                                    .padding(.leading, 20)
                                     .padding(.top, 4)
                                 }
                             }
@@ -229,7 +226,7 @@ struct PostureSettingsContentView: View {
                         
                         // Calibration guidance
                         if motionService.currentPosture == .calibrating {
-                            VStack(alignment: .leading, spacing: 8) {
+                            VStack(alignment: .leading, spacing: 12) {
                                 Text("Calibration Instructions:")
                                     .font(.subheadline)
                                     .foregroundColor(.white)
@@ -248,7 +245,6 @@ struct PostureSettingsContentView: View {
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                 }
-                                .padding(.leading, 20)
                                 
                                 Button("Complete Calibration") {
                                     motionService.completePostureCalibration()
@@ -256,9 +252,8 @@ struct PostureSettingsContentView: View {
                                 }
                                 .buttonStyle(.borderedProminent)
                                 .controlSize(.small)
-                                .padding(.leading, 20)
                             }
-                            .padding(.leading, 20)
+                            .padding(.top, 16)
                         }
                         
                         // Advanced settings collapsible
@@ -380,10 +375,9 @@ struct PostureSettingsContentView: View {
                                         }
                                     }
                                 }
-                                .padding(.leading, 20)
                             }
                         }
-                        .padding(.leading, 20)
+                        .padding(.top, 16)
                     }
                 }
             }

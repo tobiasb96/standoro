@@ -11,8 +11,8 @@ class CalendarService: ObservableObject {
     @Published var isInMeeting = false
     @Published var currentMeetingTitle: String?
     
-    // Busy ranges caching
-    private var busyRanges: [DateInterval] = []
+    // Busy ranges caching with event information
+    private var busyEvents: [EKEvent] = []
     private var lastCacheUpdate: Date?
     private var cacheTimer: Timer?
     private let cacheRefreshInterval: TimeInterval = 15 * 60 // 15 minutes
@@ -39,7 +39,7 @@ class CalendarService: ObservableObject {
             errorMessage = nil
             // Refresh cache immediately when authorized
             Task {
-                await refreshBusyRanges()
+                await refreshBusyEvents()
             }
         }
     }
@@ -59,7 +59,7 @@ class CalendarService: ObservableObject {
             
             // Refresh cache if access was granted
             if granted {
-                await refreshBusyRanges()
+                await refreshBusyEvents()
             }
             
             return granted
@@ -89,12 +89,12 @@ class CalendarService: ObservableObject {
         cacheTimer?.invalidate()
         cacheTimer = Timer.scheduledTimer(withTimeInterval: cacheRefreshInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in
-                await self?.refreshBusyRanges()
+                await self?.refreshBusyEvents()
             }
         }
     }
     
-    private func refreshBusyRanges() async {
+    private func refreshBusyEvents() async {
         guard isAuthorized else {
             return
         }
@@ -107,10 +107,8 @@ class CalendarService: ObservableObject {
         let predicate = store.predicateForEvents(withStart: now, end: end, calendars: nil)
         let events = store.events(matching: predicate)
         
-        // Filter for non-all-day events and create date intervals manually
-        busyRanges = events
-            .filter { !$0.isAllDay }
-            .map { DateInterval(start: $0.startDate, end: $0.endDate) }
+        // Filter for non-all-day events
+        busyEvents = events.filter { !$0.isAllDay }
         
         lastCacheUpdate = now
         
@@ -122,24 +120,40 @@ class CalendarService: ObservableObject {
         let now = Date()
         
         // Find current meeting
-        let currentMeeting = busyRanges.first { range in
-            range.contains(now)
+        let currentMeeting = busyEvents.first { event in
+            event.startDate <= now && event.endDate > now
         }
         
         isInMeeting = currentMeeting != nil
-        currentMeetingTitle = currentMeeting?.description ?? nil
+        currentMeetingTitle = currentMeeting?.title
     }
     
     func isInMeeting(hoursToCheck: Int = 4) -> Bool {
-        // Use cached busy ranges for better performance
+        // Use cached busy events for better performance
         let now = Date()
-        return busyRanges.contains { range in
-            range.contains(now)
+        return busyEvents.contains { event in
+            event.startDate <= now && event.endDate > now
         }
     }
     
     func isCurrentlyBusy() -> Bool {
         return isInMeeting
+    }
+    
+    // New method to get current event details for UI display
+    func getCurrentEventDetails() -> (title: String, endTime: String)? {
+        let now = Date()
+        guard let currentEvent = busyEvents.first(where: { event in
+            event.startDate <= now && event.endDate > now
+        }) else {
+            return nil
+        }
+        
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        let endTimeString = formatter.string(from: currentEvent.endDate)
+        
+        return (title: currentEvent.title ?? "Untitled Event", endTime: endTimeString)
     }
     
     func getUpcomingMeetings(hoursToCheck: Int = 4) -> [EKEvent] {
@@ -173,6 +187,8 @@ class CalendarService: ObservableObject {
             return "Authorized"
         case .fullAccess:
             return "Full access"
+        case .writeOnly:
+            return "Write only"
         @unknown default:
             return "Unknown"
         }
