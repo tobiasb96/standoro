@@ -6,7 +6,7 @@ struct MenuBarLabelView: View {
     @Environment(\.modelContext) private var ctx
     @Query private var prefs: [UserPrefs]
     @ObservedObject var scheduler: Scheduler
-    @ObservedObject var postureService: PostureService
+    @ObservedObject var motionService: MotionService
     
     @State private var updateCounter = 0
     @State private var timer = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
@@ -51,12 +51,12 @@ struct MenuBarLabelView: View {
     private var postureEmoji: String {
         guard userPrefs.postureMonitoringEnabledValue else { return "" }
         
-        switch postureService.currentPosture {
+        switch motionService.currentPosture {
         case .good:
             return "😊"
         case .poor:
             return "😟"
-        case .calibrating, .unknown, .noAirPods:
+        case .calibrating, .unknown, .noData:
             return ""
         }
     }
@@ -78,11 +78,8 @@ struct MenuBarLabelView: View {
             }
         }
         .onReceive(timer) { _ in
+            // Only update counter for scheduler-related updates
             if scheduler.isRunning && !scheduler.isPaused {
-                updateCounter += 1
-            }
-            // Also update when posture monitoring is enabled to show emoji changes
-            if userPrefs.postureMonitoringEnabledValue && postureService.isAuthorized {
                 updateCounter += 1
             }
         }

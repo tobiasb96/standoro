@@ -6,7 +6,7 @@ import Combine
 @main
 struct PosturePulseApp: App {
     @StateObject private var scheduler = Scheduler()
-    private var postureService = PostureService()
+    private var motionService = MotionService()
     @State private var updateCounter = 0
     @State private var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -16,10 +16,10 @@ struct PosturePulseApp: App {
 
     var body: some Scene {
         MenuBarExtra {
-            AppContentView(scheduler: scheduler, postureService: postureService)
+            AppContentView(scheduler: scheduler, motionService: motionService)
                 .modelContainer(for: UserPrefs.self)
         } label: {
-            MenuBarLabelView(scheduler: scheduler, postureService: postureService)
+            MenuBarLabelView(scheduler: scheduler, motionService: motionService)
                 .modelContainer(for: UserPrefs.self)
         }
         .menuBarExtraStyle(.window)
@@ -40,16 +40,16 @@ struct AppContentView: View {
     @State private var onboardingWindowController: NSWindowController?
     @AppStorage("didOnboard") private var didOnboard = false
     let scheduler: Scheduler
-    let postureService: PostureService
+    let motionService: MotionService
     
     var body: some View {
         MenuBarView(
             scheduler: scheduler,
-            postureService: postureService,
+            motionService: motionService,
             onOpenSettings: showSettingsWindow,
             onQuit: {
                 scheduler.stop()
-                postureService.stopMonitoring()
+                motionService.stopMonitoring()
                 NSApp.terminate(nil)
             }
         )
@@ -89,7 +89,7 @@ struct AppContentView: View {
     
     private func showSettingsWindow() {
         if settingsWindowController == nil {
-            let settingsView = SettingsView(scheduler: scheduler, postureService: postureService)
+            let settingsView = SettingsView(scheduler: scheduler, motionService: motionService)
                 .modelContainer(for: UserPrefs.self)
             
             let window = NSWindow(

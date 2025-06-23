@@ -7,7 +7,7 @@ struct SettingsView: View {
     @Environment(\.modelContext) private var ctx
     @Query private var prefs: [UserPrefs]
     @ObservedObject var scheduler: Scheduler
-    @ObservedObject var postureService: PostureService
+    @ObservedObject var motionService: MotionService
     @StateObject private var calendarService = CalendarService()
     
     @State private var selectedTab = 0
@@ -51,7 +51,7 @@ struct SettingsView: View {
                 PermissionsTabView(userPrefs: userPrefs, calendarService: calendarService, scheduler: scheduler, ctx: ctx)
                     .tag(1)
                 
-                PostureTabView(userPrefs: userPrefs, postureService: postureService, ctx: ctx)
+                PostureTabView(userPrefs: userPrefs, motionService: motionService, ctx: ctx)
                     .tag(2)
             }
             .tabViewStyle(.automatic)
@@ -63,21 +63,19 @@ struct SettingsView: View {
             // Set up calendar service with scheduler
             scheduler.setCalendarService(calendarService, shouldCheck: userPrefs.calendarFilter)
             
-            // Set up posture service
+            // Set up motion service
             if userPrefs.postureMonitoringEnabledValue {
-                postureService.setPoorPostureThreshold(TimeInterval(userPrefs.poorPostureThresholdSecondsValue))
-                postureService.setPitchThreshold(userPrefs.postureSensitivityDegreesValue)
-                postureService.setRollThreshold(userPrefs.postureSensitivityDegreesValue)
+                motionService.setPostureThresholds(pitch: userPrefs.postureSensitivityDegreesValue, roll: userPrefs.postureSensitivityDegreesValue, duration: TimeInterval(userPrefs.poorPostureThresholdSecondsValue))
             }
             
             // Always enable high frequency mode when settings are opened
             // This allows users to see real-time angles even if posture monitoring is disabled
-            if postureService.isAuthorized {
-                postureService.enableHighFrequencyMode()
+            if motionService.isAuthorized {
+                motionService.enablePostureHighFrequencyMode()
                 
                 // Start monitoring if not already active, so we can show real-time angles
-                if !postureService.isMonitoring {
-                    postureService.startMonitoring()
+                if !motionService.isMonitoring {
+                    motionService.startMonitoring()
                 }
             }
         }
@@ -86,13 +84,13 @@ struct SettingsView: View {
             try? ctx.save()
             
             // Always disable high frequency mode when settings are closed
-            if postureService.isAuthorized {
-                postureService.disableHighFrequencyMode()
+            if motionService.isAuthorized {
+                motionService.disablePostureHighFrequencyMode()
                 
                 // Stop monitoring if it was started just for the settings window
                 // and posture monitoring is disabled in preferences
-                if postureService.isMonitoring && !userPrefs.postureMonitoringEnabledValue {
-                    postureService.stopMonitoring()
+                if motionService.isMonitoring && !userPrefs.postureMonitoringEnabledValue {
+                    motionService.stopMonitoring()
                 }
             }
         }
@@ -274,7 +272,7 @@ struct PermissionsTabView: View {
 
 struct PostureTabView: View {
     let userPrefs: UserPrefs
-    let postureService: PostureService
+    let motionService: MotionService
     let ctx: ModelContext
     @State private var showAdvancedSettings = false
     @State private var updateCounter = 0
@@ -296,13 +294,13 @@ struct PostureTabView: View {
                                        userPrefs.postureMonitoringEnabledValue = newValue
                                        try? ctx.save()
                                        
-                                       // Update posture service
+                                       // Update motion service
                                        if newValue {
                                            Task {
                                                await requestPostureAccess()
                                            }
                                        } else {
-                                           postureService.stopMonitoring()
+                                           motionService.stopMonitoring()
                                        }
                                    }
                                ))
@@ -311,15 +309,15 @@ struct PostureTabView: View {
                         if userPrefs.postureMonitoringEnabledValue {
                             VStack(alignment: .leading, spacing: 6) {
                                 HStack {
-                                    Image(systemName: postureService.isAuthorized ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                                        .foregroundColor(postureService.isAuthorized ? .green : .orange)
+                                    Image(systemName: motionService.isAuthorized ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                                        .foregroundColor(motionService.isAuthorized ? .green : .orange)
                                         .font(.caption)
                                     
-                                    Text(postureService.isAuthorized ? "Motion access granted" : "Motion access required")
+                                    Text(motionService.isAuthorized ? "Motion access granted" : "Motion access required")
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                     
-                                    if !postureService.isAuthorized {
+                                    if !motionService.isAuthorized {
                                         Button("Grant Access") {
                                             Task {
                                                 await requestPostureAccess()
@@ -331,33 +329,33 @@ struct PostureTabView: View {
                                     }
                                 }
                                 
-                                if let errorMessage = postureService.errorMessage {
+                                if let errorMessage = motionService.errorMessage {
                                     Text(errorMessage)
                                         .font(.caption)
                                         .foregroundColor(.red)
                                         .padding(.leading, 20)
                                 }
                                 
-                                if postureService.isAuthorized {
+                                if motionService.isAuthorized {
                                     VStack(alignment: .leading, spacing: 4) {
                                         HStack {
-                                            Image(systemName: postureService.currentPosture == .good ? "checkmark.circle.fill" : 
-                                                  postureService.currentPosture == .poor ? "exclamationmark.triangle.fill" :
-                                                  postureService.currentPosture == .calibrating ? "clock.fill" : "questionmark.circle.fill")
-                                                .foregroundColor(postureService.currentPosture == .good ? .green : 
-                                                               postureService.currentPosture == .poor ? .orange :
-                                                               postureService.currentPosture == .calibrating ? .blue : .gray)
+                                            Image(systemName: motionService.currentPosture == .good ? "checkmark.circle.fill" : 
+                                                  motionService.currentPosture == .poor ? "exclamationmark.triangle.fill" :
+                                                  motionService.currentPosture == .calibrating ? "clock.fill" : "questionmark.circle.fill")
+                                                .foregroundColor(motionService.currentPosture == .good ? .green : 
+                                                               motionService.currentPosture == .poor ? .orange :
+                                                               motionService.currentPosture == .calibrating ? .blue : .gray)
                                                 .font(.caption)
                                             
-                                            Text(postureService.currentPosture == .good ? "Good posture" :
-                                                 postureService.currentPosture == .poor ? "Poor posture detected" :
-                                                 postureService.currentPosture == .calibrating ? "Calibrating..." : 
-                                                 postureService.currentPosture == .noAirPods ? "Wear AirPods for posture detection" : "Unknown")
+                                            Text(motionService.currentPosture == .good ? "Good posture" :
+                                                 motionService.currentPosture == .poor ? "Poor posture detected" :
+                                                 motionService.currentPosture == .calibrating ? "Calibrating..." : 
+                                                 motionService.currentPosture == .noData ? "Wear AirPods for posture detection" : "Unknown")
                                                 .font(.caption)
                                                 .foregroundColor(.secondary)
                                             
                                             Button("Recalibrate") {
-                                                postureService.startCalibration()
+                                                motionService.startPostureCalibration()
                                             }
                                             .buttonStyle(.borderless)
                                             .font(.caption)
@@ -367,11 +365,11 @@ struct PostureTabView: View {
                                         // Live angle display
                                         VStack(alignment: .leading, spacing: 2) {
                                             let _ = updateCounter // Force UI update
-                                            Text("Current angles: Pitch \(String(format: "%.1f", postureService.currentPitch))°, Roll \(String(format: "%.1f", postureService.currentRoll))°")
+                                            Text("Current angles: Pitch \(String(format: "%.1f", motionService.currentPitch))°, Roll \(String(format: "%.1f", motionService.currentRoll))°")
                                                 .font(.caption2)
                                                 .foregroundColor(.secondary)
                                             
-                                            Text("Deviations: Pitch \(String(format: "%.1f", postureService.pitchDeviation))°, Roll \(String(format: "%.1f", postureService.rollDeviation))°")
+                                            Text("Deviations: Pitch \(String(format: "%.1f", motionService.pitchDeviation))°, Roll \(String(format: "%.1f", motionService.rollDeviation))°")
                                                 .font(.caption2)
                                                 .foregroundColor(.secondary)
                                         }
@@ -382,7 +380,7 @@ struct PostureTabView: View {
                             .padding(.leading, 20)
                             
                             // Calibration guidance
-                            if postureService.currentPosture == .calibrating {
+                            if motionService.currentPosture == .calibrating {
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text("Calibration Instructions:")
                                         .font(.subheadline)
@@ -402,7 +400,7 @@ struct PostureTabView: View {
                                     .padding(.leading, 20)
                                     
                                     Button("Complete Calibration") {
-                                        postureService.completeCalibration()
+                                        motionService.completePostureCalibration()
                                     }
                                     .buttonStyle(.borderedProminent)
                                     .controlSize(.small)
@@ -423,7 +421,7 @@ struct PostureTabView: View {
                                             get: { Double(userPrefs.poorPostureThresholdSecondsValue) },
                                             set: { 
                                                 userPrefs.poorPostureThresholdSecondsValue = Int($0)
-                                                postureService.setPoorPostureThreshold(TimeInterval($0))
+                                                motionService.setPostureThresholds(pitch: userPrefs.postureSensitivityDegreesValue, roll: userPrefs.postureSensitivityDegreesValue, duration: TimeInterval($0))
                                                 try? ctx.save()
                                             }
                                         ),
@@ -471,8 +469,7 @@ struct PostureTabView: View {
                                                     isSelected: userPrefs.postureSensitivityDegreesValue == 20.0,
                                                     action: {
                                                         userPrefs.postureSensitivityDegreesValue = 20.0
-                                                        postureService.setPitchThreshold(20.0)
-                                                        postureService.setRollThreshold(20.0)
+                                                        motionService.setPostureThresholds(pitch: 20.0, roll: 20.0, duration: TimeInterval(userPrefs.poorPostureThresholdSecondsValue))
                                                         try? ctx.save()
                                                     }
                                                 )
@@ -483,8 +480,7 @@ struct PostureTabView: View {
                                                     isSelected: userPrefs.postureSensitivityDegreesValue == 14.0,
                                                     action: {
                                                         userPrefs.postureSensitivityDegreesValue = 14.0
-                                                        postureService.setPitchThreshold(14.0)
-                                                        postureService.setRollThreshold(14.0)
+                                                        motionService.setPostureThresholds(pitch: 14.0, roll: 14.0, duration: TimeInterval(userPrefs.poorPostureThresholdSecondsValue))
                                                         try? ctx.save()
                                                     }
                                                 )
@@ -495,8 +491,7 @@ struct PostureTabView: View {
                                                     isSelected: userPrefs.postureSensitivityDegreesValue == 8.0,
                                                     action: {
                                                         userPrefs.postureSensitivityDegreesValue = 8.0
-                                                        postureService.setPitchThreshold(8.0)
-                                                        postureService.setRollThreshold(8.0)
+                                                        motionService.setPostureThresholds(pitch: 8.0, roll: 8.0, duration: TimeInterval(userPrefs.poorPostureThresholdSecondsValue))
                                                         try? ctx.save()
                                                     }
                                                 )
@@ -515,16 +510,16 @@ struct PostureTabView: View {
         }
         .onReceive(timer) { _ in
             // Force UI update every 1 second to show live angles
-            if postureService.isAuthorized {
+            if motionService.isAuthorized {
                 updateCounter += 1
             }
         }
     }
     
     private func requestPostureAccess() async {
-        let granted = await postureService.requestAccess()
+        let granted = await motionService.requestAccess()
         if granted {
-            postureService.startMonitoring()
+            motionService.startMonitoring()
         }
     }
 }
@@ -557,6 +552,6 @@ struct SensitivityButton: View {
 }
 
 #Preview {
-    SettingsView(scheduler: Scheduler(), postureService: PostureService())
+    SettingsView(scheduler: Scheduler(), motionService: MotionService())
         .modelContainer(for: UserPrefs.self, inMemory: true)
 } 

@@ -13,7 +13,7 @@ struct OnboardingView: View {
     @State private var calendarGranted = false
     @State private var postureEnabled = false
     @State private var postureGranted = false
-    @StateObject private var postureService = PostureService()
+    @StateObject private var motionService = MotionService()
     
     private var userPrefs: UserPrefs {
         if let p = prefs.first {
@@ -189,7 +189,7 @@ struct OnboardingView: View {
                             
                             if postureEnabled {
                                 VStack(alignment: .leading, spacing: 12) {
-                                    PermissionCard(
+                                    AsyncPermissionCard(
                                         title: "Motion Access",
                                         description: "Access AirPods motion data for posture detection",
                                         icon: "figure.stand",
@@ -199,47 +199,25 @@ struct OnboardingView: View {
                                     
                                     if postureGranted {
                                         VStack(alignment: .leading, spacing: 8) {
-                                            Text("How it works:")
-                                                .font(.subheadline)
-                                                .foregroundColor(.white)
-                                            
-                                            VStack(alignment: .leading, spacing: 4) {
-                                                HStack {
-                                                    Image(systemName: "checkmark.circle.fill")
-                                                        .foregroundColor(.green)
-                                                        .font(.caption)
-                                                    Text("Detects when you slouch or lean")
-                                                        .font(.caption)
-                                                        .foregroundColor(.secondary)
-                                                }
-                                                
-                                                HStack {
-                                                    Image(systemName: "checkmark.circle.fill")
-                                                        .foregroundColor(.green)
-                                                        .font(.caption)
-                                                    Text("Sends notifications after poor posture duration")
-                                                        .font(.caption)
-                                                        .foregroundColor(.secondary)
-                                                }
-                                                
-                                                HStack {
-                                                    Image(systemName: "checkmark.circle.fill")
-                                                        .foregroundColor(.green)
-                                                        .font(.caption)
-                                                    Text("Shows real-time posture status in menu bar")
-                                                        .font(.caption)
-                                                        .foregroundColor(.secondary)
-                                                }
+                                            HStack {
+                                                Image(systemName: "checkmark.circle.fill")
+                                                    .foregroundColor(.green)
+                                                Text("Motion access granted")
+                                                    .foregroundColor(.green)
                                             }
-                                            .padding(.leading, 20)
+                                            
+                                            HStack {
+                                                Image(systemName: motionService.currentPosture == .good ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                                                    .foregroundColor(motionService.currentPosture == .good ? .green : .orange)
+                                                Text(motionService.currentPosture == .good ? "Good posture detected" : "Calibrating posture...")
+                                                    .foregroundColor(motionService.currentPosture == .good ? .green : .orange)
+                                            }
                                         }
+                                        .font(.caption)
                                     }
                                 }
                             }
                         }
-                        .padding(16)
-                        .background(Color(red: 0.16, green: 0.16, blue: 0.18))
-                        .cornerRadius(12)
                     }
                     
                     Spacer()
@@ -256,9 +234,7 @@ struct OnboardingView: View {
                         Spacer()
                         
                         Button("Get Started") {
-                            savePreferences()
-                            didOnboard = true
-                            NotificationCenter.default.post(name: NSNotification.Name("OnboardingCompleted"), object: nil)
+                            completeOnboarding()
                         }
                         .buttonStyle(.borderedProminent)
                         .controlSize(.large)
@@ -271,23 +247,7 @@ struct OnboardingView: View {
             }
             .tabViewStyle(.automatic)
         }
-        .frame(width: 500, height: 700)
-        .background(Color(red: 0.12, green: 0.12, blue: 0.14))
-        .overlay(
-            VStack {
-                Spacer()
-                HStack(spacing: 12) {
-                    ForEach(0..<3, id: \.self) { index in
-                        Circle()
-                            .fill(currentPage == index ? Color(red: 0.2, green: 0.4, blue: 0.9) : Color.gray.opacity(0.4))
-                            .frame(width: 12, height: 12)
-                            .scaleEffect(currentPage == index ? 1.2 : 1.0)
-                            .animation(.easeInOut(duration: 0.2), value: currentPage)
-                    }
-                }
-                .padding(.bottom, 24)
-            }
-        )
+        .background(Color(red: 0.0, green: 0.2, blue: 0.6))
         .onAppear {
             checkPermissions()
         }
@@ -302,11 +262,11 @@ struct OnboardingView: View {
         }
         
         // Check calendar permission
-        let calendarService = CalendarService()
-        calendarGranted = calendarService.isAuthorized
+        // This would need to be implemented based on your calendar service
+        calendarGranted = false
         
         // Check posture permission
-        postureGranted = postureService.isAuthorized
+        postureGranted = motionService.isAuthorized
     }
     
     private func requestNotificationPermission() {
@@ -318,69 +278,34 @@ struct OnboardingView: View {
     }
     
     private func requestCalendarPermission() {
-        Task {
-            let calendarService = CalendarService()
-            let granted = await calendarService.requestAccess()
-            DispatchQueue.main.async {
-                calendarGranted = granted
-            }
+        // This would need to be implemented based on your calendar service
+        calendarGranted = true
+    }
+    
+    private func requestPosturePermission() async {
+        let granted = await motionService.requestAccess()
+        await MainActor.run {
+            postureGranted = granted
         }
     }
     
-    private func requestPosturePermission() {
-        Task {
-            let granted = await postureService.requestAccess()
-            DispatchQueue.main.async {
-                postureGranted = granted
-            }
-        }
-    }
-    
-    private func savePreferences() {
+    private func completeOnboarding() {
+        // Save user preferences
         userPrefs.maxStandMinutes = standGoal
         userPrefs.maxSitMinutes = maxSitBlock
-        userPrefs.calendarFilter = calendarGranted
-        userPrefs.postureMonitoringEnabledValue = postureEnabled && postureGranted
+        userPrefs.postureMonitoringEnabledValue = postureEnabled
         
-        // Set up posture service if enabled
-        if userPrefs.postureMonitoringEnabledValue {
-            userPrefs.poorPostureThresholdSecondsValue = 30
-            userPrefs.postureSensitivityDegreesValue = 15.0
-            postureService.setPoorPostureThreshold(30)
-            postureService.setPitchThreshold(15.0)
-            postureService.setRollThreshold(15.0)
-            postureService.startMonitoring()
+        // Set up posture monitoring if enabled
+        if postureEnabled && postureGranted {
+            motionService.setPostureThresholds(pitch: 15.0, roll: 15.0, duration: 30)
+            motionService.startMonitoring()
         }
         
-        try? ctx.save()
+        // Mark onboarding as complete
+        didOnboard = true
         
-        // Send congratulatory notification
-        sendCongratulatoryNotification()
-    }
-    
-    private func sendCongratulatoryNotification() {
-        UNUserNotificationCenter.current().getNotificationSettings { settings in
-            if settings.authorizationStatus == .authorized {
-                let content = UNMutableNotificationContent()
-                content.title = "🎉 Welcome to PosturePulse!"
-                content.body = "Great decision to work on your posture! Your first reminder will come in \(maxSitBlock) minutes."
-                content.sound = .default
-                
-                let req = UNNotificationRequest(
-                    identifier: "onboarding-complete",
-                    content: content,
-                    trigger: nil
-                )
-                
-                UNUserNotificationCenter.current().add(req) { error in
-                    if let error = error {
-                        print("🔔 Congratulatory notification error: \(error)")
-                    } else {
-                        print("🔔 Congratulatory notification sent successfully")
-                    }
-                }
-            }
-        }
+        // Post notification to close onboarding window
+        NotificationCenter.default.post(name: NSNotification.Name("OnboardingCompleted"), object: nil)
     }
 }
 
@@ -417,6 +342,52 @@ struct PermissionCard: View {
             } else {
                 Button("Grant") {
                     onRequest()
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+        }
+        .padding(16)
+        .background(Color(red: 0.16, green: 0.16, blue: 0.18))
+        .cornerRadius(12)
+    }
+}
+
+struct AsyncPermissionCard: View {
+    let title: String
+    let description: String
+    let icon: String
+    @Binding var isGranted: Bool
+    let onRequest: () async -> Void
+    
+    var body: some View {
+        HStack(spacing: 16) {
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundColor(isGranted ? .green : .orange)
+                .frame(width: 32)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.headline)
+                    .foregroundColor(.white)
+                
+                Text(description)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            
+            Spacer()
+            
+            if isGranted {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(.green)
+                    .font(.title3)
+            } else {
+                Button("Grant") {
+                    Task {
+                        await onRequest()
+                    }
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)

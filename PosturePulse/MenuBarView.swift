@@ -6,7 +6,7 @@ struct MenuBarView: View {
     @Environment(\.modelContext) private var ctx
     @Query private var prefs: [UserPrefs]
     @ObservedObject var scheduler: Scheduler
-    @ObservedObject var postureService: PostureService
+    @ObservedObject var motionService: MotionService
     var onOpenSettings: () -> Void
     var onQuit: () -> Void
 
@@ -110,11 +110,9 @@ struct MenuBarView: View {
         .foregroundColor(.white)
         .onAppear(perform: setupInitialState)
         .onReceive(timer) { _ in
-            // Force UI update every second when timer is running and not paused
-            if scheduler.isRunning && !scheduler.isPaused {
-                // This will trigger a UI refresh every second
-                updateCounter += 1
-            }
+            // Force UI update every second when popup is open
+            // This ensures posture emoji and other UI elements update regularly
+            updateCounter += 1
         }
         .onChange(of: prefs) { _, newPrefs in
             print("🔔 Preferences changed, count: \(newPrefs.count)")
@@ -123,19 +121,17 @@ struct MenuBarView: View {
                 scheduler.sittingInterval = TimeInterval(p.maxSitMinutes * 60)
                 scheduler.standingInterval = TimeInterval(p.maxStandMinutes * 60)
                 
-                // Update posture service settings
+                // Update motion service settings
                 if p.postureMonitoringEnabledValue {
-                    postureService.setPoorPostureThreshold(TimeInterval(p.poorPostureThresholdSecondsValue))
-                    postureService.setPitchThreshold(p.postureSensitivityDegreesValue)
-                    postureService.setRollThreshold(p.postureSensitivityDegreesValue)
+                    motionService.setPostureThresholds(pitch: p.postureSensitivityDegreesValue, roll: p.postureSensitivityDegreesValue, duration: TimeInterval(p.poorPostureThresholdSecondsValue))
                     
                     // Start monitoring if authorized
-                    if postureService.isAuthorized {
-                        postureService.startMonitoring()
+                    if motionService.isAuthorized {
+                        motionService.startMonitoring()
                     }
                 } else {
                     // Stop monitoring if disabled
-                    postureService.stopMonitoring()
+                    motionService.stopMonitoring()
                 }
                 
                 // Force UI update to reflect the new setting
@@ -144,14 +140,14 @@ struct MenuBarView: View {
         }
         .onAppear {
             // Enable high frequency mode when popup is opened
-            if prefs.first?.postureMonitoringEnabledValue == true && postureService.isAuthorized {
-                postureService.enableHighFrequencyMode()
+            if prefs.first?.postureMonitoringEnabledValue == true && motionService.isAuthorized {
+                motionService.enablePostureHighFrequencyMode()
             }
         }
         .onDisappear {
             // Disable high frequency mode when popup is closed
-            if prefs.first?.postureMonitoringEnabledValue == true && postureService.isAuthorized {
-                postureService.disableHighFrequencyMode()
+            if prefs.first?.postureMonitoringEnabledValue == true && motionService.isAuthorized {
+                motionService.disablePostureHighFrequencyMode()
             }
         }
     }
@@ -171,15 +167,13 @@ struct MenuBarView: View {
             scheduler.sittingInterval = TimeInterval(p.maxSitMinutes * 60)
             scheduler.standingInterval = TimeInterval(p.maxStandMinutes * 60)
             
-            // Set up posture service if enabled
+            // Set up motion service if enabled
             if p.postureMonitoringEnabledValue {
-                postureService.setPoorPostureThreshold(TimeInterval(p.poorPostureThresholdSecondsValue))
-                postureService.setPitchThreshold(p.postureSensitivityDegreesValue)
-                postureService.setRollThreshold(p.postureSensitivityDegreesValue)
+                motionService.setPostureThresholds(pitch: p.postureSensitivityDegreesValue, roll: p.postureSensitivityDegreesValue, duration: TimeInterval(p.poorPostureThresholdSecondsValue))
                 
                 // Start monitoring if authorized
-                if postureService.isAuthorized {
-                    postureService.startMonitoring()
+                if motionService.isAuthorized {
+                    motionService.startMonitoring()
                 }
             }
         }
@@ -237,42 +231,36 @@ struct MenuBarView: View {
     }
     
     private var postureEmoji: String {
-        switch postureService.currentPosture {
+        switch motionService.currentPosture {
         case .good:
             return "😊"
         case .poor:
             return "😟"
-        case .calibrating, .unknown, .noAirPods:
-            return ""
-        @unknown default:
+        case .calibrating, .unknown, .noData:
             return ""
         }
     }
     
     private var postureText: String {
-        switch postureService.currentPosture {
+        switch motionService.currentPosture {
         case .good:
             return "Good Posture"
         case .poor:
             return "Poor Posture"
         case .calibrating, .unknown:
             return ""
-        case .noAirPods:
+        case .noData:
             return "Wear AirPods for posture detection"
-        @unknown default:
-            return ""
         }
     }
     
     private var postureBackgroundColor: Color {
-        switch postureService.currentPosture {
+        switch motionService.currentPosture {
         case .good:
             return .green
         case .poor:
             return .red
-        case .calibrating, .unknown, .noAirPods:
-            return .clear
-        @unknown default:
+        case .calibrating, .unknown, .noData:
             return .clear
         }
     }
