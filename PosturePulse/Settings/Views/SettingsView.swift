@@ -110,6 +110,9 @@ struct SettingsView: View {
             // Set up calendar service with motion service
             motionService.setCalendarService(calendarService, shouldCheck: userPrefs.calendarFilter)
             
+            // Set up auto-start setting
+            scheduler.setAutoStartEnabled(userPrefs.autoStartEnabledValue)
+            
             // Set up motion service
             if userPrefs.postureMonitoringEnabledValue {
                 motionService.setPostureThresholds(pitch: userPrefs.postureSensitivityDegreesValue, roll: userPrefs.postureSensitivityDegreesValue, duration: TimeInterval(userPrefs.poorPostureThresholdSecondsValue))

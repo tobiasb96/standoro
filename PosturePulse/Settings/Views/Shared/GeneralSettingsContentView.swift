@@ -35,6 +35,26 @@ struct GeneralSettingsContentView: View {
                 EmptyView()
             }
             
+            // Auto-Start Card
+            SettingsCard(
+                icon: "play.circle",
+                header: "Auto-Start",
+                subheader: "Automatically continue to the next phase when a session ends. When disabled, you'll need to manually start each phase.",
+                iconColor: .settingsAccentBlue,
+                trailing: AnyView(
+                    Toggle("", isOn: Binding(
+                        get: { userPrefs.autoStartEnabledValue },
+                        set: { 
+                            userPrefs.autoStartEnabledValue = $0
+                            try? ctx.save()
+                        }
+                    ))
+                    .toggleStyle(CustomToggleStyle())
+                )
+            ) {
+                EmptyView()
+            }
+            
             // Calendar Integration Card
             SettingsCard(
                 icon: "calendar",

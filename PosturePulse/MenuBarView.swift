@@ -31,11 +31,20 @@ struct MenuBarView: View {
     
     private var phaseText: String {
         if scheduler.isRunning {
-            switch scheduler.currentPhase {
-            case .sitting:
-                return "Sitting"
-            case .standing:
-                return "Standing"
+            if scheduler.isPaused {
+                switch scheduler.currentPhase {
+                case .sitting:
+                    return "Sitting (Paused)"
+                case .standing:
+                    return "Standing (Paused)"
+                }
+            } else {
+                switch scheduler.currentPhase {
+                case .sitting:
+                    return "Sitting"
+                case .standing:
+                    return "Standing"
+                }
             }
         } else {
             return "Sitting"
@@ -44,6 +53,16 @@ struct MenuBarView: View {
 
     private var playPauseIcon: String {
         return scheduler.isRunning && !scheduler.isPaused ? "pause.circle.fill" : "play.circle.fill"
+    }
+    
+    private var playPauseTooltip: String {
+        if !scheduler.isRunning {
+            return "Start timer"
+        } else if scheduler.isPaused {
+            return "Resume timer"
+        } else {
+            return "Pause timer"
+        }
     }
     
     private var shouldShowCalendarMute: Bool {
@@ -107,7 +126,7 @@ struct MenuBarView: View {
                             .font(.system(size: 44, weight: .thin))
                     }
                     .buttonStyle(.plain)
-                    .help(scheduler.isRunning && !scheduler.isPaused ? "Pause timer" : "Start/resume timer")
+                    .help(playPauseTooltip)
                     
                     Button(action: handleSkipPhase) {
                         Image(systemName: "forward.fill")
@@ -159,6 +178,9 @@ struct MenuBarView: View {
                 scheduler.sittingInterval = TimeInterval(p.maxSitMinutes * 60)
                 scheduler.standingInterval = TimeInterval(p.maxStandMinutes * 60)
                 
+                // Update auto-start setting
+                scheduler.setAutoStartEnabled(p.autoStartEnabledValue)
+                
                 // Update motion service settings (but don't start/stop monitoring)
                 if p.postureMonitoringEnabledValue {
                     motionService.setPostureThresholds(pitch: p.postureSensitivityDegreesValue, roll: p.postureSensitivityDegreesValue, duration: TimeInterval(p.poorPostureThresholdSecondsValue))
@@ -182,6 +204,7 @@ struct MenuBarView: View {
             if let p = prefs.first {
                 scheduler.setCalendarService(calendarService, shouldCheck: p.calendarFilter)
                 motionService.setCalendarService(calendarService, shouldCheck: p.calendarFilter)
+                scheduler.setAutoStartEnabled(p.autoStartEnabledValue)
             }
         }
         .onDisappear {
@@ -199,9 +222,11 @@ struct MenuBarView: View {
             try? ctx.save()
             scheduler.sittingInterval = TimeInterval(newPrefs.maxSitMinutes * 60)
             scheduler.standingInterval = TimeInterval(newPrefs.maxStandMinutes * 60)
+            scheduler.setAutoStartEnabled(newPrefs.autoStartEnabledValue)
         } else if let p = prefs.first {
             scheduler.sittingInterval = TimeInterval(p.maxSitMinutes * 60)
             scheduler.standingInterval = TimeInterval(p.maxStandMinutes * 60)
+            scheduler.setAutoStartEnabled(p.autoStartEnabledValue)
             
             // Set up motion service if enabled
             if p.postureMonitoringEnabledValue {

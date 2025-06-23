@@ -21,6 +21,7 @@ class Scheduler: ObservableObject {
     private var remainingTimeWhenPaused: TimeInterval = 0
     private var calendarService: CalendarService?
     private var shouldCheckCalendar: Bool = false
+    private var autoStartEnabled: Bool = true // Default to true
     
     var sittingInterval: TimeInterval {
         get { _sittingInterval }
@@ -68,6 +69,10 @@ class Scheduler: ObservableObject {
     func setCalendarService(_ calendarService: CalendarService, shouldCheck: Bool) {
         self.calendarService = calendarService
         self.shouldCheckCalendar = shouldCheck
+    }
+    
+    func setAutoStartEnabled(_ enabled: Bool) {
+        self.autoStartEnabled = enabled
     }
 
     func start(sittingInterval: TimeInterval? = nil, standingInterval: TimeInterval? = nil) {
@@ -180,6 +185,7 @@ class Scheduler: ObservableObject {
         let currentPhase = self.currentPhase
         let sittingMinutes = Int(sittingInterval / 60)
         let standingMinutes = Int(standingInterval / 60)
+        let autoStartEnabled = self.autoStartEnabled
         
         // Check notification authorization first
         UNUserNotificationCenter.current().getNotificationSettings { settings in
@@ -191,11 +197,11 @@ class Scheduler: ObservableObject {
                 case .sitting:
                     content.title = "Time to Stand Up!"
                     content.subtitle = "You've been sitting for \(sittingMinutes) minutes."
-                    content.body = "A quick stretch will do you good."
+                    content.body = autoStartEnabled ? "A quick stretch will do you good." : "A quick stretch will do you good. Open the menu to start your standing session."
                 case .standing:
                     content.title = "Time to Sit Down"
                     content.subtitle = "You've been standing for \(standingMinutes) minutes."
-                    content.body = "Time to relax for a bit."
+                    content.body = autoStartEnabled ? "Time to relax for a bit." : "Time to relax for a bit. Open the menu to start your sitting session."
                 }
                 
                 content.sound = .default
@@ -214,8 +220,14 @@ class Scheduler: ObservableObject {
             }
         }
         
-        // Switch to next phase
-        switchPhase()
+        // Handle auto-start logic
+        if autoStartEnabled {
+            // Continue to next phase automatically
+            switchPhase()
+        } else {
+            // Pause the timer and wait for manual start
+            pause()
+        }
     }
     
     private func switchPhase() {
