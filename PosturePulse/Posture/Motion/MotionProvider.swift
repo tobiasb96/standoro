@@ -39,31 +39,44 @@ class AirPodsMotionProvider: NSObject, MotionProvider, CMHeadphoneMotionManagerD
         
         return await withCheckedContinuation { continuation in
             var hasResumed = false
-            
-            self.motionManager.startDeviceMotionUpdates(to: .main) { motion, error in
+            let resumeOnce = { (result: Bool) in
                 guard !hasResumed else { return }
                 hasResumed = true
-                
                 self.motionManager.stopDeviceMotionUpdates()
-                
+                continuation.resume(returning: result)
+            }
+            
+            // Timeout task
+            Task {
+                try? await Task.sleep(nanoseconds: 3_000_000_000) // 3 seconds
+                if !hasResumed {
+                    print("🔔 AirPodsMotionProvider - requestAccess timed out.")
+                    resumeOnce(false)
+                }
+            }
+            
+            // Motion updates
+            self.motionManager.startDeviceMotionUpdates(to: .main) { motion, error in
                 if let error = error {
-                    print("🔔 AirPodsMotionProvider - Motion error: \(error)")
-                    continuation.resume(returning: false)
+                    print("🔔 AirPodsMotionProvider - Motion access error: \(error.localizedDescription)")
+                    resumeOnce(false)
                     return
                 }
                 
                 if let motion = motion {
-                    // Check if we have AirPods data by looking for gravity data
+                    // Check for actual motion data to confirm connection
                     if motion.gravity.x != 0 || motion.gravity.y != 0 || motion.gravity.z != 0 {
-                        print("🔔 AirPodsMotionProvider - AirPods motion data available")
-                        continuation.resume(returning: true)
+                        print("🔔 AirPodsMotionProvider - Motion data available, access granted.")
+                        resumeOnce(true)
                     } else {
-                        print("🔔 AirPodsMotionProvider - No AirPods motion data available")
-                        continuation.resume(returning: false)
+                        // This can happen if updates start but there's no data (e.g., not AirPods Pro/Max)
+                        print("🔔 AirPodsMotionProvider - Motion data received but gravity is zero, likely not supported.")
+                        resumeOnce(false)
                     }
                 } else {
-                    print("🔔 AirPodsMotionProvider - No motion data")
-                    continuation.resume(returning: false)
+                    // This case should ideally not be reached if error is nil, but handled for safety
+                    print("🔔 AirPodsMotionProvider - No motion data received.")
+                    resumeOnce(false)
                 }
             }
         }
@@ -78,7 +91,7 @@ class AirPodsMotionProvider: NSObject, MotionProvider, CMHeadphoneMotionManagerD
         print("🔔 AirPodsMotionProvider - Starting motion updates")
         motionManager.startDeviceMotionUpdates(to: .main) { [weak self] motion, error in
             if let error = error {
-                print("🔔 AirPodsMotionProvider - Motion error: \(error)")
+                print("🔔 AirPodsMotionProvider - Motion update error: \(error.localizedDescription)")
                 return
             }
             
@@ -101,12 +114,12 @@ class AirPodsMotionProvider: NSObject, MotionProvider, CMHeadphoneMotionManagerD
     // MARK: - CMHeadphoneMotionManagerDelegate
     
     func headphoneMotionManagerDidConnect(_ manager: CMHeadphoneMotionManager) {
-        print("🔔 AirPodsMotionProvider - Headphones connected")
+        print("🔔 AirPodsMotionProvider - Headphones connected.")
         isConnected = true
     }
     
     func headphoneMotionManagerDidDisconnect(_ manager: CMHeadphoneMotionManager) {
-        print("🔔 AirPodsMotionProvider - Headphones disconnected")
+        print("🔔 AirPodsMotionProvider - Headphones disconnected.")
         isConnected = false
     }
 } 

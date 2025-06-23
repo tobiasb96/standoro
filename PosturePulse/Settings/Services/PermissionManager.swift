@@ -10,10 +10,18 @@ class PermissionManager: ObservableObject {
     
     private let motionService: MotionService
     private let calendarService: CalendarService
+    private var cancellables = Set<AnyCancellable>()
     
     init(motionService: MotionService, calendarService: CalendarService) {
         self.motionService = motionService
         self.calendarService = calendarService
+        
+        // Bind to motion service's authorization status
+        motionService.$isAuthorized
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.motionGranted, on: self)
+            .store(in: &cancellables)
+            
         checkAllPermissions()
     }
     
@@ -62,8 +70,8 @@ class PermissionManager: ObservableObject {
     
     func requestMotionPermission() async -> Bool {
         let granted = await motionService.requestAccess()
-        await MainActor.run {
-            self.motionGranted = granted
+        if granted {
+            motionService.errorMessage = nil
         }
         return granted
     }
