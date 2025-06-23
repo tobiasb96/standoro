@@ -31,45 +31,87 @@ struct MenuBarView: View {
     
     private var phaseText: String {
         if scheduler.isRunning {
-            if scheduler.isPaused {
-                if scheduler.pomodoroModeEnabled {
-                    switch scheduler.currentSessionType {
-                    case .focus:
-                        return "Focus (\(scheduler.currentPhase == .sitting ? "Sitting" : "Standing")) (Paused)"
-                    case .shortBreak:
-                        return "Short Break (Paused)"
-                    case .longBreak:
-                        return "Long Break (Paused)"
-                    }
-                } else {
-                    switch scheduler.currentPhase {
-                    case .sitting:
-                        return "Sitting (Paused)"
-                    case .standing:
-                        return "Standing (Paused)"
-                    }
+            if scheduler.pomodoroModeEnabled {
+                switch scheduler.currentSessionType {
+                case .focus:
+                    return "Focus"
+                case .shortBreak:
+                    return "Short Break"
+                case .longBreak:
+                    return "Long Break"
                 }
             } else {
-                if scheduler.pomodoroModeEnabled {
-                    switch scheduler.currentSessionType {
-                    case .focus:
-                        return "Focus (\(scheduler.currentPhase == .sitting ? "Sitting" : "Standing"))"
-                    case .shortBreak:
-                        return "Short Break"
-                    case .longBreak:
-                        return "Long Break"
-                    }
-                } else {
-                    switch scheduler.currentPhase {
-                    case .sitting:
-                        return "Sitting"
-                    case .standing:
-                        return "Standing"
-                    }
+                switch scheduler.currentPhase {
+                case .sitting:
+                    return "Sitting"
+                case .standing:
+                    return "Standing"
                 }
             }
         } else {
             return "Sitting"
+        }
+    }
+    
+    private var phaseIcon: String {
+        if scheduler.isRunning {
+            if scheduler.pomodoroModeEnabled {
+                switch scheduler.currentSessionType {
+                case .focus:
+                    return scheduler.currentPhase == .sitting ? "chair" : "figure.stand"
+                case .shortBreak:
+                    return "cup.and.saucer"
+                case .longBreak:
+                    return "bed.double"
+                }
+            } else {
+                switch scheduler.currentPhase {
+                case .sitting:
+                    return "chair"
+                case .standing:
+                    return "figure.stand"
+                }
+            }
+        } else {
+            return "chair"
+        }
+    }
+    
+    private var phaseBackgroundColor: Color {
+        if !scheduler.isRunning {
+            return Color.gray.opacity(0.3)
+        } else if scheduler.isPaused {
+            return Color.gray.opacity(0.3)
+        } else {
+            if scheduler.pomodoroModeEnabled {
+                switch scheduler.currentSessionType {
+                case .focus:
+                    return Color.blue.opacity(0.3)
+                case .shortBreak, .longBreak:
+                    return Color.green.opacity(0.3)
+                }
+            } else {
+                return Color.blue.opacity(0.3)
+            }
+        }
+    }
+    
+    private var phaseIconColor: Color {
+        if !scheduler.isRunning {
+            return Color.gray
+        } else if scheduler.isPaused {
+            return Color.gray
+        } else {
+            if scheduler.pomodoroModeEnabled {
+                switch scheduler.currentSessionType {
+                case .focus:
+                    return Color.blue
+                case .shortBreak, .longBreak:
+                    return Color.green
+                }
+            } else {
+                return Color.blue
+            }
         }
     }
 
@@ -100,11 +142,53 @@ struct MenuBarView: View {
         }
     }
 
+    private var sessionProgressText: String? {
+        guard scheduler.pomodoroModeEnabled && scheduler.isRunning else { return nil }
+        
+        switch scheduler.currentSessionType {
+        case .focus:
+            let completed = scheduler.completedFocusSessions
+            let total = scheduler.intervalsBeforeLongBreak
+            let currentSession = (completed % total) + 1
+            return "Session \(currentSession) of \(total)"
+        case .shortBreak:
+            let completed = scheduler.completedFocusSessions
+            let total = scheduler.intervalsBeforeLongBreak
+            let currentSession = (completed % total)
+            return "Break after session \(currentSession) of \(total)"
+        case .longBreak:
+            let completed = scheduler.completedFocusSessions
+            let total = scheduler.intervalsBeforeLongBreak
+            let completedSessions = completed - (completed % total)
+            return "Long break after \(completedSessions) sessions"
+        }
+    }
+    
+    private var sessionProgressColor: Color {
+        guard scheduler.pomodoroModeEnabled && scheduler.isRunning else { return .clear }
+        
+        switch scheduler.currentSessionType {
+        case .focus:
+            return .blue.opacity(0.2)
+        case .shortBreak:
+            return .green.opacity(0.2)
+        case .longBreak:
+            return .green.opacity(0.2)
+        }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            // Calendar mute indicator in top right
+            // Top bar with posture indicator and calendar mute
             HStack {
+                // Posture indicator in top left
+                if let prefs = prefs.first, prefs.postureMonitoringEnabledValue {
+                    postureIndicator
+                }
+                
                 Spacer()
+                
+                // Calendar mute indicator in top right
                 if shouldShowCalendarMute {
                     Image(systemName: "bell.slash.fill")
                         .foregroundColor(.orange)
@@ -118,26 +202,36 @@ struct MenuBarView: View {
             VStack {
                 Spacer(minLength: 20)
 
-                // Posture indicator
-                HStack {
-                    Spacer()
-                    postureIndicator
-                    Spacer()
+                // Phase indicator with icon (no background)
+                HStack(spacing: 12) {
+                    Image(systemName: phaseIcon)
+                        .font(.system(size: 24, weight: .medium))
+                        .foregroundColor(phaseIconColor)
+                    
+                    Text(phaseText)
+                        .font(.system(size: 24, weight: .medium))
+                        .foregroundColor(.white)
                 }
-                .padding(.bottom, 10)
 
-                Text(phaseText)
-                    .font(.system(size: 28, weight: .medium))
+                // Session progress indicator for Pomodoro mode
+                if let progressText = sessionProgressText {
+                    Text(progressText)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.white.opacity(0.8))
+                        .padding(.top, 2)
+                }
 
                 Text(formatTime(displayTime))
                     .font(.system(size: 64, weight: .light, design: .rounded))
                     .lineLimit(1)
                     .minimumScaleFactor(0.5)
+                    .padding(.top, 8)
 
                 HStack(spacing: 40) {
                     Button(action: handleRestart) {
                         Image(systemName: "arrow.clockwise")
-                            .font(.system(size: 22))
+                            .font(.system(size: 20))
+                            .foregroundColor(scheduler.isRunning ? .white : .gray)
                     }
                     .buttonStyle(.plain)
                     .disabled(!scheduler.isRunning)
@@ -145,14 +239,16 @@ struct MenuBarView: View {
 
                     Button(action: handlePlayPause) {
                         Image(systemName: playPauseIcon)
-                            .font(.system(size: 44, weight: .thin))
+                            .font(.system(size: 40, weight: .thin))
+                            .foregroundColor(scheduler.isRunning && scheduler.isPaused ? .gray : .white)
                     }
                     .buttonStyle(.plain)
                     .help(playPauseTooltip)
                     
                     Button(action: handleSkipPhase) {
                         Image(systemName: "forward.fill")
-                            .font(.system(size: 22))
+                            .font(.system(size: 20))
+                            .foregroundColor(scheduler.isRunning ? .white : .gray)
                     }
                     .buttonStyle(.plain)
                     .disabled(!scheduler.isRunning)
@@ -162,9 +258,11 @@ struct MenuBarView: View {
                 Spacer(minLength: 20)
             }
 
+            // Bottom toolbar with smaller, monochrome buttons
             HStack {
                 Button(action: { /* TODO: Stats */ }) {
                     Image(systemName: "chart.bar.xaxis")
+                        .foregroundColor(.white.opacity(0.7))
                 }.buttonStyle(.plain)
                 .help("View statistics")
                 
@@ -172,6 +270,7 @@ struct MenuBarView: View {
                 
                 Button(action: onOpenSettings) {
                     Image(systemName: "gearshape.fill")
+                        .foregroundColor(.white.opacity(0.7))
                 }.buttonStyle(.plain)
                 .help("Open settings")
                 
@@ -179,15 +278,17 @@ struct MenuBarView: View {
                 
                 Button(action: onQuit) {
                     Image(systemName: "power")
+                        .foregroundColor(.white.opacity(0.7))
                 }.buttonStyle(.plain)
                 .help("Quit application")
             }
-            .font(.system(size: 20))
-            .padding()
+            .font(.system(size: 16))
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
             .background(Color.black.opacity(0.2))
         }
         .frame(width: 300, height: 300)
-        .background(Color(red: 0.0, green: 0.2, blue: 0.6))
+        .background(phaseBackgroundColor)
         .foregroundColor(.white)
         .onAppear(perform: setupInitialState)
         .onReceive(timer) { _ in
@@ -324,18 +425,22 @@ struct MenuBarView: View {
     @ViewBuilder
     private var postureIndicator: some View {
         if let prefs = prefs.first, prefs.postureMonitoringEnabledValue {
-            HStack(spacing: 8) {
+            HStack(spacing: 4) {
                 Text(postureEmoji)
-                    .font(.system(size: 24))
+                    .font(.system(size: 16))
                 
                 Text(postureText)
-                    .font(.system(size: 12, weight: .medium))
-                    .opacity(0.8)
+                    .font(.system(size: 10, weight: .medium))
+                    .opacity(0.9)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(postureBackgroundColor.opacity(0.2))
-            .cornerRadius(12)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(postureBackgroundColor.opacity(0.15))
+            .cornerRadius(8)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(postureBackgroundColor.opacity(0.3), lineWidth: 1)
+            )
         }
     }
     

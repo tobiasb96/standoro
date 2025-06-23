@@ -31,7 +31,7 @@ class Scheduler: ObservableObject {
     private var autoStartEnabled: Bool = true // Default to true
     
     // Pomodoro tracking
-    private var completedFocusSessions: Int = 0
+    private var _completedFocusSessions: Int = 0
     @Published var pomodoroModeEnabled: Bool = false
     private var _focusInterval: TimeInterval = 25 * 60 // Default 25 minutes for Pomodoro
     private var _shortBreakInterval: TimeInterval = 5 * 60 // Default 5 minutes
@@ -67,6 +67,10 @@ class Scheduler: ObservableObject {
     var intervalsBeforeLongBreak: Int {
         get { _intervalsBeforeLongBreak }
         set { _intervalsBeforeLongBreak = newValue }
+    }
+    
+    var completedFocusSessions: Int {
+        get { _completedFocusSessions }
     }
     
     var currentInterval: TimeInterval {
@@ -126,7 +130,7 @@ class Scheduler: ObservableObject {
         self.pomodoroModeEnabled = enabled
         if enabled {
             // Reset Pomodoro tracking when enabling
-            completedFocusSessions = 0
+            _completedFocusSessions = 0
             currentSessionType = .focus
         }
     }
@@ -179,7 +183,7 @@ class Scheduler: ObservableObject {
         isPaused = false
         currentPhase = .sitting
         currentSessionType = .focus
-        completedFocusSessions = 0
+        _completedFocusSessions = 0
         pauseStartTime = nil
         remainingTimeWhenPaused = 0
     }
@@ -335,8 +339,8 @@ class Scheduler: ObservableObject {
         if pomodoroModeEnabled {
             switch currentSessionType {
             case .focus:
-                completedFocusSessions += 1
-                if completedFocusSessions % intervalsBeforeLongBreak == 0 {
+                _completedFocusSessions += 1
+                if _completedFocusSessions % intervalsBeforeLongBreak == 0 {
                     currentSessionType = .longBreak
                     nextFire = Date().addingTimeInterval(self.longBreakInterval)
                 } else {

@@ -3,49 +3,70 @@ import SwiftData
 
 struct IntervalSliderView: View {
     let label: String
-    @Binding var minutes: Int
+    @Binding var value: Int
+    let range: ClosedRange<Int>
+    let unit: String
     let quickOptions: [Int]
     let context: ModelContext
     
+    init(label: String, value: Binding<Int>, range: ClosedRange<Int>, unit: String, quickOptions: [Int], context: ModelContext) {
+        self.label = label
+        self._value = value
+        self.range = range
+        self.unit = unit
+        self.quickOptions = quickOptions
+        self.context = context
+    }
+    
+    // Convenience initializer for backward compatibility
+    init(label: String, minutes: Binding<Int>, quickOptions: [Int], context: ModelContext) {
+        self.label = label
+        self._value = minutes
+        self.range = 5...90
+        self.unit = "min"
+        self.quickOptions = quickOptions
+        self.context = context
+    }
+    
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text(label)
                     .font(.headline)
                     .foregroundColor(.white)
                 Spacer()
-                Text("\(minutes) min")
+                Text("\(value) \(unit)")
                     .font(.headline)
                     .foregroundColor(.white)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
                     .background(Color(red: 0.2, green: 0.4, blue: 0.9))
-                    .cornerRadius(10)
+                    .cornerRadius(8)
             }
             
             Slider(value: Binding(
-                get: { Double(minutes) },
+                get: { Double(value) },
                 set: { 
-                    minutes = Int($0)
+                    value = Int($0)
                     try? context.save()
                 }
-            ), in: 5...90, step: 1)
+            ), in: Double(range.lowerBound)...Double(range.upperBound), step: 1)
             .tint(Color(red: 0.2, green: 0.4, blue: 0.9))
-            .controlSize(.large)
+            .controlSize(.regular)
 
-            HStack(spacing: 8) {
+            HStack(spacing: 6) {
                 ForEach(quickOptions, id: \.self) { option in
-                    Button("\(option) min") {
-                        minutes = option
+                    Button("\(option)") {
+                        value = option
                         try? context.save()
                     }
                     .buttonStyle(.plain)
-                    .foregroundColor(minutes == option ? .white : .secondary)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(minutes == option ? Color(red: 0.2, green: 0.4, blue: 0.9) : Color(red: 0.16, green: 0.16, blue: 0.18))
-                    .cornerRadius(8)
-                    .font(.subheadline)
+                    .foregroundColor(value == option ? .white : .secondary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(value == option ? Color(red: 0.2, green: 0.4, blue: 0.9) : Color(red: 0.16, green: 0.16, blue: 0.18))
+                    .cornerRadius(6)
+                    .font(.caption)
                     .fontWeight(.medium)
                 }
             }
@@ -54,12 +75,34 @@ struct IntervalSliderView: View {
 }
 
 #Preview {
-    IntervalSliderView(
-        label: "Minutes",
-        minutes: .constant(15),
-        quickOptions: [5, 10, 15, 20],
-        context: try! ModelContainer(for: UserPrefs.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true)).mainContext
-    )
+    VStack(spacing: 20) {
+        IntervalSliderView(
+            label: "Focus Interval",
+            value: .constant(25),
+            range: 5...90,
+            unit: "min",
+            quickOptions: [20, 25, 30, 45],
+            context: try! ModelContainer(for: UserPrefs.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true)).mainContext
+        )
+        
+        IntervalSliderView(
+            label: "Short Break",
+            value: .constant(5),
+            range: 3...30,
+            unit: "min",
+            quickOptions: [3, 5, 7, 10],
+            context: try! ModelContainer(for: UserPrefs.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true)).mainContext
+        )
+        
+        IntervalSliderView(
+            label: "Long Break Frequency",
+            value: .constant(4),
+            range: 2...8,
+            unit: "sessions",
+            quickOptions: [3, 4, 5, 6],
+            context: try! ModelContainer(for: UserPrefs.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true)).mainContext
+        )
+    }
     .background(Color(red: 0.0, green: 0.2, blue: 0.6))
     .padding()
 } 

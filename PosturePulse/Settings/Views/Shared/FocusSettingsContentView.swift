@@ -15,7 +15,7 @@ struct FocusSettingsContentView: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: 16) {
             // Timer Mode Selection
             SettingsCard(
                 icon: "timer",
@@ -90,7 +90,7 @@ struct FocusSettingsContentView: View {
     
     @ViewBuilder
     private var pomodoroSettings: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 16) {
             // Focus Interval
             SettingsCard(
                 icon: "brain.head.profile",
@@ -101,7 +101,7 @@ struct FocusSettingsContentView: View {
             ) {
                 IntervalSliderView(
                     label: "Minutes",
-                    minutes: Binding(
+                    value: Binding(
                         get: { userPrefs.focusIntervalMinutesValue },
                         set: { 
                             userPrefs.focusIntervalMinutesValue = $0
@@ -109,6 +109,8 @@ struct FocusSettingsContentView: View {
                             try? ctx.save()
                         }
                     ),
+                    range: 5...90,
+                    unit: "min",
                     quickOptions: [20, 25, 30, 45],
                     context: ctx
                 )
@@ -124,7 +126,7 @@ struct FocusSettingsContentView: View {
             ) {
                 IntervalSliderView(
                     label: "Minutes",
-                    minutes: Binding(
+                    value: Binding(
                         get: { userPrefs.shortBreakMinutesValue },
                         set: { 
                             userPrefs.shortBreakMinutesValue = $0
@@ -132,6 +134,8 @@ struct FocusSettingsContentView: View {
                             try? ctx.save()
                         }
                     ),
+                    range: 3...30,
+                    unit: "min",
                     quickOptions: [3, 5, 7, 10],
                     context: ctx
                 )
@@ -147,7 +151,7 @@ struct FocusSettingsContentView: View {
             ) {
                 IntervalSliderView(
                     label: "Minutes",
-                    minutes: Binding(
+                    value: Binding(
                         get: { userPrefs.longBreakMinutesValue },
                         set: { 
                             userPrefs.longBreakMinutesValue = $0
@@ -155,6 +159,8 @@ struct FocusSettingsContentView: View {
                             try? ctx.save()
                         }
                     ),
+                    range: 5...60,
+                    unit: "min",
                     quickOptions: [10, 15, 20, 30],
                     context: ctx
                 )
@@ -170,7 +176,7 @@ struct FocusSettingsContentView: View {
             ) {
                 IntervalSliderView(
                     label: "Sessions",
-                    minutes: Binding(
+                    value: Binding(
                         get: { userPrefs.intervalsBeforeLongBreakValue },
                         set: { 
                             userPrefs.intervalsBeforeLongBreakValue = $0
@@ -178,6 +184,8 @@ struct FocusSettingsContentView: View {
                             try? ctx.save()
                         }
                     ),
+                    range: 2...8,
+                    unit: "sessions",
                     quickOptions: [3, 4, 5, 6],
                     context: ctx
                 )
@@ -187,7 +195,7 @@ struct FocusSettingsContentView: View {
     
     @ViewBuilder
     private var postureTimerSettings: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 16) {
             // Standing Goal
             SettingsCard(
                 icon: "figure.stand",
@@ -198,7 +206,7 @@ struct FocusSettingsContentView: View {
             ) {
                 IntervalSliderView(
                     label: "Minutes",
-                    minutes: Binding(
+                    value: Binding(
                         get: { userPrefs.maxStandMinutes },
                         set: { 
                             userPrefs.maxStandMinutes = $0
@@ -206,6 +214,8 @@ struct FocusSettingsContentView: View {
                             try? ctx.save()
                         }
                     ),
+                    range: 5...60,
+                    unit: "min",
                     quickOptions: [5, 10, 15, 20],
                     context: ctx
                 )
@@ -221,7 +231,7 @@ struct FocusSettingsContentView: View {
             ) {
                 IntervalSliderView(
                     label: "Minutes",
-                    minutes: Binding(
+                    value: Binding(
                         get: { userPrefs.maxSitMinutes },
                         set: { 
                             userPrefs.maxSitMinutes = $0
@@ -229,6 +239,8 @@ struct FocusSettingsContentView: View {
                             try? ctx.save()
                         }
                     ),
+                    range: 15...120,
+                    unit: "min",
                     quickOptions: [25, 45, 60, 90],
                     context: ctx
                 )
