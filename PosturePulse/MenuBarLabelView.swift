@@ -72,7 +72,7 @@ struct MenuBarLabelView: View {
                     .monospacedDigit()
             }
             
-            if !postureEmoji.isEmpty {
+            if userPrefs.postureMonitoringEnabledValue {
                 Text(" \(postureEmoji)")
                     .font(.system(size: 12))
             }
