@@ -113,7 +113,10 @@ struct AppContentView: View {
             window.title = ""
             window.titleVisibility = .hidden
             window.titlebarAppearsTransparent = true
-            window.styleMask.remove(.titled)
+            if let titlebarView = window.standardWindowButton(.closeButton)?.superview {
+                titlebarView.wantsLayer = true
+                titlebarView.layer?.backgroundColor = NSColor(Color.settingsSidebar).cgColor
+            }
             window.contentView = NSHostingView(rootView: settingsView)
             window.center()
             
