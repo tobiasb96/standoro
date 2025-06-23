@@ -51,12 +51,12 @@ class MotionService: ObservableObject {
             return true
         }
         
-        print("🔔 MotionService - Requesting access...")
+        print("🔔 MotionService - Requesting system-level access...")
         
         // Request notification authorization
         let notificationAuthorized = await notificationService.requestAuthorization()
         
-        // Request motion provider access
+        // Request motion provider access (system-level permission only)
         var motionAuthorized = false
         for provider in motionProviders {
             if await provider.requestAccess() {
@@ -75,7 +75,8 @@ class MotionService: ObservableObject {
             errorMessage = nil
         }
         
-        print("🔔 MotionService - Access result: authorized=\(isAuthorized), notification=\(notificationAuthorized), motion=\(motionAuthorized)")
+        print("🔔 MotionService - System access result: authorized=\(isAuthorized), notification=\(notificationAuthorized), motion=\(motionAuthorized)")
+        print("🔔 MotionService - Note: Device connection and data availability are handled separately")
         
         return isAuthorized
     }

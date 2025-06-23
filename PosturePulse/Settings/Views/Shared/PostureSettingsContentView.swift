@@ -83,13 +83,13 @@ struct PostureSettingsContentView: View {
                                                    isRequestingPermission ? .blue : .orange)
                                     .font(.caption)
                                 
-                                Text(motionService.isAuthorized ? "Motion access granted" : 
-                                     isRequestingPermission ? "Requesting access..." : "Motion access required")
+                                Text(motionService.isAuthorized ? "System permission granted" : 
+                                     isRequestingPermission ? "Requesting system permission..." : "System permission required")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                                 
                                 if !motionService.isAuthorized && !isRequestingPermission {
-                                    Button("Grant Access") {
+                                    Button("Grant System Permission") {
                                         if !isRequestingPermission {
                                             isRequestingPermission = true
                                             Task {
@@ -162,41 +162,34 @@ struct PostureSettingsContentView: View {
                                     }
                                 }
                                 
-                                // Show device connection guidance if not connected
+                                // Show step guidance (only one at a time)
                                 if !localDeviceConnected {
                                     VStack(alignment: .leading, spacing: 8) {
-                                        Text("AirPods Not Connected")
+                                        Text("Step 2: Connect AirPods")
                                             .font(.subheadline)
                                             .foregroundColor(.white)
                                         
-                                        Text("Please connect your AirPods Pro or AirPods Max to enable posture monitoring.")
+                                        Text("Please connect your AirPods Pro or AirPods Max to continue.")
                                             .font(.caption)
                                             .foregroundColor(.secondary)
                                     }
                                     .padding(.leading, 20)
                                     .padding(.top, 8)
-                                }
-                                
-                                // Show wear guidance if connected but not receiving data
-                                if localDeviceConnected && !localDeviceReceivingData {
+                                } else if !localDeviceReceivingData {
                                     VStack(alignment: .leading, spacing: 8) {
-                                        Text("AirPods Not Worn")
+                                        Text("Step 2: Wear AirPods")
                                             .font(.subheadline)
                                             .foregroundColor(.white)
                                         
-                                        Text("Please wear your AirPods to start posture monitoring.")
+                                        Text("Please wear your AirPods to enable motion detection.")
                                             .font(.caption)
                                             .foregroundColor(.secondary)
                                     }
                                     .padding(.leading, 20)
                                     .padding(.top, 8)
-                                }
-                                
-                                // Show calibration guidance if device is ready but not calibrated
-                                if localDeviceConnected && localDeviceReceivingData && 
-                                   motionService.currentPosture == .noData && !showCalibrationDetails {
+                                } else if motionService.currentPosture == .noData && !showCalibrationDetails {
                                     VStack(alignment: .leading, spacing: 8) {
-                                        Text("Calibration Required")
+                                        Text("Step 3: Calibration Required")
                                             .font(.subheadline)
                                             .foregroundColor(.white)
                                         
@@ -433,7 +426,7 @@ struct PostureSettingsContentView: View {
             return "airpods.gen3"
         }
         
-        return "airpodspro"
+        return "checkmark.circle.fill"
     }
     
     private var deviceStatusColor: Color {
@@ -450,11 +443,11 @@ struct PostureSettingsContentView: View {
     
     private var deviceStatusText: String {
         if !localDeviceConnected {
-            return "AirPods not connected"
+            return "Connect AirPods"
         }
         
         if !localDeviceReceivingData {
-            return "AirPods connected but not worn"
+            return "Wear AirPods"
         }
         
         return "AirPods connected and active"
