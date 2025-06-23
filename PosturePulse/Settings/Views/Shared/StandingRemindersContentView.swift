@@ -15,19 +15,14 @@ struct StandingRemindersContentView: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 32) {
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Standing Goal")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .foregroundColor(.white)
-                
-                if showExplanations {
-                    Text("How long would you like to stand for each session?")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-                
+        VStack(alignment: .leading, spacing: 20) {
+            SettingsCard(
+                icon: "figure.stand",
+                header: "Standing Goal",
+                subheader: "How long would you like to stand for each session?",
+                iconColor: .settingsAccentBlue,
+                showDivider: true
+            ) {
                 IntervalSliderView(
                     label: "Minutes",
                     minutes: Binding(
@@ -42,19 +37,13 @@ struct StandingRemindersContentView: View {
                     context: ctx
                 )
             }
-            
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Maximum Sitting Time")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .foregroundColor(.white)
-                
-                if showExplanations {
-                    Text("How long can you sit before needing a break?")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-                
+            SettingsCard(
+                icon: "chair",
+                header: "Maximum Sitting Time",
+                subheader: "How long can you sit before needing a break?",
+                iconColor: .settingsAccentBlue,
+                showDivider: true
+            ) {
                 IntervalSliderView(
                     label: "Minutes",
                     minutes: Binding(
@@ -89,6 +78,6 @@ struct StandingRemindersContentView: View {
             showExplanations: false
         )
     }
-    .background(Color(red: 0.1, green: 0.1, blue: 0.15))
+    .background(Color.settingsBackground)
     .padding()
 } 

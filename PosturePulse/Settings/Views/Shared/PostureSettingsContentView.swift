@@ -34,351 +34,340 @@ struct PostureSettingsContentView: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 32) {
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Posture Monitoring")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .foregroundColor(.white)
-                
-                if showExplanations {
-                    Text("Monitor your sitting posture using AirPods to detect when you're slouching or leaning too far. This helps you maintain better posture and reduce neck and back strain.")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .lineLimit(nil)
-                }
-                
-                VStack(alignment: .leading, spacing: 8) {
-                    Toggle("Monitor posture using AirPods",
-                           isOn: Binding(
-                               get: { userPrefs.postureMonitoringEnabledValue },
-                               set: { newValue in
-                                   userPrefs.postureMonitoringEnabledValue = newValue
-                                   try? ctx.save()
-                                   
-                                   // Only request permission when enabling and not already authorized
-                                   if newValue && !motionService.isAuthorized && !isRequestingPermission {
-                                       isRequestingPermission = true
-                                       Task {
-                                           await requestPostureAccess()
-                                           isRequestingPermission = false
-                                       }
-                                   } else if newValue && motionService.isAuthorized {
-                                       // Start monitoring if already authorized
-                                       motionService.startMonitoring()
-                                   } else if !newValue {
-                                       motionService.stopMonitoring()
-                                   }
-                               }
-                           ))
-                           .toggleStyle(CustomToggleStyle())
-                    
-                    if userPrefs.postureMonitoringEnabledValue {
-                        VStack(alignment: .leading, spacing: 12) {
-                            // Permission status
+        VStack(alignment: .leading, spacing: 20) {
+            SettingsCard(
+                icon: "airpods",
+                header: "Posture Monitoring",
+                subheader: "Monitor your sitting posture using AirPods to detect when you're slouching or leaning too far.",
+                iconColor: .settingsAccentBlue,
+                showDivider: userPrefs.postureMonitoringEnabledValue,
+                trailing: AnyView(
+                    Toggle("", isOn: Binding(
+                        get: { userPrefs.postureMonitoringEnabledValue },
+                        set: { newValue in
+                            userPrefs.postureMonitoringEnabledValue = newValue
+                            try? ctx.save()
+                            if newValue && !motionService.isAuthorized && !isRequestingPermission {
+                                isRequestingPermission = true
+                                Task {
+                                    await requestPostureAccess()
+                                    isRequestingPermission = false
+                                }
+                            } else if newValue && motionService.isAuthorized {
+                                motionService.startMonitoring()
+                            } else if !newValue {
+                                motionService.stopMonitoring()
+                            }
+                        }
+                    ))
+                    .toggleStyle(CustomToggleStyle())
+                )
+            ) {
+                if userPrefs.postureMonitoringEnabledValue {
+                    VStack(alignment: .leading, spacing: 12) {
+                        // Permission status
+                        HStack {
+                            Image(systemName: motionService.isAuthorized ? "checkmark.circle.fill" : 
+                                  isRequestingPermission ? "clock.fill" : "exclamationmark.triangle.fill")
+                                .foregroundColor(motionService.isAuthorized ? .green : 
+                                               isRequestingPermission ? .blue : .orange)
+                                .font(.caption)
+                            
+                            Text(motionService.isAuthorized ? "System permission granted" : 
+                                 isRequestingPermission ? "Requesting system permission..." : "System permission required")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            
+                            if !motionService.isAuthorized && !isRequestingPermission {
+                                Button("Grant System Permission") {
+                                    if !isRequestingPermission {
+                                        isRequestingPermission = true
+                                        Task {
+                                            await requestPostureAccess()
+                                            isRequestingPermission = false
+                                        }
+                                    }
+                                }
+                                .buttonStyle(.borderless)
+                                .font(.caption)
+                                .foregroundColor(.blue)
+                                .disabled(isRequestingPermission)
+                            }
+                        }
+                        
+                        // Only show error message for system-level issues, not device connection issues
+                        if let errorMessage = motionService.errorMessage, !localDeviceAvailable {
+                            Text(errorMessage)
+                                .font(.caption)
+                                .foregroundColor(.red)
+                                .padding(.leading, 20)
+                        }
+                        
+                        // Posture status (only show if authorized)
+                        if motionService.isAuthorized {
+                            // Device status indicator
                             HStack {
-                                Image(systemName: motionService.isAuthorized ? "checkmark.circle.fill" : 
-                                      isRequestingPermission ? "clock.fill" : "exclamationmark.triangle.fill")
-                                    .foregroundColor(motionService.isAuthorized ? .green : 
-                                                   isRequestingPermission ? .blue : .orange)
+                                Image(systemName: deviceStatusIcon)
+                                    .foregroundColor(deviceStatusColor)
                                     .font(.caption)
                                 
-                                Text(motionService.isAuthorized ? "System permission granted" : 
-                                     isRequestingPermission ? "Requesting system permission..." : "System permission required")
+                                Text(deviceStatusText)
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                                 
-                                if !motionService.isAuthorized && !isRequestingPermission {
-                                    Button("Grant System Permission") {
-                                        if !isRequestingPermission {
-                                            isRequestingPermission = true
-                                            Task {
-                                                await requestPostureAccess()
-                                                isRequestingPermission = false
-                                            }
-                                        }
+                                Spacer()
+                            }
+                            .padding(.bottom, 4)
+                            
+                            // Force UI updates by referencing device status properties
+                            let _ = motionService.isDeviceConnected
+                            let _ = motionService.isDeviceReceivingData
+                            let _ = motionService.isDeviceAvailable
+                            
+                            // Only show posture status if device is connected and receiving data
+                            if localDeviceConnected && localDeviceReceivingData {
+                                HStack {
+                                    Image(systemName: motionService.currentPosture == .good ? "checkmark.circle.fill" : 
+                                          motionService.currentPosture == .poor ? "exclamationmark.triangle.fill" :
+                                          motionService.currentPosture == .calibrating ? "clock.fill" : "questionmark.circle.fill")
+                                        .foregroundColor(motionService.currentPosture == .good ? .green : 
+                                                       motionService.currentPosture == .poor ? .orange :
+                                                       motionService.currentPosture == .calibrating ? .blue : .gray)
+                                        .font(.caption)
+                                    
+                                    Text(motionService.currentPosture == .good ? "Good posture" :
+                                         motionService.currentPosture == .poor ? "Poor posture detected" :
+                                         motionService.currentPosture == .calibrating ? "Calibrating..." : 
+                                         motionService.currentPosture == .noData ? "No data available" : "Unknown")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    
+                                    Button("Recalibrate") {
+                                        motionService.startPostureCalibration()
+                                        showCalibrationDetails = true
                                     }
                                     .buttonStyle(.borderless)
                                     .font(.caption)
                                     .foregroundColor(.blue)
-                                    .disabled(isRequestingPermission)
                                 }
+                                .padding(.bottom, 8)
                             }
                             
-                            // Only show error message for system-level issues, not device connection issues
-                            if let errorMessage = motionService.errorMessage, !localDeviceAvailable {
-                                Text(errorMessage)
-                                    .font(.caption)
-                                    .foregroundColor(.red)
-                                    .padding(.leading, 20)
-                            }
-                            
-                            // Posture status (only show if authorized)
-                            if motionService.isAuthorized {
-                                // Device status indicator
-                                HStack {
-                                    Image(systemName: deviceStatusIcon)
-                                        .foregroundColor(deviceStatusColor)
-                                        .font(.caption)
-                                    
-                                    Text(deviceStatusText)
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                    
-                                    Spacer()
-                                }
-                                .padding(.bottom, 4)
-                                
-                                // Force UI updates by referencing device status properties
-                                let _ = motionService.isDeviceConnected
-                                let _ = motionService.isDeviceReceivingData
-                                let _ = motionService.isDeviceAvailable
-                                
-                                // Only show posture status if device is connected and receiving data
-                                if localDeviceConnected && localDeviceReceivingData {
-                                    HStack {
-                                        Image(systemName: motionService.currentPosture == .good ? "checkmark.circle.fill" : 
-                                              motionService.currentPosture == .poor ? "exclamationmark.triangle.fill" :
-                                              motionService.currentPosture == .calibrating ? "clock.fill" : "questionmark.circle.fill")
-                                            .foregroundColor(motionService.currentPosture == .good ? .green : 
-                                                           motionService.currentPosture == .poor ? .orange :
-                                                           motionService.currentPosture == .calibrating ? .blue : .gray)
-                                            .font(.caption)
-                                        
-                                        Text(motionService.currentPosture == .good ? "Good posture" :
-                                             motionService.currentPosture == .poor ? "Poor posture detected" :
-                                             motionService.currentPosture == .calibrating ? "Calibrating..." : 
-                                             motionService.currentPosture == .noData ? "No data available" : "Unknown")
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                        
-                                        Button("Recalibrate") {
-                                            motionService.startPostureCalibration()
-                                            showCalibrationDetails = true
-                                        }
-                                        .buttonStyle(.borderless)
-                                        .font(.caption)
-                                        .foregroundColor(.blue)
-                                    }
-                                    .padding(.bottom, 8)
-                                }
-                                
-                                // Show step guidance (only one at a time)
-                                if !localDeviceConnected {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text("Connect AirPods")
-                                            .font(.subheadline)
-                                            .foregroundColor(.white)
-                                        
-                                        Text("Please connect your AirPods Pro or AirPods Max to continue.")
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                    }
-                                    .padding(.top, 8)
-                                } else if !localDeviceReceivingData {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text("Wear AirPods")
-                                            .font(.subheadline)
-                                            .foregroundColor(.white)
-                                        
-                                        Text("Please wear your AirPods to enable motion detection.")
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                    }
-                                    .padding(.top, 8)
-                                } else if motionService.currentPosture == .noData && !showCalibrationDetails {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text("Calibration Required")
-                                            .font(.subheadline)
-                                            .foregroundColor(.white)
-                                        
-                                        Text("To start monitoring your posture, you need to calibrate the system first. This helps establish your baseline good posture.")
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                        
-                                        Button("Start Calibration") {
-                                            motionService.startPostureCalibration()
-                                            showCalibrationDetails = true
-                                        }
-                                        .buttonStyle(.borderedProminent)
-                                        .controlSize(.small)
-                                    }
-                                    .padding(.top, 8)
-                                }
-                                
-                                // Only show angles when calibrating or in advanced settings
-                                if showCalibrationDetails || showAdvancedSettings {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        let _ = updateCounter // Force UI update
-                                        Text("Current angles: Pitch \(String(format: "%.1f", motionService.currentPitch))°, Roll \(String(format: "%.1f", motionService.currentRoll))°")
-                                            .font(.caption2)
-                                            .foregroundColor(.secondary)
-                                        
-                                        Text("Deviations: Pitch \(String(format: "%.1f", motionService.pitchDeviation))°, Roll \(String(format: "%.1f", motionService.rollDeviation))°")
-                                            .font(.caption2)
-                                            .foregroundColor(.secondary)
-                                    }
-                                    .padding(.top, 4)
-                                }
-                            }
-                        }
-                        .padding(.leading, 20)
-                        
-                        // Calibration guidance
-                        if motionService.currentPosture == .calibrating {
-                            VStack(alignment: .leading, spacing: 12) {
-                                Text("Calibration Instructions:")
-                                    .font(.subheadline)
-                                    .foregroundColor(.white)
-                                
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("1. Sit straight in your chair with your back against the backrest")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                    Text("2. Look straight ahead at the center of your screen")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                    Text("3. Keep your head level and your neck relaxed")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                    Text("4. Hold this position for a few seconds")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                }
-                                
-                                Button("Complete Calibration") {
-                                    motionService.completePostureCalibration()
-                                    showCalibrationDetails = false
-                                }
-                                .buttonStyle(.borderedProminent)
-                                .controlSize(.small)
-                            }
-                            .padding(.top, 16)
-                        }
-                        
-                        // Advanced settings collapsible
-                        VStack(alignment: .leading, spacing: 8) {
-                            Button(action: {
-                                withAnimation(.easeInOut(duration: 0.2)) {
-                                    showAdvancedSettings.toggle()
-                                }
-                            }) {
-                                HStack {
-                                    Text("Advanced Settings")
+                            // Show step guidance (only one at a time)
+                            if !localDeviceConnected {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Connect AirPods")
                                         .font(.subheadline)
                                         .foregroundColor(.white)
                                     
-                                    Spacer()
-                                    
-                                    Image(systemName: showAdvancedSettings ? "chevron.up" : "chevron.down")
-                                        .foregroundColor(.secondary)
+                                    Text("Please connect your AirPods Pro or AirPods Max to continue.")
                                         .font(.caption)
+                                        .foregroundColor(.secondary)
                                 }
+                                .padding(.top, 8)
+                            } else if !localDeviceReceivingData {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Wear AirPods")
+                                        .font(.subheadline)
+                                        .foregroundColor(.white)
+                                    
+                                    Text("Please wear your AirPods to enable motion detection.")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                .padding(.top, 8)
+                            } else if motionService.currentPosture == .noData && !showCalibrationDetails {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Calibration Required")
+                                        .font(.subheadline)
+                                        .foregroundColor(.white)
+                                    
+                                    Text("To start monitoring your posture, you need to calibrate the system first. This helps establish your baseline good posture.")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    
+                                    Button("Start Calibration") {
+                                        motionService.startPostureCalibration()
+                                        showCalibrationDetails = true
+                                    }
+                                    .buttonStyle(.borderedProminent)
+                                    .controlSize(.small)
+                                }
+                                .padding(.top, 8)
                             }
-                            .buttonStyle(.plain)
                             
-                            if showAdvancedSettings {
-                                VStack(alignment: .leading, spacing: 24) {
-                                    // Sensitivity settings
-                                    VStack(alignment: .leading, spacing: 16) {
-                                        Text("Sensitivity")
+                            // Only show angles when calibrating or in advanced settings
+                            if showCalibrationDetails || showAdvancedSettings {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    let _ = updateCounter // Force UI update
+                                    Text("Current angles: Pitch \(String(format: "%.1f", motionService.currentPitch))°, Roll \(String(format: "%.1f", motionService.currentRoll))°")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                    
+                                    Text("Deviations: Pitch \(String(format: "%.1f", motionService.pitchDeviation))°, Roll \(String(format: "%.1f", motionService.rollDeviation))°")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                }
+                                .padding(.top, 4)
+                            }
+                        }
+                    }
+                    .padding(.leading, 20)
+                    
+                    // Calibration guidance
+                    if motionService.currentPosture == .calibrating {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Calibration Instructions:")
+                                .font(.subheadline)
+                                .foregroundColor(.white)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("1. Sit straight in your chair with your back against the backrest")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Text("2. Look straight ahead at the center of your screen")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Text("3. Keep your head level and your neck relaxed")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Text("4. Hold this position for a few seconds")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            
+                            Button("Complete Calibration") {
+                                motionService.completePostureCalibration()
+                                showCalibrationDetails = false
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.small)
+                        }
+                        .padding(.top, 16)
+                    }
+                    
+                    // Advanced settings collapsible
+                    VStack(alignment: .leading, spacing: 8) {
+                        Button(action: {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                showAdvancedSettings.toggle()
+                            }
+                        }) {
+                            HStack {
+                                Text("Advanced Settings")
+                                    .font(.subheadline)
+                                    .foregroundColor(.white)
+                                
+                                Spacer()
+                                
+                                Image(systemName: showAdvancedSettings ? "chevron.up" : "chevron.down")
+                                    .foregroundColor(.secondary)
+                                    .font(.caption)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        
+                        if showAdvancedSettings {
+                            VStack(alignment: .leading, spacing: 24) {
+                                // Sensitivity settings
+                                VStack(alignment: .leading, spacing: 16) {
+                                    Text("Sensitivity")
+                                        .font(.headline)
+                                        .foregroundColor(.white)
+                                    
+                                    HStack(spacing: 12) {
+                                        SensitivityButton(
+                                            title: "Low",
+                                            degrees: 20.0,
+                                            isSelected: userPrefs.postureSensitivityDegreesValue == 20.0,
+                                            action: {
+                                                userPrefs.postureSensitivityDegreesValue = 20.0
+                                                motionService.setPostureThresholds(pitch: 20.0, roll: 20.0, duration: TimeInterval(userPrefs.poorPostureThresholdSecondsValue))
+                                                try? ctx.save()
+                                            }
+                                        )
+                                        
+                                        SensitivityButton(
+                                            title: "Medium",
+                                            degrees: 14.0,
+                                            isSelected: userPrefs.postureSensitivityDegreesValue == 14.0,
+                                            action: {
+                                                userPrefs.postureSensitivityDegreesValue = 14.0
+                                                motionService.setPostureThresholds(pitch: 14.0, roll: 14.0, duration: TimeInterval(userPrefs.poorPostureThresholdSecondsValue))
+                                                try? ctx.save()
+                                            }
+                                        )
+                                        
+                                        SensitivityButton(
+                                            title: "High",
+                                            degrees: 8.0,
+                                            isSelected: userPrefs.postureSensitivityDegreesValue == 8.0,
+                                            action: {
+                                                userPrefs.postureSensitivityDegreesValue = 8.0
+                                                motionService.setPostureThresholds(pitch: 8.0, roll: 8.0, duration: TimeInterval(userPrefs.poorPostureThresholdSecondsValue))
+                                                try? ctx.save()
+                                            }
+                                        )
+                                    }
+                                }
+                                
+                                // Poor posture threshold (moved to advanced section)
+                                VStack(alignment: .leading, spacing: 16) {
+                                    Text("Poor Posture Threshold")
+                                        .font(.headline)
+                                        .foregroundColor(.white)
+                                    
+                                    HStack {
+                                        Text("Seconds")
                                             .font(.headline)
                                             .foregroundColor(.white)
-                                        
-                                        HStack(spacing: 12) {
-                                            SensitivityButton(
-                                                title: "Low",
-                                                degrees: 20.0,
-                                                isSelected: userPrefs.postureSensitivityDegreesValue == 20.0,
-                                                action: {
-                                                    userPrefs.postureSensitivityDegreesValue = 20.0
-                                                    motionService.setPostureThresholds(pitch: 20.0, roll: 20.0, duration: TimeInterval(userPrefs.poorPostureThresholdSecondsValue))
-                                                    try? ctx.save()
-                                                }
-                                            )
-                                            
-                                            SensitivityButton(
-                                                title: "Medium",
-                                                degrees: 14.0,
-                                                isSelected: userPrefs.postureSensitivityDegreesValue == 14.0,
-                                                action: {
-                                                    userPrefs.postureSensitivityDegreesValue = 14.0
-                                                    motionService.setPostureThresholds(pitch: 14.0, roll: 14.0, duration: TimeInterval(userPrefs.poorPostureThresholdSecondsValue))
-                                                    try? ctx.save()
-                                                }
-                                            )
-                                            
-                                            SensitivityButton(
-                                                title: "High",
-                                                degrees: 8.0,
-                                                isSelected: userPrefs.postureSensitivityDegreesValue == 8.0,
-                                                action: {
-                                                    userPrefs.postureSensitivityDegreesValue = 8.0
-                                                    motionService.setPostureThresholds(pitch: 8.0, roll: 8.0, duration: TimeInterval(userPrefs.poorPostureThresholdSecondsValue))
-                                                    try? ctx.save()
-                                                }
-                                            )
-                                        }
+                                        Spacer()
+                                        Text("\(userPrefs.poorPostureThresholdSecondsValue)s")
+                                            .font(.headline)
+                                            .foregroundColor(.white)
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 6)
+                                            .background(Color(red: 0.2, green: 0.4, blue: 0.9))
+                                            .cornerRadius(10)
                                     }
                                     
-                                    // Poor posture threshold (moved to advanced section)
-                                    VStack(alignment: .leading, spacing: 16) {
-                                        Text("Poor Posture Threshold")
-                                            .font(.headline)
-                                            .foregroundColor(.white)
-                                        
-                                        HStack {
-                                            Text("Seconds")
-                                                .font(.headline)
-                                                .foregroundColor(.white)
-                                            Spacer()
-                                            Text("\(userPrefs.poorPostureThresholdSecondsValue)s")
-                                                .font(.headline)
-                                                .foregroundColor(.white)
-                                                .padding(.horizontal, 12)
-                                                .padding(.vertical, 6)
-                                                .background(Color(red: 0.2, green: 0.4, blue: 0.9))
-                                                .cornerRadius(10)
-                                        }
-                                        
-                                        Slider(
-                                            value: Binding(
-                                                get: { Double(userPrefs.poorPostureThresholdSecondsValue) },
-                                                set: { 
-                                                    userPrefs.poorPostureThresholdSecondsValue = Int($0)
-                                                    motionService.setPostureThresholds(pitch: userPrefs.postureSensitivityDegreesValue, roll: userPrefs.postureSensitivityDegreesValue, duration: TimeInterval($0))
-                                                    try? ctx.save()
-                                                }
-                                            ),
-                                            in: 10...120,
-                                            step: 5
-                                        )
-                                        .tint(Color(red: 0.2, green: 0.4, blue: 0.9))
-                                        .controlSize(.large)
-
-                                        HStack(spacing: 8) {
-                                            ForEach([15, 30, 45, 60], id: \.self) { option in
-                                                Button("\(option)s") {
-                                                    userPrefs.poorPostureThresholdSecondsValue = option
-                                                    motionService.setPostureThresholds(pitch: userPrefs.postureSensitivityDegreesValue, roll: userPrefs.postureSensitivityDegreesValue, duration: TimeInterval(option))
-                                                    try? ctx.save()
-                                                }
-                                                .buttonStyle(.plain)
-                                                .foregroundColor(userPrefs.poorPostureThresholdSecondsValue == option ? .white : .secondary)
-                                                .padding(.horizontal, 12)
-                                                .padding(.vertical, 6)
-                                                .background(userPrefs.poorPostureThresholdSecondsValue == option ? Color(red: 0.2, green: 0.4, blue: 0.9) : Color(red: 0.16, green: 0.16, blue: 0.18))
-                                                .cornerRadius(8)
-                                                .font(.subheadline)
-                                                .fontWeight(.medium)
+                                    Slider(
+                                        value: Binding(
+                                            get: { Double(userPrefs.poorPostureThresholdSecondsValue) },
+                                            set: { 
+                                                userPrefs.poorPostureThresholdSecondsValue = Int($0)
+                                                motionService.setPostureThresholds(pitch: userPrefs.postureSensitivityDegreesValue, roll: userPrefs.postureSensitivityDegreesValue, duration: TimeInterval($0))
+                                                try? ctx.save()
                                             }
+                                        ),
+                                        in: 10...120,
+                                        step: 5
+                                    )
+                                    .tint(Color(red: 0.2, green: 0.4, blue: 0.9))
+                                    .controlSize(.large)
+
+                                    HStack(spacing: 8) {
+                                        ForEach([15, 30, 45, 60], id: \.self) { option in
+                                            Button("\(option)s") {
+                                                userPrefs.poorPostureThresholdSecondsValue = option
+                                                motionService.setPostureThresholds(pitch: userPrefs.postureSensitivityDegreesValue, roll: userPrefs.postureSensitivityDegreesValue, duration: TimeInterval(option))
+                                                try? ctx.save()
+                                            }
+                                            .buttonStyle(.plain)
+                                            .foregroundColor(userPrefs.poorPostureThresholdSecondsValue == option ? .white : .secondary)
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 6)
+                                            .background(userPrefs.poorPostureThresholdSecondsValue == option ? Color(red: 0.2, green: 0.4, blue: 0.9) : Color(red: 0.16, green: 0.16, blue: 0.18))
+                                            .cornerRadius(8)
+                                            .font(.subheadline)
+                                            .fontWeight(.medium)
                                         }
                                     }
                                 }
                             }
                         }
-                        .padding(.top, 16)
                     }
+                    .padding(.top, 16)
                 }
             }
         }

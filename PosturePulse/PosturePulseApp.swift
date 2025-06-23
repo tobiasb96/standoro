@@ -105,12 +105,12 @@ struct AppContentView: View {
                 .modelContainer(for: UserPrefs.self)
             
             let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 450, height: 600),
+                contentRect: NSRect(x: 0, y: 0, width: 700, height: 500),
                 styleMask: [.titled, .closable, .miniaturizable],
                 backing: .buffered,
                 defer: false
             )
-            window.title = "PosturePulse Settings"
+            window.title = ""
             window.contentView = NSHostingView(rootView: settingsView)
             window.center()
             

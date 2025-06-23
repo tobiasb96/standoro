@@ -17,133 +17,103 @@ struct GeneralSettingsContentView: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 32) {
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Menu Bar")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .foregroundColor(.white)
-                
-                if showExplanations {
-                    Text("Show the countdown timer in your menu bar")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-                
-                Toggle("Show countdown in menu bar",
-                       isOn: Binding(
-                           get: { userPrefs.showMenuBarCountdown },
-                           set: { 
-                               userPrefs.showMenuBarCountdown = $0
-                               try? ctx.save()
-                           }
-                       ))
-                       .toggleStyle(CustomToggleStyle())
+        VStack(alignment: .leading, spacing: 20) {
+            // Menu Bar Card
+            SettingsCard(
+                icon: "menubar.rectangle",
+                header: "Menu Bar",
+                subheader: "Show the countdown timer in your menu bar.",
+                iconColor: .settingsAccentBlue,
+                trailing: AnyView(
+                    Toggle("", isOn: Binding(
+                        get: { userPrefs.showMenuBarCountdown },
+                        set: { userPrefs.showMenuBarCountdown = $0; try? ctx.save() }
+                    ))
+                    .toggleStyle(CustomToggleStyle())
+                )
+            ) {
+                EmptyView()
             }
-
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Calendar Integration")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .foregroundColor(.white)
-                
-                if showExplanations {
-                    Text("Automatically mute alerts when you're in calendar meetings")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-                
-                VStack(alignment: .leading, spacing: 8) {
-                    Toggle("Mute alerts during calendar meetings",
-                           isOn: Binding(
-                               get: { userPrefs.calendarFilter },
-                               set: { newValue in
-                                   userPrefs.calendarFilter = newValue
-                                   try? ctx.save()
-                                   
-                                   // Update scheduler with calendar service
-                                   scheduler.setCalendarService(calendarService, shouldCheck: newValue)
-                                   
-                                   // Request calendar access if enabled
-                                   if newValue && !calendarService.isAuthorized {
-                                       Task {
-                                           await requestCalendarAccess()
-                                       }
-                                   }
-                               }
-                           ))
-                           .toggleStyle(CustomToggleStyle())
-                    
-                    if userPrefs.calendarFilter {
-                        VStack(alignment: .leading, spacing: 6) {
-                            HStack {
-                                Image(systemName: calendarService.isAuthorized ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                                    .foregroundColor(calendarService.isAuthorized ? .green : .orange)
-                                    .font(.caption)
-                                
-                                Text(calendarService.isAuthorized ? "Calendar access granted" : "Calendar access required")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                
-                                if !calendarService.isAuthorized {
-                                    Button("Grant Access") {
-                                        Task {
-                                            await requestCalendarAccess()
-                                        }
-                                    }
-                                    .buttonStyle(.borderless)
-                                    .font(.caption)
-                                    .foregroundColor(.blue)
+            
+            // Calendar Integration Card
+            SettingsCard(
+                icon: "calendar",
+                header: "Calendar Integration",
+                subheader: "Automatically mute alerts when you're in calendar meetings.",
+                iconColor: .settingsAccentBlue,
+                showDivider: userPrefs.calendarFilter,
+                trailing: AnyView(
+                    Toggle("", isOn: Binding(
+                        get: { userPrefs.calendarFilter },
+                        set: { newValue in
+                            userPrefs.calendarFilter = newValue
+                            try? ctx.save()
+                            scheduler.setCalendarService(calendarService, shouldCheck: newValue)
+                            if newValue && !calendarService.isAuthorized {
+                                Task { await requestCalendarAccess() }
+                            }
+                        }
+                    ))
+                    .toggleStyle(CustomToggleStyle())
+                )
+            ) {
+                if userPrefs.calendarFilter {
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack {
+                            Image(systemName: calendarService.isAuthorized ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                                .foregroundColor(calendarService.isAuthorized ? .green : .orange)
+                                .font(.caption)
+                            Text(calendarService.isAuthorized ? "Calendar access granted" : "Calendar access required")
+                                .font(.caption)
+                                .foregroundColor(.settingsSubheader)
+                            if !calendarService.isAuthorized {
+                                Button("Grant Access") {
+                                    Task { await requestCalendarAccess() }
                                 }
+                                .buttonStyle(.borderless)
+                                .font(.caption)
+                                .foregroundColor(.settingsAccentBlue)
                             }
-                            
-                            // Show error message if there's one
-                            if let errorMessage = calendarService.errorMessage {
-                                Text(errorMessage)
+                        }
+                        if let errorMessage = calendarService.errorMessage {
+                            Text(errorMessage)
+                                .font(.caption)
+                                .foregroundColor(.red)
+                                .padding(.leading, 20)
+                        }
+                        if calendarService.isAuthorized {
+                            HStack {
+                                Image(systemName: calendarService.isInMeeting ? "bell.slash.fill" : "bell.fill")
+                                    .foregroundColor(calendarService.isInMeeting ? .orange : .green)
                                     .font(.caption)
-                                    .foregroundColor(.red)
-                                    .padding(.leading, 20)
-                            }
-                            
-                            // Show current meeting status if authorized
-                            if calendarService.isAuthorized {
-                                HStack {
-                                    Image(systemName: calendarService.isInMeeting ? "bell.slash.fill" : "bell.fill")
-                                        .foregroundColor(calendarService.isInMeeting ? .orange : .green)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(calendarService.isInMeeting ? "Currently in a meeting - notifications muted" : "No current meetings - notifications active")
                                         .font(.caption)
-                                    
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(calendarService.isInMeeting ? "Currently in a meeting - notifications muted" : "No current meetings - notifications active")
+                                        .foregroundColor(.settingsSubheader)
+                                    if calendarService.isInMeeting, let eventDetails = calendarService.getCurrentEventDetails() {
+                                        Text("Event: \"\(eventDetails.title)\"")
                                             .font(.caption)
-                                            .foregroundColor(.secondary)
-                                        
-                                        // Show detailed event information if in a meeting
-                                        if calendarService.isInMeeting, let eventDetails = calendarService.getCurrentEventDetails() {
-                                            Text("Event: \"\(eventDetails.title)\"")
-                                                .font(.caption)
-                                                .foregroundColor(.primary)
-                                                .fontWeight(.medium)
-                                            
-                                            Text("Ends at: \(eventDetails.endTime)")
-                                                .font(.caption)
-                                                .foregroundColor(.secondary)
-                                        }
+                                            .foregroundColor(.settingsText)
+                                            .fontWeight(.medium)
+                                        Text("Ends at: \(eventDetails.endTime)")
+                                            .font(.caption)
+                                            .foregroundColor(.settingsSubheader)
                                     }
                                 }
                             }
                         }
-                        .padding(.leading, 20)
                     }
+                    .padding(.leading, 20)
                 }
             }
             
             #if DEBUG
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Development")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .foregroundColor(.white)
-                
+            SettingsCard(
+                icon: "hammer",
+                header: "Development",
+                subheader: "Debug and development tools.",
+                iconColor: .gray
+            ) {
                 Button("Reset Onboarding") {
                     UserDefaults.standard.set(false, forKey: "didOnboard")
                     NotificationCenter.default.post(name: NSNotification.Name("ResetOnboarding"), object: nil)
@@ -178,6 +148,6 @@ struct GeneralSettingsContentView: View {
             showExplanations: false
         )
     }
-    .background(Color(red: 0.1, green: 0.1, blue: 0.15))
+    .background(Color.settingsBackground)
     .padding()
 } 

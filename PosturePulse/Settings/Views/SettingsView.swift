@@ -10,7 +10,11 @@ struct SettingsView: View {
     @ObservedObject var motionService: MotionService
     @ObservedObject var calendarService: CalendarService
     
-    @State private var selectedTab = 0
+    @State private var selection: SidebarItem? = .general
+    
+    enum SidebarItem: Hashable {
+        case stats, general, standing, posture, about
+    }
     
     private var userPrefs: UserPrefs {
         if let p = prefs.first {
@@ -25,39 +29,75 @@ struct SettingsView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Tab selector
-            HStack(spacing: 0) {
-                TabButton(title: "General", icon: "gearshape", isSelected: selectedTab == 0) {
-                    selectedTab = 0
-                }
-                
-                TabButton(title: "Standing", icon: "figure.stand", isSelected: selectedTab == 1) {
-                    selectedTab = 1
-                }
-                
-                TabButton(title: "Posture", icon: "airpods", isSelected: selectedTab == 2) {
-                    selectedTab = 2
-                }
-            }
-            .padding(.horizontal)
-            .padding(.top, 16)
-            .padding(.bottom, 8)
+        HStack(spacing: 0) {
+            SidebarView(selection: $selection)
+                .frame(width: 220)
             
-            // Tab content
-            TabView(selection: $selectedTab) {
-                GeneralTabView(userPrefs: userPrefs, calendarService: calendarService, scheduler: scheduler, ctx: ctx)
-                    .tag(0)
-                
-                StandingRemindersTabView(userPrefs: userPrefs, scheduler: scheduler, ctx: ctx)
-                    .tag(1)
-                
-                PostureTabView(userPrefs: userPrefs, motionService: motionService, ctx: ctx)
-                    .tag(2)
+            Divider()
+
+            VStack(spacing: 0) {
+                // Header
+                if let sectionTitle = title(for: selection), !sectionTitle.isEmpty {
+                    VStack(spacing: 2) {
+                        Text(sectionTitle)
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundColor(.settingsHeader)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                        if let subheader = subheader(for: selection) {
+                            Text(subheader)
+                                .font(.system(size: 14))
+                                .foregroundColor(.settingsSubheader)
+                                .multilineTextAlignment(.center)
+                                .frame(maxWidth: .infinity)
+                                .padding(.bottom, 8)
+                        }
+                    }
+                    .padding(.top, 16)
+                }
+                // Content
+                ZStack {
+                    switch selection {
+                    case .stats:
+                        Text("Stats (Coming Soon)")
+                            .font(.body)
+                            .foregroundColor(.settingsSubheader)
+                    case .general:
+                        GeneralSettingsContentView(
+                            userPrefs: userPrefs,
+                            calendarService: calendarService,
+                            scheduler: scheduler,
+                            ctx: ctx,
+                            showExplanations: false
+                        )
+                    case .standing:
+                        StandingRemindersContentView(
+                            userPrefs: userPrefs,
+                            scheduler: scheduler,
+                            ctx: ctx,
+                            showExplanations: false
+                        )
+                    case .posture:
+                        PostureSettingsContentView(
+                            userPrefs: userPrefs,
+                            motionService: motionService,
+                            ctx: ctx,
+                            showExplanations: false
+                        )
+                    case .about:
+                        Text("About PosturePulse (Coming Soon)")
+                            .font(.body)
+                            .foregroundColor(.settingsSubheader)
+                    case nil:
+                        Text("Select a category")
+                            .font(.body)
+                            .foregroundColor(.settingsSubheader)
+                    }
+                }
+                .padding()
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
-            .tabViewStyle(.automatic)
         }
-        .frame(width: 450, height: 600)
+        .frame(minWidth: 700, idealWidth: 800, minHeight: 450, idealHeight: 550)
         .background(Color(red: 0.1, green: 0.1, blue: 0.15))
         .foregroundColor(.white)
         .onAppear {
@@ -97,6 +137,35 @@ struct SettingsView: View {
                     motionService.stopMonitoring()
                 }
             }
+        }
+    }
+    
+    private func title(for item: SidebarItem?) -> String? {
+        switch item {
+        case .stats:
+            return "Stats"
+        case .general:
+            return "General Settings"
+        case .standing:
+            return "Standing Reminders"
+        case .posture:
+            return "Posture Tracking"
+        case .about:
+            return "About"
+        case nil:
+            return nil
+        }
+    }
+    private func subheader(for item: SidebarItem?) -> String? {
+        switch item {
+        case .general:
+            return "Customize how PosturePulse behaves and integrates with your system."
+        case .standing:
+            return "Set your standing goals and maximum sitting time for healthier habits."
+        case .posture:
+            return "Configure posture monitoring and advanced AirPods tracking."
+        default:
+            return nil
         }
     }
 }
