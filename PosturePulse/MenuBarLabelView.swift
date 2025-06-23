@@ -27,6 +27,10 @@ struct MenuBarLabelView: View {
         return shouldShow
     }
     
+    private var shouldShowPosture: Bool {
+        return userPrefs.postureMonitoringEnabledValue
+    }
+    
     private var countdownText: String {
         // Use updateCounter to force recalculation when timer fires
         let _ = updateCounter
@@ -72,7 +76,7 @@ struct MenuBarLabelView: View {
                     .monospacedDigit()
             }
             
-            if userPrefs.postureMonitoringEnabledValue {
+            if shouldShowPosture && !postureEmoji.isEmpty {
                 Text(" \(postureEmoji)")
                     .font(.system(size: 12))
             }
