@@ -9,6 +9,11 @@ class MotionService: ObservableObject {
     @Published var isMonitoring = false
     @Published var errorMessage: String?
     
+    // Device status properties
+    @Published var isDeviceAvailable = false
+    @Published var isDeviceConnected = false
+    @Published var isDeviceReceivingData = false
+    
     // Published properties for UI - these will trigger UI updates
     @Published var currentPosture: PostureStatus = .unknown
     @Published var currentPitch: Double = 0.0
@@ -40,6 +45,14 @@ class MotionService: ObservableObject {
     }
     
     func requestAccess() async -> Bool {
+        // If already authorized, don't request again
+        if isAuthorized {
+            print("🔔 MotionService - Already authorized, skipping request")
+            return true
+        }
+        
+        print("🔔 MotionService - Requesting access...")
+        
         // Request notification authorization
         let notificationAuthorized = await notificationService.requestAuthorization()
         
@@ -54,9 +67,15 @@ class MotionService: ObservableObject {
         
         isAuthorized = notificationAuthorized && motionAuthorized
         
+        // Only set error message for system-level issues (no providers available at all)
         if !motionAuthorized {
             errorMessage = "No motion providers available. Please ensure you have AirPods connected and are running macOS Sonoma 14.0+"
+        } else {
+            // Clear any existing error message when access is granted
+            errorMessage = nil
         }
+        
+        print("🔔 MotionService - Access result: authorized=\(isAuthorized), notification=\(notificationAuthorized), motion=\(motionAuthorized)")
         
         return isAuthorized
     }
@@ -64,6 +83,12 @@ class MotionService: ObservableObject {
     func startMonitoring() {
         guard isAuthorized else {
             print("🔔 MotionService - Not authorized to monitor")
+            return
+        }
+        
+        // Prevent multiple starts
+        if isMonitoring {
+            print("🔔 MotionService - Already monitoring, skipping start")
             return
         }
         
@@ -79,6 +104,12 @@ class MotionService: ObservableObject {
     }
     
     func stopMonitoring() {
+        // Prevent multiple stops
+        if !isMonitoring {
+            print("🔔 MotionService - Not monitoring, skipping stop")
+            return
+        }
+        
         print("🔔 MotionService - Stopping monitoring...")
         
         // Stop all motion providers
@@ -93,6 +124,10 @@ class MotionService: ObservableObject {
     // MARK: - Posture Methods
     
     func startPostureCalibration() {
+        guard isDeviceReceivingData else {
+            print("🔔 MotionService - Cannot start calibration: no device data available")
+            return
+        }
         postureAnalyzer.startCalibration()
     }
     
@@ -145,6 +180,42 @@ class MotionService: ObservableObject {
                 .receive(on: DispatchQueue.main)
                 .sink { [weak self] motionData in
                     self?.processMotionData(motionData)
+                }
+                .store(in: &cancellables)
+        }
+        
+        // Subscribe to device status changes
+        if let airPodsProvider = airPodsProvider as? AirPodsMotionProvider {
+            airPodsProvider.$isAvailable
+                .sink { [weak self] available in
+                    self?.isDeviceAvailable = available
+                    print("🔔 MotionService - Device available changed: \(available)")
+                    // Clear error message when device becomes available
+                    if available {
+                        self?.errorMessage = nil
+                    }
+                }
+                .store(in: &cancellables)
+            
+            airPodsProvider.$isConnected
+                .sink { [weak self] connected in
+                    self?.isDeviceConnected = connected
+                    print("🔔 MotionService - Device connected changed: \(connected)")
+                    // Clear error message when device connects (assuming it's a connection issue)
+                    if connected {
+                        self?.errorMessage = nil
+                    }
+                }
+                .store(in: &cancellables)
+            
+            airPodsProvider.$isReceivingData
+                .sink { [weak self] receivingData in
+                    self?.isDeviceReceivingData = receivingData
+                    print("🔔 MotionService - Device receiving data changed: \(receivingData)")
+                    if !receivingData {
+                        // Set posture to noData when not receiving data
+                        self?.postureAnalyzer.setNoData()
+                    }
                 }
                 .store(in: &cancellables)
         }

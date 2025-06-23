@@ -8,7 +8,7 @@ struct SettingsView: View {
     @Query private var prefs: [UserPrefs]
     @ObservedObject var scheduler: Scheduler
     @ObservedObject var motionService: MotionService
-    @StateObject private var calendarService = CalendarService()
+    @ObservedObject var calendarService: CalendarService
     
     @State private var selectedTab = 0
     
@@ -102,6 +102,6 @@ struct SettingsView: View {
 }
 
 #Preview {
-    SettingsView(scheduler: Scheduler(), motionService: MotionService())
+    SettingsView(scheduler: Scheduler(), motionService: MotionService(), calendarService: CalendarService())
         .modelContainer(for: UserPrefs.self, inMemory: true)
 } 

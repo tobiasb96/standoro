@@ -77,6 +77,11 @@ class PostureAnalyzer: ObservableObject {
         print("🔔 PostureAnalyzer - Roll threshold set to \(rollThreshold) degrees")
     }
     
+    func setNoData() {
+        currentPosture = .noData
+        print("🔔 PostureAnalyzer - No motion data available")
+    }
+    
     func processMotionData(_ motionData: MotionData) {
         // Check if enough time has passed since last update
         let now = Date()
@@ -120,9 +125,12 @@ class PostureAnalyzer: ObservableObject {
             } else if currentPosture == .calibrating {
                 currentPosture = .good
                 print("🔔 PostureAnalyzer - ✅ Calibration complete")
+            } else if currentPosture == .noData {
+                currentPosture = .good
+                print("🔔 PostureAnalyzer - ✅ Data received, posture good")
             }
         } else {
-            if currentPosture == .good || currentPosture == .calibrating {
+            if currentPosture == .good || currentPosture == .calibrating || currentPosture == .noData {
                 poorPostureStartTime = Date()
                 currentPosture = .poor
                 print("🔔 PostureAnalyzer - ⚠️ Poor posture detected")

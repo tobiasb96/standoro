@@ -48,6 +48,7 @@ struct AppContentView: View {
         MenuBarView(
             scheduler: scheduler,
             motionService: motionService,
+            calendarService: calendarService,
             onOpenSettings: showSettingsWindow,
             onQuit: {
                 scheduler.stop()
@@ -73,7 +74,7 @@ struct AppContentView: View {
     
     private func showOnboardingWindow() {
         if onboardingWindowController == nil {
-            let onboardingView = OnboardingView()
+            let onboardingView = OnboardingView(calendarService: calendarService)
                 .modelContainer(for: UserPrefs.self)
                 .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OnboardingCompleted"))) { _ in
                     onboardingWindowController?.close()
@@ -100,7 +101,7 @@ struct AppContentView: View {
     
     private func showSettingsWindow() {
         if settingsWindowController == nil {
-            let settingsView = SettingsView(scheduler: scheduler, motionService: motionService)
+            let settingsView = SettingsView(scheduler: scheduler, motionService: motionService, calendarService: calendarService)
                 .modelContainer(for: UserPrefs.self)
             
             let window = NSWindow(

@@ -7,7 +7,7 @@ struct MenuBarView: View {
     @Query private var prefs: [UserPrefs]
     @ObservedObject var scheduler: Scheduler
     @ObservedObject var motionService: MotionService
-    @StateObject private var calendarService = CalendarService()
+    @ObservedObject var calendarService: CalendarService
     var onOpenSettings: () -> Void
     var onQuit: () -> Void
 
@@ -153,17 +153,9 @@ struct MenuBarView: View {
                 scheduler.sittingInterval = TimeInterval(p.maxSitMinutes * 60)
                 scheduler.standingInterval = TimeInterval(p.maxStandMinutes * 60)
                 
-                // Update motion service settings
+                // Update motion service settings (but don't start/stop monitoring)
                 if p.postureMonitoringEnabledValue {
                     motionService.setPostureThresholds(pitch: p.postureSensitivityDegreesValue, roll: p.postureSensitivityDegreesValue, duration: TimeInterval(p.poorPostureThresholdSecondsValue))
-                    
-                    // Start monitoring if authorized
-                    if motionService.isAuthorized {
-                        motionService.startMonitoring()
-                    }
-                } else {
-                    // Stop monitoring if disabled
-                    motionService.stopMonitoring()
                 }
                 
                 // Update calendar service integration
@@ -279,36 +271,69 @@ struct MenuBarView: View {
     }
     
     private var postureEmoji: String {
+        // Check device status first
+        if !motionService.isDeviceConnected {
+            return "🎧"
+        }
+        
+        if !motionService.isDeviceReceivingData {
+            return "⚠️"
+        }
+        
         switch motionService.currentPosture {
         case .good:
             return "😊"
         case .poor:
             return "😟"
-        case .calibrating, .unknown, .noData:
+        case .calibrating:
+            return "⏳"
+        case .unknown, .noData:
             return ""
         }
     }
     
     private var postureText: String {
+        // Check device status first
+        if !motionService.isDeviceConnected {
+            return "Connect AirPods"
+        }
+        
+        if !motionService.isDeviceReceivingData {
+            return "Wear AirPods"
+        }
+        
         switch motionService.currentPosture {
         case .good:
             return "Good Posture"
         case .poor:
             return "Poor Posture"
-        case .calibrating, .unknown:
-            return ""
+        case .calibrating:
+            return "Calibrating..."
+        case .unknown:
+            return "Unknown"
         case .noData:
-            return "Wear AirPods for posture detection"
+            return "No Data"
         }
     }
     
     private var postureBackgroundColor: Color {
+        // Check device status first
+        if !motionService.isDeviceConnected {
+            return .orange
+        }
+        
+        if !motionService.isDeviceReceivingData {
+            return .yellow
+        }
+        
         switch motionService.currentPosture {
         case .good:
             return .green
         case .poor:
             return .red
-        case .calibrating, .unknown, .noData:
+        case .calibrating:
+            return .blue
+        case .unknown, .noData:
             return .clear
         }
     }

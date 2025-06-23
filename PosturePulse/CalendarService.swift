@@ -34,8 +34,7 @@ class CalendarService: ObservableObject {
     }
     
     private func isRunningInSandbox() -> Bool {
-        return Bundle.main.appStoreReceiptURL != nil || 
-               ProcessInfo.processInfo.environment["APP_SANDBOX_CONTAINER_ID"] != nil
+        return ProcessInfo.processInfo.environment["APP_SANDBOX_CONTAINER_ID"] != nil
     }
     
     func checkAuthorizationStatus() {

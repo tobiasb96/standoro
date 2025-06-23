@@ -13,11 +13,24 @@ struct PostureSettingsContentView: View {
     @State private var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     @State private var showCalibrationDetails = false
     
+    // Local state for device status to ensure UI updates
+    @State private var localDeviceConnected = false
+    @State private var localDeviceReceivingData = false
+    @State private var localDeviceAvailable = false
+    
+    // State to prevent multiple permission requests
+    @State private var isRequestingPermission = false
+    
     init(userPrefs: UserPrefs, motionService: MotionService, ctx: ModelContext, showExplanations: Bool = false) {
         self.userPrefs = userPrefs
         self.motionService = motionService
         self.ctx = ctx
         self.showExplanations = showExplanations
+        
+        // Initialize local state
+        _localDeviceConnected = State(initialValue: motionService.isDeviceConnected)
+        _localDeviceReceivingData = State(initialValue: motionService.isDeviceReceivingData)
+        _localDeviceAvailable = State(initialValue: motionService.isDeviceAvailable)
     }
     
     var body: some View {
@@ -44,9 +57,11 @@ struct PostureSettingsContentView: View {
                                    try? ctx.save()
                                    
                                    // Only request permission when enabling and not already authorized
-                                   if newValue && !motionService.isAuthorized {
+                                   if newValue && !motionService.isAuthorized && !isRequestingPermission {
+                                       isRequestingPermission = true
                                        Task {
                                            await requestPostureAccess()
+                                           isRequestingPermission = false
                                        }
                                    } else if newValue && motionService.isAuthorized {
                                        // Start monitoring if already authorized
@@ -62,27 +77,36 @@ struct PostureSettingsContentView: View {
                         VStack(alignment: .leading, spacing: 12) {
                             // Permission status
                             HStack {
-                                Image(systemName: motionService.isAuthorized ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                                    .foregroundColor(motionService.isAuthorized ? .green : .orange)
+                                Image(systemName: motionService.isAuthorized ? "checkmark.circle.fill" : 
+                                      isRequestingPermission ? "clock.fill" : "exclamationmark.triangle.fill")
+                                    .foregroundColor(motionService.isAuthorized ? .green : 
+                                                   isRequestingPermission ? .blue : .orange)
                                     .font(.caption)
                                 
-                                Text(motionService.isAuthorized ? "Motion access granted" : "Motion access required")
+                                Text(motionService.isAuthorized ? "Motion access granted" : 
+                                     isRequestingPermission ? "Requesting access..." : "Motion access required")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                                 
-                                if !motionService.isAuthorized {
+                                if !motionService.isAuthorized && !isRequestingPermission {
                                     Button("Grant Access") {
-                                        Task {
-                                            await requestPostureAccess()
+                                        if !isRequestingPermission {
+                                            isRequestingPermission = true
+                                            Task {
+                                                await requestPostureAccess()
+                                                isRequestingPermission = false
+                                            }
                                         }
                                     }
                                     .buttonStyle(.borderless)
                                     .font(.caption)
                                     .foregroundColor(.blue)
+                                    .disabled(isRequestingPermission)
                                 }
                             }
                             
-                            if let errorMessage = motionService.errorMessage {
+                            // Only show error message for system-level issues, not device connection issues
+                            if let errorMessage = motionService.errorMessage, !localDeviceAvailable {
                                 Text(errorMessage)
                                     .font(.caption)
                                     .foregroundColor(.red)
@@ -91,33 +115,86 @@ struct PostureSettingsContentView: View {
                             
                             // Posture status (only show if authorized)
                             if motionService.isAuthorized {
+                                // Device status indicator
                                 HStack {
-                                    Image(systemName: motionService.currentPosture == .good ? "checkmark.circle.fill" : 
-                                          motionService.currentPosture == .poor ? "exclamationmark.triangle.fill" :
-                                          motionService.currentPosture == .calibrating ? "clock.fill" : "questionmark.circle.fill")
-                                        .foregroundColor(motionService.currentPosture == .good ? .green : 
-                                                       motionService.currentPosture == .poor ? .orange :
-                                                       motionService.currentPosture == .calibrating ? .blue : .gray)
+                                    Image(systemName: deviceStatusIcon)
+                                        .foregroundColor(deviceStatusColor)
                                         .font(.caption)
                                     
-                                    Text(motionService.currentPosture == .good ? "Good posture" :
-                                         motionService.currentPosture == .poor ? "Poor posture detected" :
-                                         motionService.currentPosture == .calibrating ? "Calibrating..." : 
-                                         motionService.currentPosture == .noData ? "Wear AirPods for posture detection" : "Unknown")
+                                    Text(deviceStatusText)
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                     
-                                    Button("Recalibrate") {
-                                        motionService.startPostureCalibration()
-                                        showCalibrationDetails = true
+                                    Spacer()
+                                }
+                                .padding(.bottom, 4)
+                                
+                                // Force UI updates by referencing device status properties
+                                let _ = motionService.isDeviceConnected
+                                let _ = motionService.isDeviceReceivingData
+                                let _ = motionService.isDeviceAvailable
+                                
+                                // Only show posture status if device is connected and receiving data
+                                if localDeviceConnected && localDeviceReceivingData {
+                                    HStack {
+                                        Image(systemName: motionService.currentPosture == .good ? "checkmark.circle.fill" : 
+                                              motionService.currentPosture == .poor ? "exclamationmark.triangle.fill" :
+                                              motionService.currentPosture == .calibrating ? "clock.fill" : "questionmark.circle.fill")
+                                            .foregroundColor(motionService.currentPosture == .good ? .green : 
+                                                           motionService.currentPosture == .poor ? .orange :
+                                                           motionService.currentPosture == .calibrating ? .blue : .gray)
+                                            .font(.caption)
+                                        
+                                        Text(motionService.currentPosture == .good ? "Good posture" :
+                                             motionService.currentPosture == .poor ? "Poor posture detected" :
+                                             motionService.currentPosture == .calibrating ? "Calibrating..." : 
+                                             motionService.currentPosture == .noData ? "No data available" : "Unknown")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                        
+                                        Button("Recalibrate") {
+                                            motionService.startPostureCalibration()
+                                            showCalibrationDetails = true
+                                        }
+                                        .buttonStyle(.borderless)
+                                        .font(.caption)
+                                        .foregroundColor(.blue)
                                     }
-                                    .buttonStyle(.borderless)
-                                    .font(.caption)
-                                    .foregroundColor(.blue)
                                 }
                                 
-                                // Show calibration guidance if not calibrated and not currently calibrating
-                                if motionService.currentPosture == .noData && !showCalibrationDetails {
+                                // Show device connection guidance if not connected
+                                if !localDeviceConnected {
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        Text("AirPods Not Connected")
+                                            .font(.subheadline)
+                                            .foregroundColor(.white)
+                                        
+                                        Text("Please connect your AirPods Pro or AirPods Max to enable posture monitoring.")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
+                                    .padding(.leading, 20)
+                                    .padding(.top, 8)
+                                }
+                                
+                                // Show wear guidance if connected but not receiving data
+                                if localDeviceConnected && !localDeviceReceivingData {
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        Text("AirPods Not Worn")
+                                            .font(.subheadline)
+                                            .foregroundColor(.white)
+                                        
+                                        Text("Please wear your AirPods to start posture monitoring.")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
+                                    .padding(.leading, 20)
+                                    .padding(.top, 8)
+                                }
+                                
+                                // Show calibration guidance if device is ready but not calibrated
+                                if localDeviceConnected && localDeviceReceivingData && 
+                                   motionService.currentPosture == .noData && !showCalibrationDetails {
                                     VStack(alignment: .leading, spacing: 8) {
                                         Text("Calibration Required")
                                             .font(.subheadline)
@@ -323,14 +400,64 @@ struct PostureSettingsContentView: View {
             if motionService.isAuthorized && (showCalibrationDetails || showAdvancedSettings) {
                 updateCounter += 1
             }
+            
+            // Sync local device status with motion service
+            localDeviceConnected = motionService.isDeviceConnected
+            localDeviceReceivingData = motionService.isDeviceReceivingData
+            localDeviceAvailable = motionService.isDeviceAvailable
+            
+            // Force UI update when device status changes
+            if motionService.isAuthorized {
+                updateCounter += 1
+            }
         }
     }
     
     private func requestPostureAccess() async {
+        print("🔔 PostureSettingsContentView - Requesting posture access...")
         let granted = await motionService.requestAccess()
+        print("🔔 PostureSettingsContentView - Access granted: \(granted)")
         if granted {
             motionService.startMonitoring()
         }
+    }
+    
+    // MARK: - Device Status Computed Properties
+    
+    private var deviceStatusIcon: String {
+        if !localDeviceConnected {
+            return "airpods"
+        }
+        
+        if !localDeviceReceivingData {
+            return "airpods.gen3"
+        }
+        
+        return "airpodspro"
+    }
+    
+    private var deviceStatusColor: Color {
+        if !localDeviceConnected {
+            return .orange
+        }
+        
+        if !localDeviceReceivingData {
+            return .yellow
+        }
+        
+        return .green
+    }
+    
+    private var deviceStatusText: String {
+        if !localDeviceConnected {
+            return "AirPods not connected"
+        }
+        
+        if !localDeviceReceivingData {
+            return "AirPods connected but not worn"
+        }
+        
+        return "AirPods connected and active"
     }
 }
 

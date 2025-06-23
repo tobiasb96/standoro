@@ -55,6 +55,9 @@ struct MenuBarLabelView: View {
     private var postureEmoji: String {
         guard userPrefs.postureMonitoringEnabledValue else { return "" }
         
+        // Only show posture emoji if device is connected and receiving data
+        guard motionService.isDeviceConnected && motionService.isDeviceReceivingData else { return "" }
+        
         switch motionService.currentPosture {
         case .good:
             return "😊"
