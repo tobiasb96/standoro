@@ -180,37 +180,35 @@ class MotionService: ObservableObject {
         }
         
         // Subscribe to device status changes
-        if let airPodsProvider = airPodsProvider as? AirPodsMotionProvider {
-            airPodsProvider.$isAvailable
-                .sink { [weak self] available in
-                    self?.isDeviceAvailable = available
-                    // Clear error message when device becomes available
-                    if available {
-                        self?.errorMessage = nil
-                    }
+        airPodsProvider.$isAvailable
+            .sink { [weak self] available in
+                self?.isDeviceAvailable = available
+                // Clear error message when device becomes available
+                if available {
+                    self?.errorMessage = nil
                 }
-                .store(in: &cancellables)
-            
-            airPodsProvider.$isConnected
-                .sink { [weak self] connected in
-                    self?.isDeviceConnected = connected
-                    // Clear error message when device connects (assuming it's a connection issue)
-                    if connected {
-                        self?.errorMessage = nil
-                    }
+            }
+            .store(in: &cancellables)
+        
+        airPodsProvider.$isConnected
+            .sink { [weak self] connected in
+                self?.isDeviceConnected = connected
+                // Clear error message when device connects (assuming it's a connection issue)
+                if connected {
+                    self?.errorMessage = nil
                 }
-                .store(in: &cancellables)
-            
-            airPodsProvider.$isReceivingData
-                .sink { [weak self] receivingData in
-                    self?.isDeviceReceivingData = receivingData
-                    if !receivingData {
-                        // Set posture to noData when not receiving data
-                        self?.postureAnalyzer.setNoData()
-                    }
+            }
+            .store(in: &cancellables)
+        
+        airPodsProvider.$isReceivingData
+            .sink { [weak self] receivingData in
+                self?.isDeviceReceivingData = receivingData
+                if !receivingData {
+                    // Set posture to noData when not receiving data
+                    self?.postureAnalyzer.setNoData()
                 }
-                .store(in: &cancellables)
-        }
+            }
+            .store(in: &cancellables)
     }
     
     private func setupNotificationHandlers() {

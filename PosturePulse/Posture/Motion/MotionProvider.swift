@@ -116,7 +116,9 @@ class AirPodsMotionProvider: NSObject, MotionProvider, CMHeadphoneMotionManagerD
     
     private func startDataAvailabilityMonitoring() {
         dataCheckTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            self?.checkDataTimeout()
+            Task { @MainActor in
+                self?.checkDataTimeout()
+            }
         }
     }
     

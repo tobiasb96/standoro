@@ -296,7 +296,7 @@ class Scheduler: ObservableObject {
                     // Use captured values to avoid MainActor isolation issues
                     let focusMinutes = Int(focusInterval / 60)
                     let shortBreakMinutes = Int(shortBreakInterval / 60)
-                    let longBreakMinutes = Int(longBreakInterval / 60)
+                    _ = Int(longBreakInterval / 60) // Unused variable replaced with underscore
                     let completedSessions = completedFocusSessions
                     
                     // Pomodoro mode notifications
@@ -409,7 +409,9 @@ class Scheduler: ObservableObject {
         stopPostureNudgeTimer()
         scheduleNextPostureNudge()
         postureNudgeTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
-            self?.checkPostureNudge()
+            Task { @MainActor in
+                self?.checkPostureNudge()
+            }
         }
     }
     
