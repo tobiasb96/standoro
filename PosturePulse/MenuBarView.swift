@@ -14,6 +14,13 @@ struct MenuBarView: View {
     @State private var updateCounter = 0
     @State private var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
+    // Challenge state
+    @State private var currentChallenge: Challenge?
+    @State private var showChallenge: Bool = false
+    @State private var lastPhaseTransition: Date = Date()
+    @State private var lastSessionType: SessionType = .focus
+    @State private var lastPhase: PosturePhase = .sitting
+    
     private var displayTime: TimeInterval {
         if scheduler.isRunning {
             let _ = updateCounter
@@ -199,63 +206,83 @@ struct MenuBarView: View {
             .padding(.horizontal, 16)
             .padding(.top, 8)
             
-            VStack {
-                Spacer(minLength: 20)
-
-                // Phase indicator with icon (no background)
-                HStack(spacing: 12) {
-                    Image(systemName: phaseIcon)
-                        .font(.system(size: 24, weight: .medium))
-                        .foregroundColor(phaseIconColor)
-                    
-                    Text(phaseText)
-                        .font(.system(size: 24, weight: .medium))
+            // Main content area
+            if showChallenge, let challenge = currentChallenge {
+                // Show challenge card
+                VStack(spacing: 16) {
+                    Text("Time for a Challenge!")
+                        .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(.white)
-                }
-
-                // Session progress indicator for Pomodoro mode
-                if let progressText = sessionProgressText {
-                    Text(progressText)
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.white.opacity(0.8))
-                        .padding(.top, 2)
-                }
-
-                Text(formatTime(displayTime))
-                    .font(.system(size: 64, weight: .light, design: .rounded))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.5)
-                    .padding(.top, 8)
-
-                HStack(spacing: 40) {
-                    Button(action: handleRestart) {
-                        Image(systemName: "arrow.clockwise")
-                            .font(.system(size: 20))
-                            .foregroundColor(scheduler.isRunning ? .white : .gray)
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(!scheduler.isRunning)
-                    .help("Restart timer")
-
-                    Button(action: handlePlayPause) {
-                        Image(systemName: playPauseIcon)
-                            .font(.system(size: 40, weight: .thin))
-                            .foregroundColor(scheduler.isRunning && scheduler.isPaused ? .gray : .white)
-                    }
-                    .buttonStyle(.plain)
-                    .help(playPauseTooltip)
+                        .padding(.top, 8)
                     
-                    Button(action: handleSkipPhase) {
-                        Image(systemName: "forward.fill")
-                            .font(.system(size: 20))
-                            .foregroundColor(scheduler.isRunning ? .white : .gray)
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(!scheduler.isRunning)
-                    .help("Skip to next phase")
+                    PopupChallengeCard(
+                        challenge: challenge,
+                        onComplete: completeChallenge
+                    )
+                    .padding(.horizontal, 16)
+                    
+                    Spacer()
                 }
+            } else {
+                // Show normal timer interface
+                VStack {
+                    Spacer(minLength: 20)
 
-                Spacer(minLength: 20)
+                    // Phase indicator with icon (no background)
+                    HStack(spacing: 12) {
+                        Image(systemName: phaseIcon)
+                            .font(.system(size: 24, weight: .medium))
+                            .foregroundColor(phaseIconColor)
+                        
+                        Text(phaseText)
+                            .font(.system(size: 24, weight: .medium))
+                            .foregroundColor(.white)
+                    }
+
+                    // Session progress indicator for Pomodoro mode
+                    if let progressText = sessionProgressText {
+                        Text(progressText)
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.white.opacity(0.8))
+                            .padding(.top, 2)
+                    }
+
+                    Text(formatTime(displayTime))
+                        .font(.system(size: 64, weight: .light, design: .rounded))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
+                        .padding(.top, 8)
+
+                    HStack(spacing: 40) {
+                        Button(action: handleRestart) {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.system(size: 20))
+                                .foregroundColor(scheduler.isRunning ? .white : .gray)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(!scheduler.isRunning)
+                        .help("Restart timer")
+
+                        Button(action: handlePlayPause) {
+                            Image(systemName: playPauseIcon)
+                                .font(.system(size: 40, weight: .thin))
+                                .foregroundColor(scheduler.isRunning && scheduler.isPaused ? .gray : .white)
+                        }
+                        .buttonStyle(.plain)
+                        .help(playPauseTooltip)
+                        
+                        Button(action: handleSkipPhase) {
+                            Image(systemName: "forward.fill")
+                                .font(.system(size: 20))
+                                .foregroundColor(scheduler.isRunning ? .white : .gray)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(!scheduler.isRunning)
+                        .help("Skip to next phase")
+                    }
+
+                    Spacer(minLength: 20)
+                }
             }
 
             // Bottom toolbar with smaller, monochrome buttons
@@ -287,7 +314,7 @@ struct MenuBarView: View {
             .padding(.vertical, 8)
             .background(Color.black.opacity(0.2))
         }
-        .frame(width: 300, height: 300)
+        .frame(width: 300, height: showChallenge ? 400 : 300)
         .background(phaseBackgroundColor)
         .foregroundColor(.white)
         .onAppear(perform: setupInitialState)
@@ -295,6 +322,9 @@ struct MenuBarView: View {
             // Force UI update every second when popup is open
             // This ensures posture emoji and other UI elements update regularly
             updateCounter += 1
+            
+            // Check for phase transitions to show challenges
+            checkForChallengeOpportunity()
         }
         .onChange(of: prefs) { _, newPrefs in
             if let p = newPrefs.first {
@@ -345,6 +375,75 @@ struct MenuBarView: View {
         }
     }
 
+    // MARK: - Challenge Management
+    
+    private func checkForChallengeOpportunity() {
+        guard let prefs = prefs.first,
+              prefs.moveChallengesEnabledValue,
+              scheduler.isRunning,
+              !showChallenge else { return }
+        
+        let now = Date()
+        let timeSinceLastTransition = now.timeIntervalSince(lastPhaseTransition)
+        
+        // Check if we should show a challenge
+        var shouldShow = false
+        
+        if scheduler.pomodoroModeEnabled {
+            // In Pomodoro mode: show at the start of breaks
+            if scheduler.currentSessionType != lastSessionType {
+                if scheduler.currentSessionType == .shortBreak || scheduler.currentSessionType == .longBreak {
+                    shouldShow = true
+                }
+            }
+        } else {
+            // In simple mode: show when transitioning from sitting to standing
+            if scheduler.currentPhase != lastPhase {
+                print("🔄 Phase transition detected: \(lastPhase) -> \(scheduler.currentPhase)")
+                if scheduler.currentPhase == .standing && lastPhase == .sitting {
+                    shouldShow = true
+                    print("✅ Should show challenge: sitting -> standing transition")
+                }
+            }
+        }
+        
+        if shouldShow {
+            print("🎯 Showing challenge!")
+            showRandomChallenge()
+        }
+        
+        // Update tracking variables
+        if scheduler.currentSessionType != lastSessionType {
+            lastSessionType = scheduler.currentSessionType
+            lastPhaseTransition = now
+        }
+        
+        if scheduler.currentPhase != lastPhase {
+            lastPhase = scheduler.currentPhase
+            lastPhaseTransition = now
+        }
+    }
+    
+    private func showRandomChallenge() {
+        let challenges = Challenge.allChallenges
+        guard !challenges.isEmpty else { return }
+        
+        // Select a random challenge
+        let randomIndex = Int.random(in: 0..<challenges.count)
+        currentChallenge = challenges[randomIndex]
+        showChallenge = true
+    }
+    
+    private func completeChallenge() {
+        showChallenge = false
+        currentChallenge = nil
+        
+        // Optional: Add completion tracking here
+        // For now, just hide the challenge
+    }
+
+    // MARK: - Existing Methods
+    
     private func setupInitialState() {
         if prefs.isEmpty {
             let newPrefs = UserPrefs()

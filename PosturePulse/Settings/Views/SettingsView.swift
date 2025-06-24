@@ -70,63 +70,11 @@ struct SettingsView: View {
                                 showExplanations: false
                             )
                         case .moveAndRest:
-                            VStack(spacing: 24) {
-                                // Coming Soon Card
-                                VStack(spacing: 16) {
-                                    Image(systemName: "figure.walk")
-                                        .font(.system(size: 48))
-                                        .foregroundColor(.settingsAccentBlue)
-                                    
-                                    Text("Move + Rest")
-                                        .font(.title2)
-                                        .fontWeight(.semibold)
-                                        .foregroundColor(.settingsHeader)
-                                    
-                                    Text("Take regular movement breaks with guided exercises and stretches to keep your body active and prevent stiffness during long work sessions.")
-                                        .font(.body)
-                                        .foregroundColor(.settingsSubheader)
-                                        .multilineTextAlignment(.center)
-                                    
-                                    Text("This feature is coming soon and will include:")
-                                        .font(.subheadline)
-                                        .foregroundColor(.settingsSubheader)
-                                        .padding(.top, 16)
-                                    
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        HStack(spacing: 8) {
-                                            Image(systemName: "checkmark.circle.fill")
-                                                .foregroundColor(.green)
-                                                .font(.caption)
-                                            Text("Guided stretching routines")
-                                                .font(.body)
-                                                .foregroundColor(.settingsSubheader)
-                                        }
-                                        
-                                        HStack(spacing: 8) {
-                                            Image(systemName: "checkmark.circle.fill")
-                                                .foregroundColor(.green)
-                                                .font(.caption)
-                                            Text("Movement reminders during breaks")
-                                                .font(.body)
-                                                .foregroundColor(.settingsSubheader)
-                                        }
-                                        
-                                        HStack(spacing: 8) {
-                                            Image(systemName: "checkmark.circle.fill")
-                                                .foregroundColor(.green)
-                                                .font(.caption)
-                                            Text("Exercise tracking and progress")
-                                                .font(.body)
-                                                .foregroundColor(.settingsSubheader)
-                                        }
-                                    }
-                                    .padding(.top, 8)
-                                }
-                                .padding(32)
-                                .background(Color.settingsCard)
-                                .cornerRadius(16)
-                            }
-                            .padding(.top, 8)
+                            MoveAndRestSettingsContentView(
+                                userPrefs: userPrefs,
+                                ctx: ctx,
+                                showExplanations: false
+                            )
                         case .keepPosture:
                             KeepPostureSettingsContentView(
                                 userPrefs: userPrefs,

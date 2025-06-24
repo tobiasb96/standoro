@@ -27,7 +27,10 @@ class UserPrefs {
     var longBreakMinutes: Int?
     var intervalsBeforeLongBreak: Int?
     
-    init(maxSitMinutes: Int = 45, maxStandMinutes: Int = 15, calendarFilter: Bool = true, showMenuBarCountdown: Bool = false, postureMonitoringEnabled: Bool = false, postureNudgesEnabled: Bool = false, poorPostureThresholdSeconds: Int = 30, postureSensitivityDegrees: Double = 15.0, autoStartEnabled: Bool = true, pomodoroModeEnabled: Bool = false, focusIntervalMinutes: Int = 25, shortBreakMinutes: Int = 5, longBreakMinutes: Int = 15, intervalsBeforeLongBreak: Int = 4) {
+    // Move challenges settings
+    var moveChallengesEnabled: Bool?
+    
+    init(maxSitMinutes: Int = 45, maxStandMinutes: Int = 15, calendarFilter: Bool = true, showMenuBarCountdown: Bool = false, postureMonitoringEnabled: Bool = false, postureNudgesEnabled: Bool = false, poorPostureThresholdSeconds: Int = 30, postureSensitivityDegrees: Double = 15.0, autoStartEnabled: Bool = true, pomodoroModeEnabled: Bool = false, focusIntervalMinutes: Int = 25, shortBreakMinutes: Int = 5, longBreakMinutes: Int = 15, intervalsBeforeLongBreak: Int = 4, moveChallengesEnabled: Bool = false) {
         self.maxSitMinutes = maxSitMinutes
         self.maxStandMinutes = maxStandMinutes
         self.calendarFilter = calendarFilter
@@ -42,6 +45,7 @@ class UserPrefs {
         self.shortBreakMinutes = shortBreakMinutes
         self.longBreakMinutes = longBreakMinutes
         self.intervalsBeforeLongBreak = intervalsBeforeLongBreak
+        self.moveChallengesEnabled = moveChallengesEnabled
     }
     
     // Computed properties to provide default values
@@ -94,5 +98,11 @@ class UserPrefs {
     var intervalsBeforeLongBreakValue: Int {
         get { intervalsBeforeLongBreak ?? 4 }
         set { intervalsBeforeLongBreak = newValue }
+    }
+    
+    // Move challenges computed property
+    var moveChallengesEnabledValue: Bool {
+        get { moveChallengesEnabled ?? false }
+        set { moveChallengesEnabled = newValue }
     }
 } 
