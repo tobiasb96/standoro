@@ -29,9 +29,17 @@ struct MenuBarView: View {
         } else {
             // When not running, show the current setting from preferences
             if let p = prefs.first {
-                return TimeInterval(p.maxSitMinutes * 60)
+                if p.pomodoroModeEnabledValue {
+                    return TimeInterval(p.focusIntervalMinutesValue * 60)
+                } else {
+                    return TimeInterval(p.maxSitMinutes * 60)
+                }
             } else {
-                return scheduler.sittingInterval
+                if scheduler.pomodoroModeEnabled {
+                    return scheduler.focusInterval
+                } else {
+                    return scheduler.sittingInterval
+                }
             }
         }
     }
@@ -56,7 +64,12 @@ struct MenuBarView: View {
                 }
             }
         } else {
-            return "Sitting"
+            // When not running, show based on current settings
+            if let p = prefs.first, p.pomodoroModeEnabledValue {
+                return "Focus"
+            } else {
+                return "Sitting"
+            }
         }
     }
     
@@ -80,13 +93,23 @@ struct MenuBarView: View {
                 }
             }
         } else {
-            return "chair"
+            // When not running, show based on current settings
+            if let p = prefs.first, p.pomodoroModeEnabledValue {
+                return "chair" // Focus sessions typically start with sitting
+            } else {
+                return "chair"
+            }
         }
     }
     
     private var phaseBackgroundColor: Color {
         if !scheduler.isRunning {
-            return Color.gray.opacity(0.3)
+            // When not running, show based on current settings
+            if let p = prefs.first, p.pomodoroModeEnabledValue {
+                return Color.blue.opacity(0.3) // Focus session color
+            } else {
+                return Color.gray.opacity(0.3)
+            }
         } else if scheduler.isPaused {
             return Color.gray.opacity(0.3)
         } else {
@@ -105,7 +128,12 @@ struct MenuBarView: View {
     
     private var phaseIconColor: Color {
         if !scheduler.isRunning {
-            return Color.gray
+            // When not running, show based on current settings
+            if let p = prefs.first, p.pomodoroModeEnabledValue {
+                return Color.blue // Focus session color
+            } else {
+                return Color.gray
+            }
         } else if scheduler.isPaused {
             return Color.gray
         } else {
@@ -150,37 +178,48 @@ struct MenuBarView: View {
     }
 
     private var sessionProgressText: String? {
-        guard scheduler.pomodoroModeEnabled && scheduler.isRunning else { return nil }
+        guard let p = prefs.first, p.pomodoroModeEnabledValue else { return nil }
         
-        switch scheduler.currentSessionType {
-        case .focus:
-            let completed = scheduler.completedFocusSessions
-            let total = scheduler.intervalsBeforeLongBreak
-            let currentSession = (completed % total) + 1
-            return "Session \(currentSession) of \(total)"
-        case .shortBreak:
-            let completed = scheduler.completedFocusSessions
-            let total = scheduler.intervalsBeforeLongBreak
-            let currentSession = (completed % total)
-            return "Break after session \(currentSession) of \(total)"
-        case .longBreak:
-            let completed = scheduler.completedFocusSessions
-            let total = scheduler.intervalsBeforeLongBreak
-            let completedSessions = completed - (completed % total)
-            return "Long break after \(completedSessions) sessions"
+        if scheduler.isRunning {
+            switch scheduler.currentSessionType {
+            case .focus:
+                let completed = scheduler.completedFocusSessions
+                let total = scheduler.intervalsBeforeLongBreak
+                let currentSession = (completed % total) + 1
+                return "Session \(currentSession) of \(total)"
+            case .shortBreak:
+                let completed = scheduler.completedFocusSessions
+                let total = scheduler.intervalsBeforeLongBreak
+                let currentSession = (completed % total)
+                return "Break after session \(currentSession) of \(total)"
+            case .longBreak:
+                let completed = scheduler.completedFocusSessions
+                let total = scheduler.intervalsBeforeLongBreak
+                let completedSessions = completed - (completed % total)
+                return "Long break after \(completedSessions) sessions"
+            }
+        } else {
+            // When not running, show "Session 1 of X" for the first session
+            let total = p.intervalsBeforeLongBreakValue
+            return "Session 1 of \(total)"
         }
     }
     
     private var sessionProgressColor: Color {
-        guard scheduler.pomodoroModeEnabled && scheduler.isRunning else { return .clear }
+        guard let p = prefs.first, p.pomodoroModeEnabledValue else { return .clear }
         
-        switch scheduler.currentSessionType {
-        case .focus:
+        if scheduler.isRunning {
+            switch scheduler.currentSessionType {
+            case .focus:
+                return .blue.opacity(0.2)
+            case .shortBreak:
+                return .green.opacity(0.2)
+            case .longBreak:
+                return .green.opacity(0.2)
+            }
+        } else {
+            // When not running, show focus session color
             return .blue.opacity(0.2)
-        case .shortBreak:
-            return .green.opacity(0.2)
-        case .longBreak:
-            return .green.opacity(0.2)
         }
     }
 
@@ -399,16 +438,13 @@ struct MenuBarView: View {
         } else {
             // In simple mode: show when transitioning from sitting to standing
             if scheduler.currentPhase != lastPhase {
-                print("🔄 Phase transition detected: \(lastPhase) -> \(scheduler.currentPhase)")
                 if scheduler.currentPhase == .standing && lastPhase == .sitting {
                     shouldShow = true
-                    print("✅ Should show challenge: sitting -> standing transition")
                 }
             }
         }
         
         if shouldShow {
-            print("🎯 Showing challenge!")
             showRandomChallenge()
         }
         
@@ -432,6 +468,9 @@ struct MenuBarView: View {
         let randomIndex = Int.random(in: 0..<challenges.count)
         currentChallenge = challenges[randomIndex]
         showChallenge = true
+        
+        // Auto-open the popup when a challenge appears
+        NotificationCenter.default.post(name: NSNotification.Name("OpenPopup"), object: nil)
     }
     
     private func completeChallenge() {
