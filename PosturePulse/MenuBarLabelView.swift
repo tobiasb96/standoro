@@ -4,26 +4,16 @@ import Combine
 
 struct MenuBarLabelView: View {
     @Environment(\.modelContext) private var ctx
-    @Query private var prefs: [UserPrefs]
+    let userPrefs: UserPrefs
     @ObservedObject var scheduler: Scheduler
     @ObservedObject var motionService: MotionService
     
     @State private var updateCounter = 0
     @State private var timer = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
     
-    private var userPrefs: UserPrefs {
-        if let p = prefs.first {
-            return p
-        } else {
-            let newPrefs = UserPrefs()
-            ctx.insert(newPrefs)
-            try? ctx.save()
-            return newPrefs
-        }
-    }
-    
     private var shouldShowCountdown: Bool {
         let shouldShow = userPrefs.showMenuBarCountdown && scheduler.isRunning && !scheduler.isPaused
+        print("📊 MenuBarLabelView: shouldShowCountdown - showMenuBarCountdown: \(userPrefs.showMenuBarCountdown), isRunning: \(scheduler.isRunning), isPaused: \(scheduler.isPaused) -> \(shouldShow)")
         return shouldShow
     }
     
@@ -90,8 +80,14 @@ struct MenuBarLabelView: View {
                 updateCounter += 1
             }
         }
-        .onChange(of: prefs) { _, newPrefs in
-            // Force UI update when preferences change
+        .onChange(of: userPrefs.showMenuBarCountdown) { _, newValue in
+            print("📊 MenuBarLabelView: showMenuBarCountdown changed to: \(newValue)")
+            // Force UI update when showMenuBarCountdown changes
+            updateCounter += 1
+        }
+        .onChange(of: userPrefs.postureMonitoringEnabledValue) { _, newValue in
+            print("📊 MenuBarLabelView: postureMonitoringEnabledValue changed to: \(newValue)")
+            // Force UI update when posture monitoring changes
             updateCounter += 1
         }
     }

@@ -3,6 +3,31 @@ import SwiftData
 import UserNotifications
 import Combine
 
+// Single source of truth for UserPrefs
+class UserPrefsManager: ObservableObject {
+    @Published var userPrefs: UserPrefs?
+    private var modelContext: ModelContext?
+    
+    func initialize(with context: ModelContext) {
+        self.modelContext = context
+        loadOrCreateUserPrefs()
+    }
+    
+    private func loadOrCreateUserPrefs() {
+        guard let ctx = modelContext else { return }
+        
+        let descriptor = FetchDescriptor<UserPrefs>()
+        if let prefs = try? ctx.fetch(descriptor), let first = prefs.first {
+            self.userPrefs = first
+        } else {
+            let newPrefs = UserPrefs()
+            ctx.insert(newPrefs)
+            try? ctx.save()
+            self.userPrefs = newPrefs
+        }
+    }
+}
+
 @main
 struct PosturePulseApp: App {
     @StateObject private var scheduler = Scheduler()
@@ -10,6 +35,9 @@ struct PosturePulseApp: App {
     @StateObject private var calendarService = CalendarService()
     @State private var updateCounter = 0
     @State private var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    @StateObject private var statsService = StatsService()
+    @State private var settingsSelection: SettingsView.SidebarItem? = .standAndFocus
+    @StateObject private var userPrefsManager = UserPrefsManager()
 
     init() {
         requestNotifAuth()
@@ -17,11 +45,26 @@ struct PosturePulseApp: App {
 
     var body: some Scene {
         MenuBarExtra {
-            AppContentView(scheduler: scheduler, motionService: motionService, calendarService: calendarService)
-                .modelContainer(for: UserPrefs.self)
+            AppContentView(
+                userPrefsManager: userPrefsManager,
+                scheduler: scheduler, 
+                motionService: motionService, 
+                calendarService: calendarService, 
+                statsService: statsService
+            )
+            .modelContainer(for: UserPrefs.self, inMemory: true)
+            .onAppear {
+                // Wire stats service after view is installed
+                scheduler.setStatsService(statsService)
+                motionService.setStatsService(statsService)
+            }
         } label: {
-            MenuBarLabelView(scheduler: scheduler, motionService: motionService)
-                .modelContainer(for: UserPrefs.self)
+            MenuBarLabelView(
+                userPrefs: userPrefsManager.userPrefs ?? UserPrefs(),
+                scheduler: scheduler, 
+                motionService: motionService
+            )
+            .modelContainer(for: UserPrefs.self, inMemory: true)
         }
         .menuBarExtraStyle(.window)
     }
@@ -37,18 +80,28 @@ struct PosturePulseApp: App {
 }
 
 struct AppContentView: View {
+    @Environment(\.modelContext) private var ctx
     @State private var settingsWindowController: NSWindowController?
     @State private var onboardingWindowController: NSWindowController?
+    @State private var settingsSelection: SettingsView.SidebarItem? = .standAndFocus
     @AppStorage("didOnboard") private var didOnboard = false
+    let userPrefsManager: UserPrefsManager
     let scheduler: Scheduler
     let motionService: MotionService
     let calendarService: CalendarService
+    let statsService: StatsService
+    
+    private var userPrefs: UserPrefs {
+        userPrefsManager.userPrefs ?? UserPrefs()
+    }
     
     var body: some View {
         MenuBarView(
+            userPrefs: userPrefs,
             scheduler: scheduler,
             motionService: motionService,
             calendarService: calendarService,
+            statsService: statsService,
             onOpenSettings: showSettingsWindow,
             onQuit: {
                 scheduler.stop()
@@ -57,6 +110,9 @@ struct AppContentView: View {
             }
         )
         .onAppear {
+            // Initialize userPrefsManager with the model context
+            userPrefsManager.initialize(with: ctx)
+            
             if !didOnboard {
                 showOnboardingWindow()
             }
@@ -70,12 +126,15 @@ struct AppContentView: View {
                 NSApp.activate(ignoringOtherApps: true)
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OpenStats"))) { _ in
+            settingsSelection = .stats
+        }
     }
     
     private func showOnboardingWindow() {
         if onboardingWindowController == nil {
-            let onboardingView = OnboardingView(calendarService: calendarService)
-                .modelContainer(for: UserPrefs.self)
+            let onboardingView = OnboardingView(userPrefs: userPrefs, calendarService: calendarService)
+                .modelContainer(for: UserPrefs.self, inMemory: true)
                 .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OnboardingCompleted"))) { _ in
                     onboardingWindowController?.close()
                     onboardingWindowController = nil
@@ -101,8 +160,15 @@ struct AppContentView: View {
     
     private func showSettingsWindow() {
         if settingsWindowController == nil {
-            let settingsView = SettingsView(scheduler: scheduler, motionService: motionService, calendarService: calendarService)
-                .modelContainer(for: UserPrefs.self)
+            let settingsView = SettingsView(
+                userPrefs: userPrefs,
+                scheduler: scheduler, 
+                motionService: motionService, 
+                calendarService: calendarService, 
+                statsService: statsService,
+                initialSelection: settingsSelection
+            )
+            .modelContainer(for: UserPrefs.self, inMemory: true)
             
             let window = NSWindow(
                 contentRect: NSRect(x: 0, y: 0, width: 1000, height: 687),

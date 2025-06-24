@@ -5,27 +5,28 @@ import Combine
 
 struct SettingsView: View {
     @Environment(\.modelContext) private var ctx
-    @Query private var prefs: [UserPrefs]
+    let userPrefs: UserPrefs
     @ObservedObject var scheduler: Scheduler
     @ObservedObject var motionService: MotionService
     @ObservedObject var calendarService: CalendarService
+    @ObservedObject var statsService: StatsService
     
-    @State private var selection: SidebarItem? = .standAndFocus
+    @State private var selection: SidebarItem?
+    
+    let initialSelection: SidebarItem?
+    
+    init(userPrefs: UserPrefs, scheduler: Scheduler, motionService: MotionService, calendarService: CalendarService, statsService: StatsService, initialSelection: SidebarItem? = .standAndFocus) {
+        self.userPrefs = userPrefs
+        self.scheduler = scheduler
+        self.motionService = motionService
+        self.calendarService = calendarService
+        self.statsService = statsService
+        self.initialSelection = initialSelection
+        self._selection = State(initialValue: initialSelection)
+    }
     
     enum SidebarItem: Hashable {
         case stats, standAndFocus, moveAndRest, keepPosture, general, about
-    }
-    
-    private var userPrefs: UserPrefs {
-        if let p = prefs.first {
-            return p
-        } else {
-            // This is a fallback, but the view should ideally handle the empty state.
-            let newPrefs = UserPrefs()
-            ctx.insert(newPrefs)
-            try? ctx.save()
-            return newPrefs
-        }
     }
 
     var body: some View {
@@ -60,9 +61,7 @@ struct SettingsView: View {
                     ZStack {
                         switch selection {
                         case .stats:
-                            Text("Stats (Coming Soon)")
-                                .font(.body)
-                                .foregroundColor(.settingsSubheader)
+                            StatsContentView(statsService: statsService)
                         case .standAndFocus:
                             StandAndFocusSettingsContentView(
                                 userPrefs: userPrefs,
@@ -136,6 +135,11 @@ struct SettingsView: View {
                 }
             }
         }
+        .onChange(of: selection) { _, newSelection in
+            if newSelection == .stats {
+                statsService.refreshStats()
+            }
+        }
         .onDisappear {
             // Save context when the window is closed
             try? ctx.save()
@@ -189,6 +193,6 @@ struct SettingsView: View {
 }
 
 #Preview {
-    SettingsView(scheduler: Scheduler(), motionService: MotionService(), calendarService: CalendarService())
+    SettingsView(userPrefs: UserPrefs(), scheduler: Scheduler(), motionService: MotionService(), calendarService: CalendarService(), statsService: StatsService(), initialSelection: .standAndFocus)
         .modelContainer(for: UserPrefs.self, inMemory: true)
 } 

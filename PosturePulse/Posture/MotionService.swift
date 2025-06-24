@@ -31,6 +31,9 @@ class MotionService: ObservableObject {
     private let standupDetector = StandupDetector()
     let notificationService = NotificationService()
     
+    // Insert near top property declarations after notificationService
+    private var statsService: StatsService?
+    
     init() {
         setupMotionProviders()
         setupNotificationHandlers()
@@ -153,6 +156,12 @@ class MotionService: ObservableObject {
         standupDetector.disableHighFrequencyMode()
     }
     
+    // MARK: - Stats Service
+    
+    func setStatsService(_ service: StatsService) {
+        self.statsService = service
+    }
+    
     // MARK: - Private Methods
     
     private func setupMotionProviders() {
@@ -209,6 +218,7 @@ class MotionService: ObservableObject {
         NotificationCenter.default.publisher(for: .postureThresholdReached)
             .sink { [weak self] _ in
                 self?.notificationService.sendPostureNotification()
+                self?.statsService?.recordPostureAlert()
             }
             .store(in: &cancellables)
         

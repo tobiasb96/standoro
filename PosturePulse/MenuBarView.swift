@@ -4,10 +4,11 @@ import Combine
 
 struct MenuBarView: View {
     @Environment(\.modelContext) private var ctx
-    @Query private var prefs: [UserPrefs]
+    let userPrefs: UserPrefs
     @ObservedObject var scheduler: Scheduler
     @ObservedObject var motionService: MotionService
     @ObservedObject var calendarService: CalendarService
+    @ObservedObject var statsService: StatsService
     var onOpenSettings: () -> Void
     var onQuit: () -> Void
 
@@ -28,18 +29,15 @@ struct MenuBarView: View {
             return scheduler.currentRemainingTime
         } else {
             // When not running, show the current setting from preferences
-            if let p = prefs.first {
-                if p.pomodoroModeEnabledValue {
-                    return TimeInterval(p.focusIntervalMinutesValue * 60)
-                } else {
-                    return TimeInterval(p.maxSitMinutes * 60)
-                }
+            print("📊 MenuBarView: Display time check - pomodoro enabled: \(userPrefs.pomodoroModeEnabledValue), scheduler pomodoro: \(scheduler.pomodoroModeEnabled)")
+            if scheduler.pomodoroModeEnabled {
+                let time = TimeInterval(userPrefs.focusIntervalMinutesValue * 60)
+                print("📊 MenuBarView: Display time (not running, pomodoro) - \(Int(time/60))m")
+                return time
             } else {
-                if scheduler.pomodoroModeEnabled {
-                    return scheduler.focusInterval
-                } else {
-                    return scheduler.sittingInterval
-                }
+                let time = TimeInterval(userPrefs.maxSitMinutes * 60)
+                print("📊 MenuBarView: Display time (not running, simple) - \(Int(time/60))m")
+                return time
             }
         }
     }
@@ -65,7 +63,7 @@ struct MenuBarView: View {
             }
         } else {
             // When not running, show based on current settings
-            if let p = prefs.first, p.pomodoroModeEnabledValue {
+            if userPrefs.pomodoroModeEnabledValue {
                 return "Focus"
             } else {
                 return "Sitting"
@@ -94,7 +92,7 @@ struct MenuBarView: View {
             }
         } else {
             // When not running, show based on current settings
-            if let p = prefs.first, p.pomodoroModeEnabledValue {
+            if userPrefs.pomodoroModeEnabledValue {
                 return "chair" // Focus sessions typically start with sitting
             } else {
                 return "chair"
@@ -105,7 +103,7 @@ struct MenuBarView: View {
     private var phaseBackgroundColor: Color {
         if !scheduler.isRunning {
             // When not running, show based on current settings
-            if let p = prefs.first, p.pomodoroModeEnabledValue {
+            if userPrefs.pomodoroModeEnabledValue {
                 return Color.blue.opacity(0.3) // Focus session color
             } else {
                 return Color.gray.opacity(0.3)
@@ -129,7 +127,7 @@ struct MenuBarView: View {
     private var phaseIconColor: Color {
         if !scheduler.isRunning {
             // When not running, show based on current settings
-            if let p = prefs.first, p.pomodoroModeEnabledValue {
+            if userPrefs.pomodoroModeEnabledValue {
                 return Color.blue // Focus session color
             } else {
                 return Color.gray
@@ -165,8 +163,7 @@ struct MenuBarView: View {
     }
     
     private var shouldShowCalendarMute: Bool {
-        guard let prefs = prefs.first else { return false }
-        return prefs.calendarFilter && calendarService.isAuthorized && calendarService.isInMeeting
+        return userPrefs.calendarFilter && calendarService.isAuthorized && calendarService.isInMeeting
     }
 
     private var calendarMuteTooltip: String {
@@ -178,7 +175,7 @@ struct MenuBarView: View {
     }
 
     private var sessionProgressText: String? {
-        guard let p = prefs.first, p.pomodoroModeEnabledValue else { return nil }
+        guard userPrefs.pomodoroModeEnabledValue else { return nil }
         
         if scheduler.isRunning {
             switch scheduler.currentSessionType {
@@ -200,13 +197,13 @@ struct MenuBarView: View {
             }
         } else {
             // When not running, show "Session 1 of X" for the first session
-            let total = p.intervalsBeforeLongBreakValue
+            let total = userPrefs.intervalsBeforeLongBreakValue
             return "Session 1 of \(total)"
         }
     }
     
     private var sessionProgressColor: Color {
-        guard let p = prefs.first, p.pomodoroModeEnabledValue else { return .clear }
+        guard userPrefs.pomodoroModeEnabledValue else { return .clear }
         
         if scheduler.isRunning {
             switch scheduler.currentSessionType {
@@ -228,7 +225,7 @@ struct MenuBarView: View {
             // Top bar with posture indicator and calendar mute
             HStack {
                 // Posture indicator in top left
-                if let prefs = prefs.first, prefs.postureMonitoringEnabledValue {
+                if userPrefs.postureMonitoringEnabledValue {
                     postureIndicator
                 }
                 
@@ -326,7 +323,7 @@ struct MenuBarView: View {
 
             // Bottom toolbar with smaller, monochrome buttons
             HStack {
-                Button(action: { /* TODO: Stats */ }) {
+                Button(action: openStats) {
                     Image(systemName: "chart.bar.xaxis")
                         .foregroundColor(.white.opacity(0.7))
                 }.buttonStyle(.plain)
@@ -365,50 +362,64 @@ struct MenuBarView: View {
             // Check for phase transitions to show challenges
             checkForChallengeOpportunity()
         }
-        .onChange(of: prefs) { _, newPrefs in
-            if let p = newPrefs.first {
-                scheduler.sittingInterval = TimeInterval(p.maxSitMinutes * 60)
-                scheduler.standingInterval = TimeInterval(p.maxStandMinutes * 60)
-                
-                // Update Pomodoro settings
-                scheduler.setPomodoroMode(p.pomodoroModeEnabledValue)
-                scheduler.focusInterval = TimeInterval(p.focusIntervalMinutesValue * 60)
-                scheduler.shortBreakInterval = TimeInterval(p.shortBreakMinutesValue * 60)
-                scheduler.longBreakInterval = TimeInterval(p.longBreakMinutesValue * 60)
-                scheduler.intervalsBeforeLongBreak = p.intervalsBeforeLongBreakValue
-                
-                // Update auto-start setting
-                scheduler.setAutoStartEnabled(p.autoStartEnabledValue)
-                
-                // Update motion service settings (but don't start/stop monitoring)
-                if p.postureMonitoringEnabledValue {
-                    motionService.setPostureThresholds(pitch: p.postureSensitivityDegreesValue, roll: p.postureSensitivityDegreesValue, duration: TimeInterval(p.poorPostureThresholdSecondsValue))
-                }
-                
-                // Update calendar service integration
-                scheduler.setCalendarService(calendarService, shouldCheck: p.calendarFilter)
-                motionService.setCalendarService(calendarService, shouldCheck: p.calendarFilter)
-                
-                // Force UI update to reflect the new setting
-                updateCounter += 1
+        .onChange(of: userPrefs.pomodoroModeEnabledValue) { _, newValue in
+            print("📊 MenuBarView: Pomodoro mode changed to: \(newValue)")
+            print("📊 MenuBarView: Current userPrefs values - pomodoro: \(userPrefs.pomodoroModeEnabledValue), focus: \(userPrefs.focusIntervalMinutesValue)m, sit: \(userPrefs.maxSitMinutes)m")
+            
+            scheduler.sittingInterval = TimeInterval(userPrefs.maxSitMinutes * 60)
+            scheduler.standingInterval = TimeInterval(userPrefs.maxStandMinutes * 60)
+            
+            // Update Pomodoro settings
+            scheduler.setPomodoroMode(userPrefs.pomodoroModeEnabledValue)
+            scheduler.focusInterval = TimeInterval(userPrefs.focusIntervalMinutesValue * 60)
+            scheduler.shortBreakInterval = TimeInterval(userPrefs.shortBreakMinutesValue * 60)
+            scheduler.longBreakInterval = TimeInterval(userPrefs.longBreakMinutesValue * 60)
+            scheduler.intervalsBeforeLongBreak = userPrefs.intervalsBeforeLongBreakValue
+            
+            // Update auto-start setting
+            scheduler.setAutoStartEnabled(userPrefs.autoStartEnabledValue)
+            
+            // Update motion service settings (but don't start/stop monitoring)
+            if userPrefs.postureMonitoringEnabledValue {
+                motionService.setPostureThresholds(pitch: userPrefs.postureSensitivityDegreesValue, roll: userPrefs.postureSensitivityDegreesValue, duration: TimeInterval(userPrefs.poorPostureThresholdSecondsValue))
             }
+            
+            // Update calendar service integration
+            scheduler.setCalendarService(calendarService, shouldCheck: userPrefs.calendarFilter)
+            motionService.setCalendarService(calendarService, shouldCheck: userPrefs.calendarFilter)
+            
+            // Force UI update to reflect the new setting
+            updateCounter += 1
+        }
+        .onChange(of: userPrefs.focusIntervalMinutesValue) { _, _ in
+            print("📊 MenuBarView: Focus interval changed to: \(userPrefs.focusIntervalMinutesValue)m")
+            scheduler.focusInterval = TimeInterval(userPrefs.focusIntervalMinutesValue * 60)
+            updateCounter += 1
+        }
+        .onChange(of: userPrefs.maxSitMinutes) { _, _ in
+            print("📊 MenuBarView: Sit interval changed to: \(userPrefs.maxSitMinutes)m")
+            scheduler.sittingInterval = TimeInterval(userPrefs.maxSitMinutes * 60)
+            updateCounter += 1
+        }
+        .onChange(of: userPrefs.maxStandMinutes) { _, _ in
+            print("📊 MenuBarView: Stand interval changed to: \(userPrefs.maxStandMinutes)m")
+            scheduler.standingInterval = TimeInterval(userPrefs.maxStandMinutes * 60)
+            updateCounter += 1
         }
         .onAppear {
             // Enable high frequency mode when popup is opened
-            if prefs.first?.postureMonitoringEnabledValue == true && motionService.isAuthorized {
+            if userPrefs.postureMonitoringEnabledValue && motionService.isAuthorized {
                 motionService.enablePostureHighFrequencyMode()
             }
             
             // Set up calendar service integration
-            if let p = prefs.first {
-                scheduler.setCalendarService(calendarService, shouldCheck: p.calendarFilter)
-                motionService.setCalendarService(calendarService, shouldCheck: p.calendarFilter)
-                scheduler.setAutoStartEnabled(p.autoStartEnabledValue)
-            }
+            scheduler.setCalendarService(calendarService, shouldCheck: userPrefs.calendarFilter)
+            motionService.setCalendarService(calendarService, shouldCheck: userPrefs.calendarFilter)
+            scheduler.setAutoStartEnabled(userPrefs.autoStartEnabledValue)
         }
         .onDisappear {
             // Disable high frequency mode when popup is closed
-            if prefs.first?.postureMonitoringEnabledValue == true && motionService.isAuthorized {
+            if userPrefs.postureMonitoringEnabledValue && motionService.isAuthorized {
                 motionService.disablePostureHighFrequencyMode()
             }
         }
@@ -417,13 +428,11 @@ struct MenuBarView: View {
     // MARK: - Challenge Management
     
     private func checkForChallengeOpportunity() {
-        guard let prefs = prefs.first,
-              prefs.moveChallengesEnabledValue,
+        guard userPrefs.moveChallengesEnabledValue,
               scheduler.isRunning,
               !showChallenge else { return }
         
         let now = Date()
-        let timeSinceLastTransition = now.timeIntervalSince(lastPhaseTransition)
         
         // Check if we should show a challenge
         var shouldShow = false
@@ -433,6 +442,7 @@ struct MenuBarView: View {
             if scheduler.currentSessionType != lastSessionType {
                 if scheduler.currentSessionType == .shortBreak || scheduler.currentSessionType == .longBreak {
                     shouldShow = true
+                    print("📊 MenuBarView: Showing challenge for Pomodoro break transition")
                 }
             }
         } else {
@@ -440,6 +450,7 @@ struct MenuBarView: View {
             if scheduler.currentPhase != lastPhase {
                 if scheduler.currentPhase == .standing && lastPhase == .sitting {
                     shouldShow = true
+                    print("📊 MenuBarView: Showing challenge for sitting->standing transition")
                 }
             }
         }
@@ -477,47 +488,35 @@ struct MenuBarView: View {
         showChallenge = false
         currentChallenge = nil
         
-        // Optional: Add completion tracking here
-        // For now, just hide the challenge
+        statsService.recordChallengeCompletion()
     }
 
     // MARK: - Existing Methods
     
     private func setupInitialState() {
-        if prefs.isEmpty {
-            let newPrefs = UserPrefs()
-            ctx.insert(newPrefs)
-            try? ctx.save()
-            scheduler.sittingInterval = TimeInterval(newPrefs.maxSitMinutes * 60)
-            scheduler.standingInterval = TimeInterval(newPrefs.maxStandMinutes * 60)
-            scheduler.setAutoStartEnabled(newPrefs.autoStartEnabledValue)
+        print("📊 MenuBarView: setupInitialState - userPrefs pomodoro: \(userPrefs.pomodoroModeEnabledValue), focus: \(userPrefs.focusIntervalMinutesValue)m, sit: \(userPrefs.maxSitMinutes)m")
+        
+        // Set up basic intervals
+        scheduler.sittingInterval = TimeInterval(userPrefs.maxSitMinutes * 60)
+        scheduler.standingInterval = TimeInterval(userPrefs.maxStandMinutes * 60)
+        scheduler.setAutoStartEnabled(userPrefs.autoStartEnabledValue)
+        
+        // Set up Pomodoro settings
+        scheduler.setPomodoroMode(userPrefs.pomodoroModeEnabledValue)
+        scheduler.focusInterval = TimeInterval(userPrefs.focusIntervalMinutesValue * 60)
+        scheduler.shortBreakInterval = TimeInterval(userPrefs.shortBreakMinutesValue * 60)
+        scheduler.longBreakInterval = TimeInterval(userPrefs.longBreakMinutesValue * 60)
+        scheduler.intervalsBeforeLongBreak = userPrefs.intervalsBeforeLongBreakValue
+        
+        print("📊 MenuBarView: setupInitialState - scheduler pomodoro: \(scheduler.pomodoroModeEnabled), focus: \(Int(scheduler.focusInterval/60))m, sit: \(Int(scheduler.sittingInterval/60))m")
+        
+        // Set up motion service if enabled
+        if userPrefs.postureMonitoringEnabledValue {
+            motionService.setPostureThresholds(pitch: userPrefs.postureSensitivityDegreesValue, roll: userPrefs.postureSensitivityDegreesValue, duration: TimeInterval(userPrefs.poorPostureThresholdSecondsValue))
             
-            // Set up Pomodoro settings
-            scheduler.setPomodoroMode(newPrefs.pomodoroModeEnabledValue)
-            scheduler.focusInterval = TimeInterval(newPrefs.focusIntervalMinutesValue * 60)
-            scheduler.shortBreakInterval = TimeInterval(newPrefs.shortBreakMinutesValue * 60)
-            scheduler.longBreakInterval = TimeInterval(newPrefs.longBreakMinutesValue * 60)
-            scheduler.intervalsBeforeLongBreak = newPrefs.intervalsBeforeLongBreakValue
-        } else if let p = prefs.first {
-            scheduler.sittingInterval = TimeInterval(p.maxSitMinutes * 60)
-            scheduler.standingInterval = TimeInterval(p.maxStandMinutes * 60)
-            scheduler.setAutoStartEnabled(p.autoStartEnabledValue)
-            
-            // Set up Pomodoro settings
-            scheduler.setPomodoroMode(p.pomodoroModeEnabledValue)
-            scheduler.focusInterval = TimeInterval(p.focusIntervalMinutesValue * 60)
-            scheduler.shortBreakInterval = TimeInterval(p.shortBreakMinutesValue * 60)
-            scheduler.longBreakInterval = TimeInterval(p.longBreakMinutesValue * 60)
-            scheduler.intervalsBeforeLongBreak = p.intervalsBeforeLongBreakValue
-            
-            // Set up motion service if enabled
-            if p.postureMonitoringEnabledValue {
-                motionService.setPostureThresholds(pitch: p.postureSensitivityDegreesValue, roll: p.postureSensitivityDegreesValue, duration: TimeInterval(p.poorPostureThresholdSecondsValue))
-                
-                // Start monitoring if authorized
-                if motionService.isAuthorized {
-                    motionService.startMonitoring()
-                }
+            // Start monitoring if authorized
+            if motionService.isAuthorized {
+                motionService.startMonitoring()
             }
         }
     }
@@ -525,13 +524,14 @@ struct MenuBarView: View {
     private func handlePlayPause() {
         if !scheduler.isRunning {
             // When starting, use the current preference settings
-            if let p = prefs.first {
-                scheduler.start(
-                    sittingInterval: TimeInterval(p.maxSitMinutes * 60),
-                    standingInterval: TimeInterval(p.maxStandMinutes * 60)
-                )
-            } else {
+            // For Pomodoro mode, don't override the intervals - let the scheduler use its own
+            if userPrefs.pomodoroModeEnabledValue {
                 scheduler.start()
+            } else {
+                scheduler.start(
+                    sittingInterval: TimeInterval(userPrefs.maxSitMinutes * 60),
+                    standingInterval: TimeInterval(userPrefs.maxStandMinutes * 60)
+                )
             }
         } else if scheduler.isPaused {
             scheduler.resume()
@@ -541,7 +541,7 @@ struct MenuBarView: View {
     }
 
     private func handleRestart() {
-        guard let p = prefs.first, p.maxSitMinutes > 0, p.maxStandMinutes > 0 else {
+        guard userPrefs.maxSitMinutes > 0, userPrefs.maxStandMinutes > 0 else {
             return
         }
         scheduler.restart()
@@ -562,7 +562,7 @@ struct MenuBarView: View {
 
     @ViewBuilder
     private var postureIndicator: some View {
-        if let prefs = prefs.first, prefs.postureMonitoringEnabledValue {
+        if userPrefs.postureMonitoringEnabledValue {
             HStack(spacing: 4) {
                 Text(postureEmoji)
                     .font(.system(size: 16))
@@ -648,5 +648,11 @@ struct MenuBarView: View {
         case .unknown, .noData:
             return .clear
         }
+    }
+
+    private func openStats() {
+        // Post notification to open settings on stats tab
+        NotificationCenter.default.post(name: NSNotification.Name("OpenStats"), object: nil)
+        onOpenSettings()
     }
 } 

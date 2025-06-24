@@ -48,6 +48,10 @@ class Scheduler: ObservableObject {
     private let minNudgeInterval: TimeInterval = 15 * 60 // 15 minutes
     private let maxNudgeInterval: TimeInterval = 45 * 60 // 45 minutes
     
+    // Stats recording
+    private var statsService: StatsService?
+    private var phaseStartTime: Date?
+    
     var sittingInterval: TimeInterval {
         get { _sittingInterval }
         set { _sittingInterval = newValue }
@@ -182,11 +186,15 @@ class Scheduler: ObservableObject {
             }
         }
         
+        phaseStartTime = Date()
         isRunning = true
         isPaused = false
     }
     
     func stop() {
+        // Record current phase before stopping
+        recordCurrentPhase(skipped: false)
+        
         timer?.invalidate()
         timer = nil
         isRunning = false
@@ -196,6 +204,7 @@ class Scheduler: ObservableObject {
         _completedFocusSessions = 0
         pauseStartTime = nil
         remainingTimeWhenPaused = 0
+        phaseStartTime = nil
     }
     
     func pause() {
@@ -236,6 +245,9 @@ class Scheduler: ObservableObject {
         }
         
         // Switch to next phase immediately without sending notification
+        let skippingBreak = pomodoroModeEnabled && currentSessionType != .focus
+        recordCurrentPhase(skipped: skippingBreak)
+        phaseStartTime = Date()
         switchPhase()
     }
 
@@ -336,6 +348,8 @@ class Scheduler: ObservableObject {
         }
         
         // Handle auto-start logic
+        recordCurrentPhase(skipped: false)
+        phaseStartTime = Date()
         if autoStartEnabled {
             // Continue to next phase automatically
             switchPhase()
@@ -437,5 +451,31 @@ class Scheduler: ObservableObject {
     
     private func scheduleNextPostureNudge() {
         nextPostureNudgeInterval = Double.random(in: minNudgeInterval...maxNudgeInterval)
+    }
+    
+    func setStatsService(_ service: StatsService) {
+        self.statsService = service
+    }
+    
+    private func recordCurrentPhase(skipped: Bool) {
+        guard let statsService, let start = phaseStartTime else { 
+            print("📊 Stats: Cannot record - statsService: \(statsService != nil), phaseStartTime: \(phaseStartTime != nil)")
+            return 
+        }
+        let elapsed = max(Date().timeIntervalSince(start), 0)
+        print("📊 Stats: Recording phase - type: \(currentSessionType), phase: \(currentPhase), elapsed: \(Int(elapsed))s, skipped: \(skipped)")
+        
+        if pomodoroModeEnabled {
+            statsService.recordPhase(type: currentSessionType,
+                                     phase: currentSessionType == .focus ? currentPhase : nil,
+                                     seconds: elapsed,
+                                     skipped: skipped)
+        } else {
+            statsService.recordPhase(type: .focus,
+                                     phase: currentPhase,
+                                     seconds: elapsed,
+                                     skipped: skipped)
+        }
+        print("📊 Stats: After recording - focus: \(Int(statsService.focusSeconds/60))m, sitting: \(Int(statsService.sittingSeconds/60))m, standing: \(Int(statsService.standingSeconds/60))m, breaks: \(statsService.breaksTaken)/\(statsService.breaksSkipped)")
     }
 } 

@@ -4,29 +4,19 @@ import UserNotifications
 
 struct OnboardingView: View {
     @Environment(\.modelContext) private var ctx
-    @Query private var prefs: [UserPrefs]
     @AppStorage("didOnboard") private var didOnboard = false
     @State private var currentPage = 0
     @StateObject private var motionService = MotionService()
     @ObservedObject var calendarService: CalendarService
     @StateObject private var permissionManager: PermissionManager
+    let userPrefs: UserPrefs
     
-    init(calendarService: CalendarService) {
+    init(userPrefs: UserPrefs, calendarService: CalendarService) {
+        self.userPrefs = userPrefs
         self.calendarService = calendarService
         let motionService = MotionService()
         self._motionService = StateObject(wrappedValue: motionService)
         self._permissionManager = StateObject(wrappedValue: PermissionManager(motionService: motionService, calendarService: calendarService))
-    }
-    
-    private var userPrefs: UserPrefs {
-        if let p = prefs.first {
-            return p
-        } else {
-            let newPrefs = UserPrefs()
-            ctx.insert(newPrefs)
-            try? ctx.save()
-            return newPrefs
-        }
     }
     
     var body: some View {
@@ -389,6 +379,6 @@ struct OnboardingView: View {
 }
 
 #Preview {
-    OnboardingView(calendarService: CalendarService())
+    OnboardingView(userPrefs: UserPrefs(), calendarService: CalendarService())
         .modelContainer(for: UserPrefs.self, inMemory: true)
 } 
