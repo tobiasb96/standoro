@@ -1,10 +1,3 @@
-//
-//  SettingsModels.swift
-//  PosturePulse
-//
-//  Created by Tobias Blanck on 22.06.25.
-//
-
 import Foundation
 import SwiftData
 

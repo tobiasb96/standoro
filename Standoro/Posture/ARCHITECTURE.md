@@ -1,6 +1,6 @@
 # Posture Motion Architecture
 
-This directory contains the refactored motion architecture for PosturePulse, designed to be more maintainable, extensible, and modular.
+This directory contains the refactored motion architecture for Standoro, designed to be more maintainable, extensible, and modular.
 
 ## Architecture Overview
 
@@ -56,7 +56,7 @@ The new architecture separates concerns into distinct layers:
 - Removed old `PostureService.swift`
 - Removed compatibility wrapper
 - Updated all UI components to use `MotionService` directly:
-  - `PosturePulseApp.swift`
+  - `StandoroApp.swift`
   - `MenuBarLabelView.swift`
   - `MenuBarView.swift`
   - `OnboardingView.swift`

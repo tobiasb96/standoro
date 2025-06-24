@@ -1,10 +1,10 @@
-# PosturePulse
+# Standoro
 
 A macOS menu bar application that helps you maintain good posture and productivity through intelligent reminders, motion detection, and focus sessions.
 
 ## 🎯 Overview
 
-PosturePulse is a comprehensive wellness and productivity app that combines:
+Standoro is a comprehensive wellness and productivity app that combines:
 
 - **Posture Monitoring**: Uses AirPods motion data to detect poor posture and provide gentle reminders
 - **Stand/Desk Reminders**: Alternates between sitting and standing periods to reduce sedentary behavior
@@ -45,12 +45,12 @@ The app follows a modular architecture with clear separation of concerns:
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd PosturePulse
+   cd Standoro
    ```
 
 2. **Open in Xcode**
    ```bash
-   open PosturePulse.xcodeproj
+   open Standoro.xcodeproj
    ```
 
 3. **Build and Run**
@@ -301,4 +301,4 @@ The motion detection system uses a modular architecture:
 
 ---
 
-**PosturePulse** - Your intelligent companion for better posture and productivity. 
+**Standoro** - Your intelligent companion for better posture and productivity. 

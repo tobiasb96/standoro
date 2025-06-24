@@ -7,19 +7,19 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		42C9BB262E086608009F106E /* PosturePulse.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PosturePulse.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		42728F042E0B0772003A0B13 /* Standoro.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Standoro.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		42C9BB282E086608009F106E /* PosturePulse */ = {
+		42728F052E0B0772003A0B13 /* Standoro */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = PosturePulse;
+			path = Standoro;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		42C9BB232E086608009F106E /* Frameworks */ = {
+		42728F012E0B0772003A0B13 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -32,7 +32,7 @@
 		42C9BB1D2E086608009F106E = {
 			isa = PBXGroup;
 			children = (
-				42C9BB282E086608009F106E /* PosturePulse */,
+				42728F052E0B0772003A0B13 /* Standoro */,
 				42C9BB272E086608009F106E /* Products */,
 			);
 			sourceTree = "<group>";
@@ -40,7 +40,7 @@
 		42C9BB272E086608009F106E /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				42C9BB262E086608009F106E /* PosturePulse.app */,
+				42728F042E0B0772003A0B13 /* Standoro.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,26 +48,26 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		42C9BB252E086608009F106E /* PosturePulse */ = {
+		42728F032E0B0772003A0B13 /* Standoro */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 42C9BB332E086609009F106E /* Build configuration list for PBXNativeTarget "PosturePulse" */;
+			buildConfigurationList = 42728F102E0B0773003A0B13 /* Build configuration list for PBXNativeTarget "Standoro" */;
 			buildPhases = (
-				42C9BB222E086608009F106E /* Sources */,
-				42C9BB232E086608009F106E /* Frameworks */,
-				42C9BB242E086608009F106E /* Resources */,
+				42728F002E0B0772003A0B13 /* Sources */,
+				42728F012E0B0772003A0B13 /* Frameworks */,
+				42728F022E0B0772003A0B13 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				42C9BB282E086608009F106E /* PosturePulse */,
+				42728F052E0B0772003A0B13 /* Standoro */,
 			);
-			name = PosturePulse;
+			name = Standoro;
 			packageProductDependencies = (
 			);
-			productName = PosturePulse;
-			productReference = 42C9BB262E086608009F106E /* PosturePulse.app */;
+			productName = Standoro;
+			productReference = 42728F042E0B0772003A0B13 /* Standoro.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -80,12 +80,12 @@
 				LastSwiftUpdateCheck = 2600;
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
-					42C9BB252E086608009F106E = {
+					42728F032E0B0772003A0B13 = {
 						CreatedOnToolsVersion = 26.0;
 					};
 				};
 			};
-			buildConfigurationList = 42C9BB212E086608009F106E /* Build configuration list for PBXProject "PosturePulse" */;
+			buildConfigurationList = 42C9BB212E086608009F106E /* Build configuration list for PBXProject "Standoro" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -99,13 +99,13 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				42C9BB252E086608009F106E /* PosturePulse */,
+				42728F032E0B0772003A0B13 /* Standoro */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		42C9BB242E086608009F106E /* Resources */ = {
+		42728F022E0B0772003A0B13 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -115,7 +115,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		42C9BB222E086608009F106E /* Sources */ = {
+		42728F002E0B0772003A0B13 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -125,6 +125,70 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
+		42728F0E2E0B0773003A0B13 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 44C6CPGAB2;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.PosturePulse.Standoro;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		42728F0F2E0B0773003A0B13 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 44C6CPGAB2;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.PosturePulse.Standoro;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 		42C9BB312E086609009F106E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -243,118 +307,23 @@
 			};
 			name = Release;
 		};
-		42C9BB342E086609009F106E /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				AUTOMATION_APPLE_EVENTS = NO;
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 44C6CPGAB2;
-				ENABLE_APP_SANDBOX = YES;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_PREVIEWS = YES;
-				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
-				ENABLE_RESOURCE_ACCESS_CALENDARS = YES;
-				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
-				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
-				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
-				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
-				ENABLE_USER_SELECTED_FILES = readonly;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_LSUIElement = NO;
-				INFOPLIST_KEY_NSCalendarsUsageDescription = Yes;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSMotionUsageDescription = "osturePulse uses motion data from your AirPods to detect your sitting posture and remind you to sit up straight";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.PosturePulse;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				REGISTER_APP_GROUPS = YES;
-				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
-				RUNTIME_EXCEPTION_ALLOW_JIT = NO;
-				RUNTIME_EXCEPTION_ALLOW_UNSIGNED_EXECUTABLE_MEMORY = NO;
-				RUNTIME_EXCEPTION_DEBUGGING_TOOL = NO;
-				RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION = NO;
-				RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION = NO;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-			};
-			name = Debug;
-		};
-		42C9BB352E086609009F106E /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				AUTOMATION_APPLE_EVENTS = NO;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 44C6CPGAB2;
-				ENABLE_APP_SANDBOX = YES;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_PREVIEWS = YES;
-				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
-				ENABLE_RESOURCE_ACCESS_CALENDARS = YES;
-				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
-				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
-				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
-				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
-				ENABLE_USER_SELECTED_FILES = readonly;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_LSUIElement = NO;
-				INFOPLIST_KEY_NSCalendarsUsageDescription = Yes;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				INFOPLIST_KEY_NSMotionUsageDescription = "osturePulse uses motion data from your AirPods to detect your sitting posture and remind you to sit up straight";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.PosturePulse;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				REGISTER_APP_GROUPS = YES;
-				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
-				RUNTIME_EXCEPTION_ALLOW_JIT = NO;
-				RUNTIME_EXCEPTION_ALLOW_UNSIGNED_EXECUTABLE_MEMORY = NO;
-				RUNTIME_EXCEPTION_DEBUGGING_TOOL = NO;
-				RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION = NO;
-				RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION = NO;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		42C9BB212E086608009F106E /* Build configuration list for PBXProject "PosturePulse" */ = {
+		42728F102E0B0773003A0B13 /* Build configuration list for PBXNativeTarget "Standoro" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				42C9BB312E086609009F106E /* Debug */,
-				42C9BB322E086609009F106E /* Release */,
+				42728F0E2E0B0773003A0B13 /* Debug */,
+				42728F0F2E0B0773003A0B13 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		42C9BB332E086609009F106E /* Build configuration list for PBXNativeTarget "PosturePulse" */ = {
+		42C9BB212E086608009F106E /* Build configuration list for PBXProject "Standoro" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				42C9BB342E086609009F106E /* Debug */,
-				42C9BB352E086609009F106E /* Release */,
+				42C9BB312E086609009F106E /* Debug */,
+				42C9BB322E086609009F106E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

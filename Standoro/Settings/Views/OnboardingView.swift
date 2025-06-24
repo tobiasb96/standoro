@@ -33,14 +33,14 @@ struct OnboardingView: View {
                                 .font(.system(size: 90))
                                 .foregroundColor(.settingsAccentBlue)
                             
-                            Text("Welcome to PosturePulse")
+                            Text("Welcome to Standoro")
                                 .font(.system(size: 28, weight: .semibold))
                                 .foregroundColor(.settingsHeader)
                         }
                         
                         // Explanation paragraphs
                         VStack(spacing: 20) {
-                            Text("PosturePulse is your intelligent companion for maintaining health and productivity during desk work. We understand that modern work often means long hours at your computer, which can lead to back pain, neck strain, and decreased energy.")
+                            Text("Standoro is your intelligent companion for maintaining health and productivity during desk work. We understand that modern work often means long hours at your computer, which can lead to back pain, neck strain, and decreased energy.")
                                 .font(.system(size: 16))
                                 .foregroundColor(.settingsSubheader)
                                 .multilineTextAlignment(.leading)
@@ -246,7 +246,7 @@ struct OnboardingView: View {
                             .fontWeight(.bold)
                             .foregroundColor(.white)
                         
-                        Text("Configure how PosturePulse integrates with your system and manages notifications. Set up calendar integration to automatically mute alerts during meetings.")
+                        Text("Configure how Standoro integrates with your system and manages notifications. Set up calendar integration to automatically mute alerts during meetings.")
                             .font(.title3)
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)
@@ -350,7 +350,7 @@ struct OnboardingView: View {
                 }
                 .tag(4)
                 
-                // Page 5: How to Use PosturePulse
+                // Page 5: How to Use Standoro
                 ScrollView {
                     VStack(spacing: 40) {
                         // Header
@@ -363,7 +363,7 @@ struct OnboardingView: View {
                                 .font(.system(size: 32, weight: .bold))
                                 .foregroundColor(.settingsHeader)
                             
-                            Text("PosturePulse is now running in the background. Here's how to access it:")
+                            Text("Standoro is now running in the background. Here's how to access it:")
                                 .font(.title3)
                                 .foregroundColor(.settingsSubheader)
                                 .multilineTextAlignment(.center)
@@ -396,7 +396,7 @@ struct OnboardingView: View {
                                             Image(systemName: "1.circle.fill")
                                                 .foregroundColor(.blue)
                                                 .font(.system(size: 14))
-                                            Text("Click the PosturePulse icon in your menu bar for quick access to settings and status")
+                                            Text("Click the Standoro icon in your menu bar for quick access to settings and status")
                                                 .font(.system(size: 14))
                                                 .foregroundColor(.settingsSubheader)
                                         }
@@ -458,7 +458,7 @@ struct OnboardingView: View {
                                         .font(.headline)
                                         .foregroundColor(.settingsHeader)
                                     
-                                    Text("Click the PosturePulse icon in your dock to open the full settings window with all configuration options.")
+                                    Text("Click the Standoro icon in your dock to open the full settings window with all configuration options.")
                                         .font(.system(size: 14))
                                         .foregroundColor(.settingsSubheader)
                                 }

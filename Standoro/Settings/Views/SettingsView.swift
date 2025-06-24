@@ -91,7 +91,7 @@ struct SettingsView: View {
                                 showExplanations: false
                             )
                         case .about:
-                            Text("About PosturePulse (Coming Soon)")
+                            Text("About Standoro (Coming Soon)")
                                 .font(.body)
                                 .foregroundColor(.settingsSubheader)
                         case nil:
@@ -185,7 +185,7 @@ struct SettingsView: View {
         case .keepPosture:
             return "Monitor your sitting posture using AirPods to detect when you're slouching or leaning too far. This helps you maintain better posture and reduce neck and back strain."
         case .general:
-            return "Customize how PosturePulse behaves and integrates with your system."
+            return "Customize how Standoro behaves and integrates with your system."
         default:
             return nil
         }
