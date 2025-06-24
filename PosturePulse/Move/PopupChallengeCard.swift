@@ -3,6 +3,7 @@ import SwiftUI
 struct PopupChallengeCard: View {
     let challenge: Challenge
     let onComplete: () -> Void
+    let onDiscard: () -> Void
     
     var body: some View {
         VStack(spacing: 12) {
@@ -64,22 +65,42 @@ struct PopupChallengeCard: View {
                 }
             }
             
-            // Complete button
-            Button(action: onComplete) {
-                HStack {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.subheadline)
-                    Text("Complete Challenge")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
+            // Action buttons
+            HStack(spacing: 8) {
+                // Discard button
+                Button(action: onDiscard) {
+                    HStack {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.subheadline)
+                        Text("Discard")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(Color.gray)
+                    .cornerRadius(8)
                 }
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-                .background(challenge.category.color)
-                .cornerRadius(8)
+                .buttonStyle(PlainButtonStyle())
+                
+                // Complete button
+                Button(action: onComplete) {
+                    HStack {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.subheadline)
+                        Text("Complete")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(challenge.category.color)
+                    .cornerRadius(8)
+                }
+                .buttonStyle(PlainButtonStyle())
             }
-            .buttonStyle(PlainButtonStyle())
         }
         .padding(16)
         .background(Color(red: 0.16, green: 0.16, blue: 0.18))
@@ -94,7 +115,8 @@ struct PopupChallengeCard: View {
 #Preview {
     PopupChallengeCard(
         challenge: Challenge.allChallenges[0],
-        onComplete: {}
+        onComplete: {},
+        onDiscard: {}
     )
     .frame(width: 280)
     .padding()

@@ -253,7 +253,8 @@ struct MenuBarView: View {
                     
                     PopupChallengeCard(
                         challenge: challenge,
-                        onComplete: completeChallenge
+                        onComplete: completeChallenge,
+                        onDiscard: discardChallenge
                     )
                     .padding(.horizontal, 16)
                     
@@ -488,7 +489,14 @@ struct MenuBarView: View {
         showChallenge = false
         currentChallenge = nil
         
-        statsService.recordChallengeCompletion()
+        statsService.recordChallengeAction(completed: true)
+    }
+
+    private func discardChallenge() {
+        showChallenge = false
+        currentChallenge = nil
+        
+        statsService.recordChallengeAction(completed: false)
     }
 
     // MARK: - Existing Methods

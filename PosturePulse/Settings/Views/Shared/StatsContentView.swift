@@ -47,6 +47,7 @@ struct StatsContentView: View {
             // Stats cards
             LazyVGrid(columns: [
                 GridItem(.flexible()),
+                GridItem(.flexible()),
                 GridItem(.flexible())
             ], spacing: 16) {
                 // Focus Minutes Card
@@ -67,15 +68,6 @@ struct StatsContentView: View {
                     color: .green
                 )
                 
-                // Challenges Card
-                StatCard(
-                    title: "Challenges",
-                    value: "\(statsService.challengesCompleted)",
-                    subtitle: "Completed",
-                    icon: "trophy",
-                    color: .orange
-                )
-                
                 // Posture Alerts Card
                 StatCard(
                     title: "Posture Alerts",
@@ -83,6 +75,24 @@ struct StatsContentView: View {
                     subtitle: "Reminders sent",
                     icon: "airpods",
                     color: .red
+                )
+                
+                // Completed Challenges Card
+                StatCard(
+                    title: "Challenges Completed",
+                    value: "\(statsService.challengesCompleted)",
+                    subtitle: "Successfully finished",
+                    icon: "trophy",
+                    color: .orange
+                )
+                
+                // Discarded Challenges Card
+                StatCard(
+                    title: "Challenges Discarded",
+                    value: "\(statsService.challengesDiscarded)",
+                    subtitle: "Skipped or dismissed",
+                    icon: "xmark.circle",
+                    color: .gray
                 )
             }
             
@@ -166,7 +176,8 @@ private struct PostureSegment: Identifiable {
         service.recordPhase(type: .focus, phase: .standing, seconds: 60*15, skipped: false)
         service.breaksTaken = 3
         service.breaksSkipped = 1
-        service.recordChallengeCompletion()
+        service.recordChallengeAction(completed: true)
+        service.recordChallengeAction(completed: false)
         service.recordPostureAlert()
         service.recordPostureAlert()
         return service

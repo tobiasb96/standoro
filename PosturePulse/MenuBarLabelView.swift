@@ -9,11 +9,11 @@ struct MenuBarLabelView: View {
     @ObservedObject var motionService: MotionService
     
     @State private var updateCounter = 0
-    @State private var timer = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
+    @State private var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
     private var shouldShowCountdown: Bool {
-        let shouldShow = userPrefs.showMenuBarCountdown && scheduler.isRunning && !scheduler.isPaused
-        print("📊 MenuBarLabelView: shouldShowCountdown - showMenuBarCountdown: \(userPrefs.showMenuBarCountdown), isRunning: \(scheduler.isRunning), isPaused: \(scheduler.isPaused) -> \(shouldShow)")
+        let shouldShow = userPrefs.showMenuBarCountdown
+        print("📊 MenuBarLabelView: shouldShowCountdown - showMenuBarCountdown: \(userPrefs.showMenuBarCountdown) -> \(shouldShow)")
         return shouldShow
     }
     
@@ -75,10 +75,8 @@ struct MenuBarLabelView: View {
             }
         }
         .onReceive(timer) { _ in
-            // Only update counter for scheduler-related updates
-            if scheduler.isRunning && !scheduler.isPaused {
-                updateCounter += 1
-            }
+            // Update counter for both scheduler and posture updates
+            updateCounter += 1
         }
         .onChange(of: userPrefs.showMenuBarCountdown) { _, newValue in
             print("📊 MenuBarLabelView: showMenuBarCountdown changed to: \(newValue)")

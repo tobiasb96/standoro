@@ -25,6 +25,7 @@ final class StatsService: ObservableObject {
     @Published var breaksTaken: Int = 0
     @Published var breaksSkipped: Int = 0
     @Published var challengesCompleted: Int = 0
+    @Published var challengesDiscarded: Int = 0
     @Published var postureAlerts: Int = 0
     
     // MARK: - Aggregation
@@ -62,9 +63,14 @@ final class StatsService: ObservableObject {
         }
     }
 
-    func recordChallengeCompletion() {
-        challengesCompleted += 1
-        print("📊 StatsService: Challenge completed (total: \(challengesCompleted))")
+    func recordChallengeAction(completed: Bool) {
+        if completed {
+            challengesCompleted += 1
+            print("📊 StatsService: Challenge completed (total: \(challengesCompleted))")
+        } else {
+            challengesDiscarded += 1
+            print("📊 StatsService: Challenge discarded (total: \(challengesDiscarded))")
+        }
     }
 
     func recordPostureAlert() {

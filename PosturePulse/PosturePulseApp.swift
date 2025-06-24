@@ -128,6 +128,11 @@ struct AppContentView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OpenStats"))) { _ in
             settingsSelection = .stats
+            // Close existing settings window if open to force recreation with new selection
+            settingsWindowController?.close()
+            settingsWindowController = nil
+            // Open settings window with stats tab
+            showSettingsWindow()
         }
     }
     
