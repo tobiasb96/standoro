@@ -38,12 +38,36 @@ struct PosturePulseApp: App {
     @StateObject private var statsService = StatsService()
     @State private var settingsSelection: SettingsView.SidebarItem? = .standAndFocus
     @StateObject private var userPrefsManager = UserPrefsManager()
+    @State private var showMainWindow = false
 
     init() {
         requestNotifAuth()
     }
 
     var body: some Scene {
+        // Main window that appears when dock icon is clicked
+        Window("PosturePulse", id: "main") {
+            MainWindowView(
+                userPrefsManager: userPrefsManager,
+                scheduler: scheduler,
+                motionService: motionService,
+                calendarService: calendarService,
+                statsService: statsService
+            )
+            .modelContainer(for: UserPrefs.self, inMemory: true)
+            .onAppear {
+                // Wire stats service after view is installed
+                scheduler.setStatsService(statsService)
+                motionService.setStatsService(statsService)
+                setupDockClickHandler()
+            }
+        }
+        .windowStyle(.hiddenTitleBar)
+        .windowResizability(.contentSize)
+        .defaultSize(width: 1000, height: 687)
+        .windowToolbarStyle(.unified)
+        
+        // Menu bar extra for quick access
         MenuBarExtra {
             AppContentView(
                 userPrefsManager: userPrefsManager,
@@ -75,6 +99,74 @@ struct PosturePulseApp: App {
                 UNUserNotificationCenter.current()
                     .requestAuthorization(options: [.alert, .sound]) { _, _ in }
             }
+        }
+    }
+    
+    private func setupDockClickHandler() {
+        // Set activation policy to regular (shows in dock)
+        NSApp.setActivationPolicy(.regular)
+        
+        // Use a more reliable method to detect dock clicks
+        NotificationCenter.default.addObserver(
+            forName: NSApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main
+        ) { _ in
+            // Check if we have any visible windows
+            let visibleWindows = NSApp.windows.filter { $0.isVisible }
+            
+            // If no windows are visible and app became active, it was likely a dock click
+            if visibleWindows.isEmpty {
+                // Show the main window
+                if let window = NSApp.windows.first(where: { $0.identifier?.rawValue == "main" }) {
+                    window.makeKeyAndOrderFront(nil)
+                    NSApp.activate(ignoringOtherApps: true)
+                }
+            }
+        }
+    }
+}
+
+// Main window content view - shows onboarding first, then settings
+struct MainWindowView: View {
+    @Environment(\.modelContext) private var ctx
+    @AppStorage("didOnboard") private var didOnboard = false
+    let userPrefsManager: UserPrefsManager
+    let scheduler: Scheduler
+    let motionService: MotionService
+    let calendarService: CalendarService
+    let statsService: StatsService
+    
+    private var userPrefs: UserPrefs {
+        userPrefsManager.userPrefs ?? UserPrefs()
+    }
+    
+    var body: some View {
+        Group {
+            if !didOnboard {
+                // Show onboarding first
+                OnboardingView(userPrefs: userPrefs, calendarService: calendarService)
+                    .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OnboardingCompleted"))) { _ in
+                        didOnboard = true
+                    }
+            } else {
+                // Show settings after onboarding
+                SettingsView(
+                    userPrefs: userPrefs,
+                    scheduler: scheduler, 
+                    motionService: motionService, 
+                    calendarService: calendarService, 
+                    statsService: statsService,
+                    initialSelection: .standAndFocus
+                )
+            }
+        }
+        .onAppear {
+            // Initialize userPrefsManager with the model context
+            userPrefsManager.initialize(with: ctx)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ResetOnboarding"))) { _ in
+            didOnboard = false
         }
     }
 }
