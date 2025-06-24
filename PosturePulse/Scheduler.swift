@@ -38,6 +38,16 @@ class Scheduler: ObservableObject {
     private var _longBreakInterval: TimeInterval = 15 * 60 // Default 15 minutes
     private var _intervalsBeforeLongBreak: Int = 4 // Default 4 focus sessions
     
+    // Posture Nudge Feature
+    private var postureNudgesEnabled: Bool = false
+    private var motionService: MotionService? = nil
+    var notificationService: NotificationService? = nil
+    private var postureNudgeTimer: Timer?
+    private var nextPostureNudgeInterval: TimeInterval = 0
+    private var lastPostureNudgeTime: Date?
+    private let minNudgeInterval: TimeInterval = 15 * 60 // 15 minutes
+    private let maxNudgeInterval: TimeInterval = 45 * 60 // 45 minutes
+    
     var sittingInterval: TimeInterval {
         get { _sittingInterval }
         set { _sittingInterval = newValue }
@@ -364,5 +374,68 @@ class Scheduler: ObservableObject {
                 nextFire = Date().addingTimeInterval(self.sittingInterval)
             }
         }
+    }
+    
+    // Public setters for integration
+    func setMotionService(_ motionService: MotionService) {
+        self.motionService = motionService
+        self.notificationService = motionService.notificationService
+    }
+    
+    func setPostureNudgesEnabled(_ enabled: Bool) {
+        postureNudgesEnabled = enabled
+        if enabled {
+            startPostureNudgeTimer()
+        } else {
+            stopPostureNudgeTimer()
+        }
+    }
+    
+    private func startPostureNudgeTimer() {
+        stopPostureNudgeTimer()
+        scheduleNextPostureNudge()
+        postureNudgeTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
+            self?.checkPostureNudge()
+        }
+    }
+    
+    private func stopPostureNudgeTimer() {
+        postureNudgeTimer?.invalidate()
+        postureNudgeTimer = nil
+    }
+    
+    private func checkPostureNudge() {
+        guard postureNudgesEnabled,
+              let motionService = motionService,
+              let notificationService = notificationService else { return }
+        
+        // Only nudge if AirPods are NOT available/connected/receiving data
+        let airpodsActive = motionService.isDeviceAvailable && motionService.isDeviceConnected && motionService.isDeviceReceivingData
+        if airpodsActive { return }
+        
+        // Only nudge during work periods (sitting/focus)
+        let isWorkPeriod: Bool = {
+            if pomodoroModeEnabled {
+                return currentSessionType == .focus
+            } else {
+                return currentPhase == .sitting
+            }
+        }()
+        if !isWorkPeriod { return }
+        
+        // Check if it's time for the next nudge
+        let now = Date()
+        if let last = lastPostureNudgeTime, now.timeIntervalSince(last) < nextPostureNudgeInterval {
+            return
+        }
+        
+        // Send nudge
+        notificationService.sendRandomPostureNudge()
+        lastPostureNudgeTime = now
+        scheduleNextPostureNudge()
+    }
+    
+    private func scheduleNextPostureNudge() {
+        nextPostureNudgeInterval = Double.random(in: minNudgeInterval...maxNudgeInterval)
     }
 } 

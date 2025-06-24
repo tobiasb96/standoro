@@ -234,4 +234,41 @@ class NotificationService: ObservableObject {
             }
         }
     }
+    
+    // Add this method for random posture nudges
+    func sendRandomPostureNudge() {
+        guard isAuthorized else { return }
+        guard shouldSendNotification() else { return }
+        
+        let messages = [
+            ("Posture Nudge", "Remember to sit up straight and relax your shoulders."),
+            ("Posture Nudge", "Keep your back aligned and avoid slouching."),
+            ("Posture Nudge", "Take a moment to check your posture."),
+            ("Posture Nudge", "Adjust your screen to eye level for better posture."),
+            ("Posture Nudge", "Stretch and reset your posture for a productivity boost!"),
+            ("Posture Nudge", "A quick posture check can help you stay healthy!"),
+            ("Posture Nudge", "Uncross your legs and plant your feet flat for best posture."),
+            ("Posture Nudge", "Roll your shoulders back and take a deep breath."),
+        ]
+        let message = messages.randomElement() ?? ("Posture Nudge", "Check your posture!")
+        
+        let content = UNMutableNotificationContent()
+        content.title = message.0
+        content.body = message.1
+        content.sound = .default
+        
+        let request = UNNotificationRequest(
+            identifier: UUID().uuidString,
+            content: content,
+            trigger: nil
+        )
+        
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("🔔 NotificationService - Random nudge error: \(error)")
+            } else {
+                print("🔔 NotificationService - Sent random posture nudge")
+            }
+        }
+    }
 } 

@@ -29,7 +29,7 @@ class MotionService: ObservableObject {
     // Feature services
     private let postureAnalyzer = PostureAnalyzer()
     private let standupDetector = StandupDetector()
-    private let notificationService = NotificationService()
+    let notificationService = NotificationService()
     
     init() {
         setupMotionProviders()
