@@ -22,7 +22,6 @@ struct StandAndFocusSettingsContentView: View {
                 header: "Work Mode",
                 subheader: "Choose between simple alternating phases or structured Pomodoro sessions to boost your productivity while staying active.",
                 iconColor: .settingsAccentBlue,
-                showDivider: true
             ) {
                 VStack(spacing: 12) {
                     HStack {
@@ -33,13 +32,13 @@ struct StandAndFocusSettingsContentView: View {
                         }) {
                             HStack {
                                 Image(systemName: "figure.stand")
-                                    .font(.system(size: 16))
+                                    .font(.system(size: 15))
                                 Text("Simple Mode")
-                                    .font(.system(size: 14, weight: .medium))
+                                    .font(.system(size: 10, weight: .medium))
                             }
                             .foregroundColor(userPrefs.pomodoroModeEnabledValue ? .settingsSubheader : .settingsAccentBlue)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
                             .background(userPrefs.pomodoroModeEnabledValue ? Color.clear : Color.settingsAccentBlue.opacity(0.2))
                             .cornerRadius(8)
                         }
@@ -52,13 +51,13 @@ struct StandAndFocusSettingsContentView: View {
                         }) {
                             HStack {
                                 Image(systemName: "timer")
-                                    .font(.system(size: 16))
+                                    .font(.system(size: 15))
                                 Text("Pomodoro Mode")
-                                    .font(.system(size: 14, weight: .medium))
+                                    .font(.system(size: 10, weight: .medium))
                             }
                             .foregroundColor(userPrefs.pomodoroModeEnabledValue ? .settingsAccentBlue : .settingsSubheader)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
                             .background(userPrefs.pomodoroModeEnabledValue ? Color.settingsAccentBlue.opacity(0.2) : Color.clear)
                             .cornerRadius(8)
                         }

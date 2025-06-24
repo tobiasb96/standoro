@@ -23,10 +23,10 @@ struct SettingsCard<Content: View>: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .top) {
                 Image(systemName: icon)
-                    .font(.system(size: 20, weight: .medium))
+                    .font(.system(size: 15, weight: .medium))
                     .foregroundColor(iconColor)
                     .padding(.top, 2)
-                VStack(alignment: .leading, spacing: 1) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(header)
                         .font(.headline)
                         .foregroundColor(.settingsHeader)
@@ -43,6 +43,8 @@ struct SettingsCard<Content: View>: View {
                 Divider()
             }
             content
+                .frame(alignment: .leading)
+                .padding(.leading, 20)
         }
         .padding(14)
         .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color.settingsCard))

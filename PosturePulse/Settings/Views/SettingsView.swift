@@ -49,7 +49,8 @@ struct SettingsView: View {
                                 .foregroundColor(.settingsSubheader)
                                 .multilineTextAlignment(.center)
                                 .frame(maxWidth: .infinity)
-                                .padding(.bottom, 18)
+                                .padding(.bottom, 10)
+                                .padding(.horizontal, 20)
                         }
                     }
                     .padding(.top, 16)
@@ -100,14 +101,14 @@ struct SettingsView: View {
                                 .foregroundColor(.settingsSubheader)
                         }
                     }
-                    .padding(.top, 8)
-                    .padding(.horizontal)
+                    .padding(.top, 10)
+                    .padding(.horizontal, 20)
                     .frame(maxWidth: .infinity, alignment: .top)
                 }
             }
         }
         .frame(minWidth: 875, idealWidth: 1000, minHeight: 562, idealHeight: 687)
-        .background(Color(red: 0.1, green: 0.1, blue: 0.15))
+        .background(Color.settingsBackground)
         .foregroundColor(.white)
         .onAppear {
             // Set up calendar service with scheduler

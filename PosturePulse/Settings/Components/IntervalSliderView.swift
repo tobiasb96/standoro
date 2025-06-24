@@ -31,19 +31,6 @@ struct IntervalSliderView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text(label)
-                    .font(.headline)
-                    .foregroundColor(.white)
-                Spacer()
-                Text("\(value) \(unit)")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
-                    .background(Color(red: 0.2, green: 0.4, blue: 0.9))
-                    .cornerRadius(8)
-            }
-            
             Slider(value: Binding(
                 get: { Double(value) },
                 set: { 
@@ -53,6 +40,17 @@ struct IntervalSliderView: View {
             ), in: Double(range.lowerBound)...Double(range.upperBound), step: 1)
             .tint(Color(red: 0.2, green: 0.4, blue: 0.9))
             .controlSize(.regular)
+            Spacer(minLength: 20)
+            Text("\(value) \(unit)")
+                .font(.headline)
+                .foregroundColor(.white)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(Color(red: 0.2, green: 0.4, blue: 0.9))
+                .cornerRadius(8)
+            }
+            
+
 
             HStack(spacing: 6) {
                 ForEach(quickOptions, id: \.self) { option in

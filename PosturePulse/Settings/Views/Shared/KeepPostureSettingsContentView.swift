@@ -107,7 +107,7 @@ struct KeepPostureSettingsContentView: View {
                 )
             ) {
                 if userPrefs.postureMonitoringEnabledValue {
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 8) {
                         // Permission status
                         HStack {
                             Image(systemName: motionService.isAuthorized ? "checkmark.circle.fill" : 
@@ -238,28 +238,12 @@ struct KeepPostureSettingsContentView: View {
                                 }
                                 .padding(.top, 8)
                             }
-                            
-                            // Only show angles when calibrating or in advanced settings
-                            if showCalibrationDetails || showAdvancedSettings {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    let _ = updateCounter // Force UI update
-                                    Text("Current angles: Pitch \(String(format: "%.1f", motionService.currentPitch))°, Roll \(String(format: "%.1f", motionService.currentRoll))°")
-                                        .font(.caption2)
-                                        .foregroundColor(.secondary)
-                                    
-                                    Text("Deviations: Pitch \(String(format: "%.1f", motionService.pitchDeviation))°, Roll \(String(format: "%.1f", motionService.rollDeviation))°")
-                                        .font(.caption2)
-                                        .foregroundColor(.secondary)
-                                }
-                                .padding(.top, 4)
-                            }
                         }
                     }
-                    .padding(.leading, 20)
                     
                     // Calibration guidance
                     if motionService.currentPosture == .calibrating {
-                        VStack(alignment: .leading, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 8) {
                             Text("Calibration Instructions:")
                                 .font(.subheadline)
                                 .foregroundColor(.white)
@@ -288,6 +272,40 @@ struct KeepPostureSettingsContentView: View {
                         }
                         .padding(.top, 16)
                     }
+
+                    // Current angles and deviations in a small card
+                    if showCalibrationDetails || showAdvancedSettings {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Image(systemName: "info.circle")
+                                    .foregroundColor(.settingsAccentBlue)
+                                    .font(.caption)
+                                
+                                Text("Live Motion Data")
+                                    .font(.subheadline)
+                                    .foregroundColor(.white)
+                                
+                                Spacer()
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                let _ = updateCounter // Force UI update
+                                Text("Current angles: Pitch \(String(format: "%.1f", motionService.currentPitch))°, Roll \(String(format: "%.1f", motionService.currentRoll))°")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                
+                                Text("Deviations: Pitch \(String(format: "%.1f", motionService.pitchDeviation))°, Roll \(String(format: "%.1f", motionService.rollDeviation))°")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        .padding(12)
+                        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.settingsCard))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .stroke(Color.settingsCardBorder, lineWidth: 0.5)
+                        )
+                    }
                     
                     // Advanced settings collapsible
                     VStack(alignment: .leading, spacing: 8) {
@@ -311,13 +329,14 @@ struct KeepPostureSettingsContentView: View {
                         .buttonStyle(.plain)
                         
                         if showAdvancedSettings {
-                            VStack(alignment: .leading, spacing: 24) {
-                                // Sensitivity settings
-                                VStack(alignment: .leading, spacing: 16) {
-                                    Text("Sensitivity")
-                                        .font(.headline)
-                                        .foregroundColor(.white)
-                                    
+                            VStack(alignment: .leading, spacing: 20) {
+                                // Sensitivity settings using SettingsCard
+                                SettingsCard(
+                                    icon: "slider.horizontal.3",
+                                    header: "Sensitivity",
+                                    subheader: "Adjust how sensitive the posture detection is. Higher sensitivity detects smaller posture changes.",
+                                    iconColor: .settingsAccentBlue
+                                ) {
                                     HStack(spacing: 12) {
                                         SensitivityButton(
                                             title: "Low",
@@ -354,58 +373,28 @@ struct KeepPostureSettingsContentView: View {
                                     }
                                 }
                                 
-                                // Poor posture threshold (moved to advanced section)
-                                VStack(alignment: .leading, spacing: 16) {
-                                    Text("Poor Posture Threshold")
-                                        .font(.headline)
-                                        .foregroundColor(.white)
-                                    
-                                    HStack {
-                                        Text("Seconds")
-                                            .font(.headline)
-                                            .foregroundColor(.white)
-                                        Spacer()
-                                        Text("\(userPrefs.poorPostureThresholdSecondsValue)s")
-                                            .font(.headline)
-                                            .foregroundColor(.white)
-                                            .padding(.horizontal, 12)
-                                            .padding(.vertical, 6)
-                                            .background(Color(red: 0.2, green: 0.4, blue: 0.9))
-                                            .cornerRadius(10)
-                                    }
-                                    
-                                    Slider(
+                                // Poor posture threshold using SettingsCard and IntervalSliderView
+                                SettingsCard(
+                                    icon: "timer",
+                                    header: "Poor Posture Threshold",
+                                    subheader: "How long to maintain poor posture before receiving a notification.",
+                                    iconColor: .settingsAccentBlue
+                                ) {
+                                    IntervalSliderView(
+                                        label: "Threshold",
                                         value: Binding(
-                                            get: { Double(userPrefs.poorPostureThresholdSecondsValue) },
+                                            get: { userPrefs.poorPostureThresholdSecondsValue },
                                             set: { 
-                                                userPrefs.poorPostureThresholdSecondsValue = Int($0)
+                                                userPrefs.poorPostureThresholdSecondsValue = $0
                                                 motionService.setPostureThresholds(pitch: userPrefs.postureSensitivityDegreesValue, roll: userPrefs.postureSensitivityDegreesValue, duration: TimeInterval($0))
                                                 try? ctx.save()
                                             }
                                         ),
-                                        in: 10...120,
-                                        step: 5
+                                        range: 10...120,
+                                        unit: "s",
+                                        quickOptions: [15, 30, 45, 60],
+                                        context: ctx
                                     )
-                                    .tint(Color(red: 0.2, green: 0.4, blue: 0.9))
-                                    .controlSize(.large)
-
-                                    HStack(spacing: 8) {
-                                        ForEach([15, 30, 45, 60], id: \.self) { option in
-                                            Button("\(option)s") {
-                                                userPrefs.poorPostureThresholdSecondsValue = option
-                                                motionService.setPostureThresholds(pitch: userPrefs.postureSensitivityDegreesValue, roll: userPrefs.postureSensitivityDegreesValue, duration: TimeInterval(option))
-                                                try? ctx.save()
-                                            }
-                                            .buttonStyle(.plain)
-                                            .foregroundColor(userPrefs.poorPostureThresholdSecondsValue == option ? .white : .secondary)
-                                            .padding(.horizontal, 12)
-                                            .padding(.vertical, 6)
-                                            .background(userPrefs.poorPostureThresholdSecondsValue == option ? Color(red: 0.2, green: 0.4, blue: 0.9) : Color(red: 0.16, green: 0.16, blue: 0.18))
-                                            .cornerRadius(8)
-                                            .font(.subheadline)
-                                            .fontWeight(.medium)
-                                        }
-                                    }
                                 }
                             }
                         }
