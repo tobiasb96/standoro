@@ -123,7 +123,6 @@ struct GeneralSettingsContentView: View {
                             }
                         }
                     }
-                    .padding(.leading, 20)
                 }
             }
             
