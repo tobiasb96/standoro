@@ -49,15 +49,65 @@ struct OnboardingView: View {
                     
                     // Explanation paragraphs
                     VStack(spacing: 20) {
-                        Text("PosturePulse is your intelligent posture companion, designed to help you build healthier work habits and reduce the aches and fatigue that come from long hours at your desk. Modern work often means sitting for extended periods, which can lead to back pain, neck strain, and decreased energy.")
+                        Text("PosturePulse is your intelligent companion for maintaining health and productivity during desk work. We understand that modern work often means long hours at your computer, which can lead to back pain, neck strain, and decreased energy.")
                             .font(.system(size: 16))
                             .foregroundColor(.settingsSubheader)
                             .multilineTextAlignment(.center)
-                        Text("With PosturePulse, you'll receive gentle reminders to stand up and move, as well as real-time posture feedback using your AirPods' motion sensors. Our goal is to help you stay active, maintain good posture, and feel your best throughout the day.")
+                        
+                        Text("Our approach is built around three core components that work together to keep you healthy and focused:")
                             .font(.system(size: 16))
                             .foregroundColor(.settingsSubheader)
                             .multilineTextAlignment(.center)
-                        Text("In the next steps, you'll set your standing and sitting goals, configure posture monitoring, and grant the necessary permissions. Let's get started on your journey to a healthier, more comfortable workday!")
+                        
+                        VStack(spacing: 16) {
+                            HStack(spacing: 12) {
+                                Image(systemName: "figure.stand")
+                                    .font(.system(size: 20))
+                                    .foregroundColor(.settingsAccentBlue)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Stand + Focus")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(.settingsHeader)
+                                    Text("Alternate between sitting and standing with structured focus sessions using the Pomodoro technique to boost productivity and reduce sedentary time.")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.settingsSubheader)
+                                }
+                                Spacer()
+                            }
+                            
+                            HStack(spacing: 12) {
+                                Image(systemName: "figure.walk")
+                                    .font(.system(size: 20))
+                                    .foregroundColor(.settingsAccentBlue)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Move + Rest")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(.settingsHeader)
+                                    Text("Take regular movement breaks with guided exercises and stretches to keep your body active and prevent stiffness.")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.settingsSubheader)
+                                }
+                                Spacer()
+                            }
+                            
+                            HStack(spacing: 12) {
+                                Image(systemName: "airpods")
+                                    .font(.system(size: 20))
+                                    .foregroundColor(.settingsAccentBlue)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Keep Posture")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(.settingsHeader)
+                                    Text("Monitor your sitting posture using AirPods' motion sensors to detect slouching and provide gentle reminders to maintain good posture.")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.settingsSubheader)
+                                }
+                                Spacer()
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        
+                        Text("In the next steps, you'll configure each of these components to match your work style and preferences. Let's create a personalized experience that helps you stay healthy, focused, and productive!")
                             .font(.system(size: 16))
                             .foregroundColor(.settingsSubheader)
                             .multilineTextAlignment(.center)
@@ -78,20 +128,21 @@ struct OnboardingView: View {
                 .padding(60)
                 .tag(0)
                 
-                // Page 1: Standing Reminders Setup (previously page 0)
+                // Page 1: Stand + Focus Setup
                 VStack(spacing: 32) {
                     VStack(spacing: 16) {
-                        Text("Standing Reminders")
+                        Text("Stand + Focus")
                             .font(.largeTitle)
                             .fontWeight(.bold)
                             .foregroundColor(.white)
                         
-                        Text("Let's set up your posture goals")
+                        Text("Configure your standing reminders and focus sessions. Choose between simple posture timers or structured Pomodoro sessions to boost your productivity while staying active.")
                             .font(.title3)
                             .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
                     }
                     
-                    FocusSettingsContentView(
+                    StandAndFocusSettingsContentView(
                         userPrefs: userPrefs,
                         scheduler: Scheduler(), // Dummy scheduler for onboarding
                         ctx: ctx,
@@ -123,26 +174,71 @@ struct OnboardingView: View {
                 .padding(32)
                 .tag(1)
                 
-                // Page 2: General Settings (previously page 1)
+                // Page 2: Move + Rest Setup (Coming Soon)
                 VStack(spacing: 32) {
                     VStack(spacing: 16) {
-                        Text("General Settings")
+                        Text("Move + Rest")
                             .font(.largeTitle)
                             .fontWeight(.bold)
                             .foregroundColor(.white)
                         
-                        Text("Configure your app preferences")
+                        Text("Take regular movement breaks with guided exercises and stretches. This feature helps you stay active and prevent stiffness during long work sessions.")
                             .font(.title3)
                             .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
                     }
                     
-                    GeneralSettingsContentView(
-                        userPrefs: userPrefs,
-                        calendarService: calendarService,
-                        scheduler: Scheduler(), // Dummy scheduler for onboarding
-                        ctx: ctx,
-                        showExplanations: true
-                    )
+                    VStack(spacing: 24) {
+                        // Coming Soon Card
+                        VStack(spacing: 16) {
+                            Image(systemName: "figure.walk")
+                                .font(.system(size: 48))
+                                .foregroundColor(.settingsAccentBlue)
+                            
+                            Text("Coming Soon")
+                                .font(.title2)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.settingsHeader)
+                            
+                            Text("We're working on guided movement breaks and stretching exercises to help you stay active during your workday. This feature will include:")
+                                .font(.body)
+                                .foregroundColor(.settingsSubheader)
+                                .multilineTextAlignment(.center)
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundColor(.green)
+                                        .font(.caption)
+                                    Text("Guided stretching routines")
+                                        .font(.body)
+                                        .foregroundColor(.settingsSubheader)
+                                }
+                                
+                                HStack(spacing: 8) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundColor(.green)
+                                        .font(.caption)
+                                    Text("Movement reminders during breaks")
+                                        .font(.body)
+                                        .foregroundColor(.settingsSubheader)
+                                }
+                                
+                                HStack(spacing: 8) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundColor(.green)
+                                        .font(.caption)
+                                    Text("Exercise tracking and progress")
+                                        .font(.body)
+                                        .foregroundColor(.settingsSubheader)
+                                }
+                            }
+                            .padding(.top, 8)
+                        }
+                        .padding(32)
+                        .background(Color.settingsCard)
+                        .cornerRadius(16)
+                    }
                     
                     Spacer()
                     
@@ -169,20 +265,68 @@ struct OnboardingView: View {
                 .padding(32)
                 .tag(2)
                 
-                // Page 3: Posture Tracking (previously page 2)
+                // Page 3: General Settings
                 VStack(spacing: 32) {
                     VStack(spacing: 16) {
-                        Text("Posture Tracking")
+                        Text("General Settings")
                             .font(.largeTitle)
                             .fontWeight(.bold)
                             .foregroundColor(.white)
                         
-                        Text("Monitor your sitting posture using AirPods to detect when you're slouching or leaning too far. This helps you maintain better posture and reduce neck and back strain.")
+                        Text("Configure how PosturePulse integrates with your system and manages notifications. Set up calendar integration to automatically mute alerts during meetings.")
                             .font(.title3)
                             .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
                     }
                     
-                    PostureSettingsContentView(
+                    GeneralSettingsContentView(
+                        userPrefs: userPrefs,
+                        calendarService: calendarService,
+                        scheduler: Scheduler(), // Dummy scheduler for onboarding
+                        ctx: ctx,
+                        showExplanations: true
+                    )
+                    
+                    Spacer()
+                    
+                    HStack {
+                        Button("Back") {
+                            currentPage = 2
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.large)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 12)
+                        
+                        Spacer()
+                        
+                        Button("Next") {
+                            currentPage = 4
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 12)
+                    }
+                }
+                .padding(32)
+                .tag(3)
+                
+                // Page 4: Keep Posture Setup
+                VStack(spacing: 32) {
+                    VStack(spacing: 16) {
+                        Text("Keep Posture")
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                        
+                        Text("Monitor your sitting posture using AirPods to detect when you're slouching or leaning too far. This helps you maintain better posture and reduce neck and back strain throughout your workday.")
+                            .font(.title3)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    
+                    KeepPostureSettingsContentView(
                         userPrefs: userPrefs,
                         motionService: motionService,
                         ctx: ctx,
@@ -193,7 +337,7 @@ struct OnboardingView: View {
                     
                     HStack {
                         Button("Back") {
-                            currentPage = 2
+                            currentPage = 3
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.large)
@@ -212,7 +356,7 @@ struct OnboardingView: View {
                     }
                 }
                 .padding(32)
-                .tag(3)
+                .tag(4)
             }
             .tabViewStyle(.automatic)
         }

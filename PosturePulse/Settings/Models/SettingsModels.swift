@@ -15,6 +15,7 @@ class UserPrefs {
     var calendarFilter: Bool
     var showMenuBarCountdown: Bool
     var postureMonitoringEnabled: Bool?
+    var postureNudgesEnabled: Bool?
     var poorPostureThresholdSeconds: Int?
     var postureSensitivityDegrees: Double?
     var autoStartEnabled: Bool?
@@ -26,12 +27,13 @@ class UserPrefs {
     var longBreakMinutes: Int?
     var intervalsBeforeLongBreak: Int?
     
-    init(maxSitMinutes: Int = 45, maxStandMinutes: Int = 15, calendarFilter: Bool = true, showMenuBarCountdown: Bool = false, postureMonitoringEnabled: Bool = false, poorPostureThresholdSeconds: Int = 30, postureSensitivityDegrees: Double = 15.0, autoStartEnabled: Bool = true, pomodoroModeEnabled: Bool = false, focusIntervalMinutes: Int = 25, shortBreakMinutes: Int = 5, longBreakMinutes: Int = 15, intervalsBeforeLongBreak: Int = 4) {
+    init(maxSitMinutes: Int = 45, maxStandMinutes: Int = 15, calendarFilter: Bool = true, showMenuBarCountdown: Bool = false, postureMonitoringEnabled: Bool = false, postureNudgesEnabled: Bool = false, poorPostureThresholdSeconds: Int = 30, postureSensitivityDegrees: Double = 15.0, autoStartEnabled: Bool = true, pomodoroModeEnabled: Bool = false, focusIntervalMinutes: Int = 25, shortBreakMinutes: Int = 5, longBreakMinutes: Int = 15, intervalsBeforeLongBreak: Int = 4) {
         self.maxSitMinutes = maxSitMinutes
         self.maxStandMinutes = maxStandMinutes
         self.calendarFilter = calendarFilter
         self.showMenuBarCountdown = showMenuBarCountdown
         self.postureMonitoringEnabled = postureMonitoringEnabled
+        self.postureNudgesEnabled = postureNudgesEnabled
         self.poorPostureThresholdSeconds = poorPostureThresholdSeconds
         self.postureSensitivityDegrees = postureSensitivityDegrees
         self.autoStartEnabled = autoStartEnabled
@@ -46,6 +48,11 @@ class UserPrefs {
     var postureMonitoringEnabledValue: Bool {
         get { postureMonitoringEnabled ?? false }
         set { postureMonitoringEnabled = newValue }
+    }
+    
+    var postureNudgesEnabledValue: Bool {
+        get { postureNudgesEnabled ?? false }
+        set { postureNudgesEnabled = newValue }
     }
     
     var poorPostureThresholdSecondsValue: Int {

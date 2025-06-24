@@ -9,6 +9,15 @@ struct SidebarView: View {
             VStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: 2) {
                     sidebarButton(item: .stats, label: "Stats", icon: "chart.bar.xaxis")
+                    Text("Core Features")
+                        .font(.system(size: 12))
+                        .foregroundColor(.settingsSubheader)
+                        .padding(.top, 18)
+                        .padding(.bottom, 2)
+                        .padding(.leading, 4)
+                    sidebarButton(item: .standAndFocus, label: "Stand + Focus", icon: "figure.stand")
+                    sidebarButton(item: .moveAndRest, label: "Move + Rest", icon: "figure.walk")
+                    sidebarButton(item: .keepPosture, label: "Keep Posture", icon: "airpods")
                     Text("Settings")
                         .font(.system(size: 12))
                         .foregroundColor(.settingsSubheader)
@@ -16,8 +25,6 @@ struct SidebarView: View {
                         .padding(.bottom, 2)
                         .padding(.leading, 4)
                     sidebarButton(item: .general, label: "General", icon: "gearshape")
-                    sidebarButton(item: .focus, label: "Focus", icon: "timer")
-                    sidebarButton(item: .posture, label: "Posture", icon: "airpods")
                 }
                 .padding(.top, 24)
                 .padding(.horizontal, 8)

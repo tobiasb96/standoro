@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-struct FocusSettingsContentView: View {
+struct StandAndFocusSettingsContentView: View {
     let userPrefs: UserPrefs
     let scheduler: Scheduler
     let ctx: ModelContext
@@ -20,7 +20,7 @@ struct FocusSettingsContentView: View {
             SettingsCard(
                 icon: "timer",
                 header: "Timer Mode",
-                subheader: "Choose between simple posture reminders or structured Pomodoro sessions.",
+                subheader: "Choose between simple posture reminders or structured Pomodoro sessions to boost your productivity while staying active.",
                 iconColor: .settingsAccentBlue,
                 showDivider: true
             ) {
@@ -69,8 +69,8 @@ struct FocusSettingsContentView: View {
                     
                     if showExplanations {
                         Text(userPrefs.pomodoroModeEnabledValue ? 
-                             "Pomodoro mode uses structured work sessions with regular breaks to improve focus and productivity." :
-                             "Posture timer alternates between sitting and standing to promote healthy movement throughout your day.")
+                             "Pomodoro mode uses structured work sessions with regular breaks to improve focus and productivity. Each session includes focused work time followed by short and long breaks." :
+                             "Posture timer alternates between sitting and standing to promote healthy movement throughout your day. This simple approach helps reduce sedentary time and keeps you active.")
                             .font(.system(size: 12))
                             .foregroundColor(.settingsSubheader)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -95,7 +95,7 @@ struct FocusSettingsContentView: View {
             SettingsCard(
                 icon: "brain.head.profile",
                 header: "Focus Interval",
-                subheader: "How long should each focus session be?",
+                subheader: "How long should each focused work session be? Longer sessions allow for deeper work, while shorter sessions help maintain concentration.",
                 iconColor: .settingsAccentBlue,
                 showDivider: true
             ) {
@@ -120,7 +120,7 @@ struct FocusSettingsContentView: View {
             SettingsCard(
                 icon: "cup.and.saucer",
                 header: "Short Break",
-                subheader: "How long should short breaks be?",
+                subheader: "How long should short breaks be? Use this time to stand up, stretch, or take a quick walk to refresh your mind and body.",
                 iconColor: .settingsAccentBlue,
                 showDivider: true
             ) {
@@ -145,7 +145,7 @@ struct FocusSettingsContentView: View {
             SettingsCard(
                 icon: "bed.double",
                 header: "Long Break",
-                subheader: "How long should long breaks be?",
+                subheader: "How long should long breaks be? Longer breaks allow for more substantial rest and recovery between focus sessions.",
                 iconColor: .settingsAccentBlue,
                 showDivider: true
             ) {
@@ -170,7 +170,7 @@ struct FocusSettingsContentView: View {
             SettingsCard(
                 icon: "number.circle",
                 header: "Long Break Frequency",
-                subheader: "How many focus sessions before a long break?",
+                subheader: "How many focus sessions before a long break? This helps maintain a sustainable rhythm of work and rest.",
                 iconColor: .settingsAccentBlue,
                 showDivider: true
             ) {
@@ -200,7 +200,7 @@ struct FocusSettingsContentView: View {
             SettingsCard(
                 icon: "figure.stand",
                 header: "Standing Goal",
-                subheader: "How long would you like to stand for each session?",
+                subheader: "How long would you like to stand for each session? Standing helps improve circulation, reduce back pain, and increase energy levels.",
                 iconColor: .settingsAccentBlue,
                 showDivider: true
             ) {
@@ -225,7 +225,7 @@ struct FocusSettingsContentView: View {
             SettingsCard(
                 icon: "chair",
                 header: "Maximum Sitting Time",
-                subheader: "How long can you sit before needing a break?",
+                subheader: "How long can you sit before needing a break? Regular movement helps prevent stiffness and maintains your energy throughout the day.",
                 iconColor: .settingsAccentBlue,
                 showDivider: true
             ) {
@@ -251,14 +251,14 @@ struct FocusSettingsContentView: View {
 
 #Preview {
     VStack(spacing: 20) {
-        FocusSettingsContentView(
+        StandAndFocusSettingsContentView(
             userPrefs: UserPrefs(),
             scheduler: Scheduler(),
             ctx: try! ModelContainer(for: UserPrefs.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true)).mainContext,
             showExplanations: true
         )
         
-        FocusSettingsContentView(
+        StandAndFocusSettingsContentView(
             userPrefs: UserPrefs(pomodoroModeEnabled: true),
             scheduler: Scheduler(),
             ctx: try! ModelContainer(for: UserPrefs.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true)).mainContext,

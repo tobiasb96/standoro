@@ -21,8 +21,8 @@ struct GeneralSettingsContentView: View {
             // Menu Bar Card
             SettingsCard(
                 icon: "menubar.rectangle",
-                header: "Menu Bar",
-                subheader: "Show the countdown timer in your menu bar.",
+                header: "Menu Bar Timer",
+                subheader: "Show the countdown timer in your menu bar for quick access to your current session status and remaining time.",
                 iconColor: .settingsAccentBlue,
                 trailing: AnyView(
                     Toggle("", isOn: Binding(
@@ -38,8 +38,8 @@ struct GeneralSettingsContentView: View {
             // Auto-Start Card
             SettingsCard(
                 icon: "play.circle",
-                header: "Auto-Start",
-                subheader: "Automatically continue to the next phase when a session ends. When disabled, you'll need to manually start each phase.",
+                header: "Auto-Start Sessions",
+                subheader: "Automatically continue to the next phase when a session ends. When disabled, you'll need to manually start each phase, giving you more control over your workflow.",
                 iconColor: .settingsAccentBlue,
                 trailing: AnyView(
                     Toggle("", isOn: Binding(
@@ -59,7 +59,7 @@ struct GeneralSettingsContentView: View {
             SettingsCard(
                 icon: "calendar",
                 header: "Calendar Integration",
-                subheader: "Automatically mute alerts when you're in calendar meetings.",
+                subheader: "Automatically mute alerts when you're in calendar meetings to avoid interruptions during important calls and presentations.",
                 iconColor: .settingsAccentBlue,
                 showDivider: userPrefs.calendarFilter,
                 trailing: AnyView(
@@ -131,7 +131,7 @@ struct GeneralSettingsContentView: View {
             SettingsCard(
                 icon: "hammer",
                 header: "Development",
-                subheader: "Debug and development tools.",
+                subheader: "Debug and development tools for testing and troubleshooting.",
                 iconColor: .gray,
                 trailing: AnyView(
                     Button("Reset Onboarding") {

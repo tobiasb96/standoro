@@ -10,10 +10,10 @@ struct SettingsView: View {
     @ObservedObject var motionService: MotionService
     @ObservedObject var calendarService: CalendarService
     
-    @State private var selection: SidebarItem? = .general
+    @State private var selection: SidebarItem? = .standAndFocus
     
     enum SidebarItem: Hashable {
-        case stats, general, focus, posture, about
+        case stats, standAndFocus, moveAndRest, keepPosture, general, about
     }
     
     private var userPrefs: UserPrefs {
@@ -62,25 +62,83 @@ struct SettingsView: View {
                             Text("Stats (Coming Soon)")
                                 .font(.body)
                                 .foregroundColor(.settingsSubheader)
+                        case .standAndFocus:
+                            StandAndFocusSettingsContentView(
+                                userPrefs: userPrefs,
+                                scheduler: scheduler,
+                                ctx: ctx,
+                                showExplanations: false
+                            )
+                        case .moveAndRest:
+                            VStack(spacing: 24) {
+                                // Coming Soon Card
+                                VStack(spacing: 16) {
+                                    Image(systemName: "figure.walk")
+                                        .font(.system(size: 48))
+                                        .foregroundColor(.settingsAccentBlue)
+                                    
+                                    Text("Move + Rest")
+                                        .font(.title2)
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(.settingsHeader)
+                                    
+                                    Text("Take regular movement breaks with guided exercises and stretches to keep your body active and prevent stiffness during long work sessions.")
+                                        .font(.body)
+                                        .foregroundColor(.settingsSubheader)
+                                        .multilineTextAlignment(.center)
+                                    
+                                    Text("This feature is coming soon and will include:")
+                                        .font(.subheadline)
+                                        .foregroundColor(.settingsSubheader)
+                                        .padding(.top, 16)
+                                    
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .foregroundColor(.green)
+                                                .font(.caption)
+                                            Text("Guided stretching routines")
+                                                .font(.body)
+                                                .foregroundColor(.settingsSubheader)
+                                        }
+                                        
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .foregroundColor(.green)
+                                                .font(.caption)
+                                            Text("Movement reminders during breaks")
+                                                .font(.body)
+                                                .foregroundColor(.settingsSubheader)
+                                        }
+                                        
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .foregroundColor(.green)
+                                                .font(.caption)
+                                            Text("Exercise tracking and progress")
+                                                .font(.body)
+                                                .foregroundColor(.settingsSubheader)
+                                        }
+                                    }
+                                    .padding(.top, 8)
+                                }
+                                .padding(32)
+                                .background(Color.settingsCard)
+                                .cornerRadius(16)
+                            }
+                            .padding(.top, 8)
+                        case .keepPosture:
+                            KeepPostureSettingsContentView(
+                                userPrefs: userPrefs,
+                                motionService: motionService,
+                                ctx: ctx,
+                                showExplanations: false
+                            )
                         case .general:
                             GeneralSettingsContentView(
                                 userPrefs: userPrefs,
                                 calendarService: calendarService,
                                 scheduler: scheduler,
-                                ctx: ctx,
-                                showExplanations: false
-                            )
-                        case .focus:
-                            FocusSettingsContentView(
-                                userPrefs: userPrefs,
-                                scheduler: scheduler,
-                                ctx: ctx,
-                                showExplanations: false
-                            )
-                        case .posture:
-                            PostureSettingsContentView(
-                                userPrefs: userPrefs,
-                                motionService: motionService,
                                 ctx: ctx,
                                 showExplanations: false
                             )
@@ -150,26 +208,31 @@ struct SettingsView: View {
         switch item {
         case .stats:
             return "Stats"
+        case .standAndFocus:
+            return "Stand + Focus"
+        case .moveAndRest:
+            return "Move + Rest"
+        case .keepPosture:
+            return "Keep Posture"
         case .general:
             return "General Settings"
-        case .focus:
-            return "Focus"
-        case .posture:
-            return "Posture Tracking"
         case .about:
             return "About"
         case nil:
             return nil
         }
     }
+    
     private func subheader(for item: SidebarItem?) -> String? {
         switch item {
+        case .standAndFocus:
+            return "Configure your standing reminders and focus sessions. Choose between simple posture timers or structured Pomodoro sessions to boost your productivity while staying active."
+        case .moveAndRest:
+            return "Take regular movement breaks with guided exercises and stretches. This feature helps you stay active and prevent stiffness during long work sessions."
+        case .keepPosture:
+            return "Monitor your sitting posture using AirPods to detect when you're slouching or leaning too far. This helps you maintain better posture and reduce neck and back strain."
         case .general:
             return "Customize how PosturePulse behaves and integrates with your system."
-        case .focus:
-            return "Configure your focus settings."
-        case .posture:
-            return "Configure posture monitoring and advanced AirPods tracking."
         default:
             return nil
         }

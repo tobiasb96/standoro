@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 import Combine
 
-struct PostureSettingsContentView: View {
+struct KeepPostureSettingsContentView: View {
     let userPrefs: UserPrefs
     let motionService: MotionService
     let ctx: ModelContext
@@ -35,10 +35,53 @@ struct PostureSettingsContentView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
+            // Posture Nudges Card
+            SettingsCard(
+                icon: "bell.badge",
+                header: "Posture Nudges",
+                subheader: "Receive gentle reminders to maintain good posture throughout your day. These nudges are especially useful when you don't have AirPods connected for real-time monitoring.",
+                iconColor: .settingsAccentBlue,
+                trailing: AnyView(
+                    Toggle("", isOn: Binding(
+                        get: { userPrefs.postureNudgesEnabledValue },
+                        set: { 
+                            userPrefs.postureNudgesEnabledValue = $0
+                            try? ctx.save()
+                        }
+                    ))
+                    .toggleStyle(CustomToggleStyle())
+                )
+            ) {
+                if userPrefs.postureNudgesEnabledValue && showExplanations {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Posture nudges will remind you to:")
+                            .font(.subheadline)
+                            .foregroundColor(.settingsHeader)
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("• Sit up straight and align your spine")
+                                .font(.caption)
+                                .foregroundColor(.settingsSubheader)
+                            Text("• Keep your shoulders relaxed and level")
+                                .font(.caption)
+                                .foregroundColor(.settingsSubheader)
+                            Text("• Position your screen at eye level")
+                                .font(.caption)
+                                .foregroundColor(.settingsSubheader)
+                            Text("• Take regular breaks to stretch")
+                                .font(.caption)
+                                .foregroundColor(.settingsSubheader)
+                        }
+                    }
+                    .padding(.top, 8)
+                }
+            }
+            
+            // AirPods Posture Monitoring Card
             SettingsCard(
                 icon: "airpods",
-                header: "Posture Monitoring",
-                subheader: "Monitor your sitting posture using AirPods to detect when you're slouching or leaning too far.",
+                header: "AirPods Posture Monitoring",
+                subheader: "Monitor your sitting posture using AirPods' motion sensors to detect when you're slouching or leaning too far. This provides real-time feedback to help you maintain better posture.",
                 iconColor: .settingsAccentBlue,
                 showDivider: userPrefs.postureMonitoringEnabledValue,
                 trailing: AnyView(
@@ -440,14 +483,14 @@ struct PostureSettingsContentView: View {
 
 #Preview {
     VStack(spacing: 20) {
-        PostureSettingsContentView(
+        KeepPostureSettingsContentView(
             userPrefs: UserPrefs(),
             motionService: MotionService(),
             ctx: try! ModelContainer(for: UserPrefs.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true)).mainContext,
             showExplanations: true
         )
         
-        PostureSettingsContentView(
+        KeepPostureSettingsContentView(
             userPrefs: UserPrefs(),
             motionService: MotionService(),
             ctx: try! ModelContainer(for: UserPrefs.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true)).mainContext,
