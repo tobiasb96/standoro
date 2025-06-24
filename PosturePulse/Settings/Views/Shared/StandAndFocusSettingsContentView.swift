@@ -16,11 +16,11 @@ struct StandAndFocusSettingsContentView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            // Timer Mode Selection
+            // Work Mode Selection
             SettingsCard(
                 icon: "timer",
-                header: "Timer Mode",
-                subheader: "Choose between simple posture reminders or structured Pomodoro sessions to boost your productivity while staying active.",
+                header: "Work Mode",
+                subheader: "Choose between simple alternating phases or structured Pomodoro sessions to boost your productivity while staying active.",
                 iconColor: .settingsAccentBlue,
                 showDivider: true
             ) {
@@ -34,7 +34,7 @@ struct StandAndFocusSettingsContentView: View {
                             HStack {
                                 Image(systemName: "figure.stand")
                                     .font(.system(size: 16))
-                                Text("Posture Timer")
+                                Text("Simple Mode")
                                     .font(.system(size: 14, weight: .medium))
                             }
                             .foregroundColor(userPrefs.pomodoroModeEnabledValue ? .settingsSubheader : .settingsAccentBlue)
@@ -53,7 +53,7 @@ struct StandAndFocusSettingsContentView: View {
                             HStack {
                                 Image(systemName: "timer")
                                     .font(.system(size: 16))
-                                Text("Pomodoro Timer")
+                                Text("Pomodoro Mode")
                                     .font(.system(size: 14, weight: .medium))
                             }
                             .foregroundColor(userPrefs.pomodoroModeEnabledValue ? .settingsAccentBlue : .settingsSubheader)
@@ -70,7 +70,7 @@ struct StandAndFocusSettingsContentView: View {
                     if showExplanations {
                         Text(userPrefs.pomodoroModeEnabledValue ? 
                              "Pomodoro mode uses structured work sessions with regular breaks to improve focus and productivity. Each session includes focused work time followed by short and long breaks." :
-                             "Posture timer alternates between sitting and standing to promote healthy movement throughout your day. This simple approach helps reduce sedentary time and keeps you active.")
+                             "Simple mode alternates between sitting and standing to promote healthy movement throughout your day. This straightforward approach helps reduce sedentary time and keeps you active.")
                             .font(.system(size: 12))
                             .foregroundColor(.settingsSubheader)
                             .frame(maxWidth: .infinity, alignment: .leading)

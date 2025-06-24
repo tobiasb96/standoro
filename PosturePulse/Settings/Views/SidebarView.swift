@@ -9,7 +9,7 @@ struct SidebarView: View {
             VStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: 2) {
                     sidebarButton(item: .stats, label: "Stats", icon: "chart.bar.xaxis")
-                    Text("Core Features")
+                    Text("Features")
                         .font(.system(size: 12))
                         .foregroundColor(.settingsSubheader)
                         .padding(.top, 18)
