@@ -13,7 +13,6 @@ struct MenuBarLabelView: View {
     
     private var shouldShowCountdown: Bool {
         let shouldShow = userPrefs.showMenuBarCountdown
-        print("📊 MenuBarLabelView: shouldShowCountdown - showMenuBarCountdown: \(userPrefs.showMenuBarCountdown) -> \(shouldShow)")
         return shouldShow
     }
     

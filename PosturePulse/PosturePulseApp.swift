@@ -145,7 +145,7 @@ struct MainWindowView: View {
         Group {
             if !didOnboard {
                 // Show onboarding first
-                OnboardingView(userPrefs: userPrefs, calendarService: calendarService)
+                OnboardingView(userPrefs: userPrefs, calendarService: calendarService, scheduler: scheduler)
                     .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OnboardingCompleted"))) { _ in
                         didOnboard = true
                     }
@@ -167,6 +167,12 @@ struct MainWindowView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ResetOnboarding"))) { _ in
             didOnboard = false
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OpenPopup"))) { _ in
+            // Focus the app and ensure the menu bar popup is visible
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                NSApp.activate(ignoringOtherApps: true)
+            }
         }
     }
 }
@@ -230,7 +236,7 @@ struct AppContentView: View {
     
     private func showOnboardingWindow() {
         if onboardingWindowController == nil {
-            let onboardingView = OnboardingView(userPrefs: userPrefs, calendarService: calendarService)
+            let onboardingView = OnboardingView(userPrefs: userPrefs, calendarService: calendarService, scheduler: scheduler)
                 .modelContainer(for: UserPrefs.self, inMemory: true)
                 .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OnboardingCompleted"))) { _ in
                     onboardingWindowController?.close()

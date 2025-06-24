@@ -8,12 +8,14 @@ struct OnboardingView: View {
     @State private var currentPage = 0
     @StateObject private var motionService = MotionService()
     @ObservedObject var calendarService: CalendarService
+    @ObservedObject var scheduler: Scheduler
     @StateObject private var permissionManager: PermissionManager
     let userPrefs: UserPrefs
     
-    init(userPrefs: UserPrefs, calendarService: CalendarService) {
+    init(userPrefs: UserPrefs, calendarService: CalendarService, scheduler: Scheduler) {
         self.userPrefs = userPrefs
         self.calendarService = calendarService
+        self.scheduler = scheduler
         let motionService = MotionService()
         self._motionService = StateObject(wrappedValue: motionService)
         self._permissionManager = StateObject(wrappedValue: PermissionManager(motionService: motionService, calendarService: calendarService))
@@ -146,7 +148,7 @@ struct OnboardingView: View {
                         VStack(spacing: 0) {
                             StandAndFocusSettingsContentView(
                                 userPrefs: userPrefs,
-                                scheduler: Scheduler(), // Dummy scheduler for onboarding
+                                scheduler: scheduler,
                                 ctx: ctx,
                                 showExplanations: true
                             )
@@ -258,7 +260,7 @@ struct OnboardingView: View {
                             GeneralSettingsContentView(
                                 userPrefs: userPrefs,
                                 calendarService: calendarService,
-                                scheduler: Scheduler(), // Dummy scheduler for onboarding
+                                scheduler: scheduler,
                                 ctx: ctx,
                                 showExplanations: true
                             )
@@ -335,8 +337,8 @@ struct OnboardingView: View {
                         
                         Spacer()
                         
-                        Button("Get Started") {
-                            completeOnboarding()
+                        Button("Next") {
+                            currentPage = 5
                         }
                         .buttonStyle(.borderedProminent)
                         .controlSize(.large)
@@ -347,6 +349,207 @@ struct OnboardingView: View {
                     .padding(.bottom, 16)
                 }
                 .tag(4)
+                
+                // Page 5: How to Use PosturePulse
+                ScrollView {
+                    VStack(spacing: 40) {
+                        // Header
+                        VStack(spacing: 16) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 80))
+                                .foregroundColor(.green)
+                            
+                            Text("You're All Set!")
+                                .font(.system(size: 32, weight: .bold))
+                                .foregroundColor(.settingsHeader)
+                            
+                            Text("PosturePulse is now running in the background. Here's how to access it:")
+                                .font(.title3)
+                                .foregroundColor(.settingsSubheader)
+                                .multilineTextAlignment(.center)
+                        }
+                        .padding(.top, 40)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 32)
+                        
+                        // Menu Bar Explanation
+                        VStack(spacing: 24) {
+                            HStack(spacing: 20) {
+                                // Menu Bar Icon Visual
+                                VStack(spacing: 8) {
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(Color.blue.opacity(0.2))
+                                        .frame(width: 200, height: 40)
+                                        .overlay(
+                                            HStack {
+                                                Image(systemName: "figure.stand")
+                                                    .foregroundColor(.blue)
+                                                    .font(.system(size: 16))
+                                                Text("PosturePulse")
+                                                    .font(.system(size: 12))
+                                                    .foregroundColor(.blue)
+                                            }
+                                        )
+                                    
+                                    Text("Menu Bar Icon")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                
+                                VStack(alignment: .leading, spacing: 12) {
+                                    Text("Quick Access")
+                                        .font(.headline)
+                                        .foregroundColor(.settingsHeader)
+                                    
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        HStack(alignment: .top, spacing: 8) {
+                                            Image(systemName: "1.circle.fill")
+                                                .foregroundColor(.blue)
+                                                .font(.system(size: 14))
+                                            Text("Click the PosturePulse icon in your menu bar for quick access to settings and status")
+                                                .font(.system(size: 14))
+                                                .foregroundColor(.settingsSubheader)
+                                        }
+                                        
+                                        HStack(alignment: .top, spacing: 8) {
+                                            Image(systemName: "2.circle.fill")
+                                                .foregroundColor(.blue)
+                                                .font(.system(size: 14))
+                                            Text("The icon shows your current posture monitoring status")
+                                                .font(.system(size: 14))
+                                                .foregroundColor(.settingsSubheader)
+                                        }
+                                        
+                                        HStack(alignment: .top, spacing: 8) {
+                                            Image(systemName: "3.circle.fill")
+                                                .foregroundColor(.blue)
+                                                .font(.system(size: 14))
+                                            Text("Access settings, view statistics, and control features")
+                                                .font(.system(size: 14))
+                                                .foregroundColor(.settingsSubheader)
+                                        }
+                                        
+                                        HStack(alignment: .top, spacing: 8) {
+                                            Image(systemName: "4.circle.fill")
+                                                .foregroundColor(.blue)
+                                                .font(.system(size: 14))
+                                            Text("When focus sessions are enabled, a timer is displayed in the menu bar")
+                                                .font(.system(size: 14))
+                                                .foregroundColor(.settingsSubheader)
+                                        }
+                                    }
+                                }
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 32)
+                        }
+                        
+                        // Dock Access
+                        VStack(spacing: 16) {
+                            HStack(spacing: 20) {
+                                // Dock Icon Visual
+                                VStack(spacing: 8) {
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color.blue.opacity(0.2))
+                                        .frame(width: 60, height: 60)
+                                        .overlay(
+                                            Image(systemName: "figure.stand")
+                                                .foregroundColor(.blue)
+                                                .font(.system(size: 30))
+                                        )
+                                    
+                                    Text("Dock Icon")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                
+                                VStack(alignment: .leading, spacing: 12) {
+                                    Text("Full Settings Access")
+                                        .font(.headline)
+                                        .foregroundColor(.settingsHeader)
+                                    
+                                    Text("Click the PosturePulse icon in your dock to open the full settings window with all configuration options.")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.settingsSubheader)
+                                }
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 32)
+                        }
+                        
+                        // Try It Now Section
+                        VStack(spacing: 16) {
+                            Text("Try It Now")
+                                .font(.headline)
+                                .foregroundColor(.settingsHeader)
+                            
+                            Text("Ready to start your first session? Click below to begin your posture journey:")
+                                .font(.system(size: 14))
+                                .foregroundColor(.settingsSubheader)
+                            
+                            Button("Start First Session") {
+                                // Start the scheduler if not already running
+                                if !scheduler.isRunning {
+                                    scheduler.start()
+                                }
+                                NotificationCenter.default.post(name: NSNotification.Name("OpenPopup"), object: nil)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.large)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 32)
+                        
+                        // Final Instructions
+                        VStack(spacing: 12) {
+                            Text("What happens next?")
+                                .font(.headline)
+                                .foregroundColor(.settingsHeader)
+                            
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack(alignment: .top, spacing: 8) {
+                                    Image(systemName: "bell")
+                                        .foregroundColor(.orange)
+                                        .font(.system(size: 14))
+                                    Text("You'll receive gentle reminders based on your settings")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.settingsSubheader)
+                                }
+                                
+                                HStack(alignment: .top, spacing: 8) {
+                                    Image(systemName: "chart.bar")
+                                        .foregroundColor(.green)
+                                        .font(.system(size: 14))
+                                    Text("Track your progress and view statistics in the settings")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.settingsSubheader)
+                                }
+                                
+                                HStack(alignment: .top, spacing: 8) {
+                                    Image(systemName: "gear")
+                                        .foregroundColor(.blue)
+                                        .font(.system(size: 14))
+                                    Text("Adjust settings anytime through the menu bar or dock icon")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.settingsSubheader)
+                                }
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 32)
+                        }
+                        
+                        // Get Started Button
+                        Button("Get Started") {
+                            completeOnboarding()
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                        .padding(.horizontal, 32)
+                        .padding(.vertical, 16)
+                    }
+                    .padding(60)
+                }
+                .tag(5)
             }
             .tabViewStyle(.automatic)
         }
@@ -379,6 +582,6 @@ struct OnboardingView: View {
 }
 
 #Preview {
-    OnboardingView(userPrefs: UserPrefs(), calendarService: CalendarService())
+    OnboardingView(userPrefs: UserPrefs(), calendarService: CalendarService(), scheduler: Scheduler())
         .modelContainer(for: UserPrefs.self, inMemory: true)
 } 
