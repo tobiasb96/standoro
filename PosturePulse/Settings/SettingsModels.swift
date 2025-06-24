@@ -29,8 +29,9 @@ class UserPrefs {
     
     // Move challenges settings
     var moveChallengesEnabled: Bool?
+    var challengeAudioFeedbackEnabled: Bool?
     
-    init(maxSitMinutes: Int = 45, maxStandMinutes: Int = 15, calendarFilter: Bool = true, showMenuBarCountdown: Bool = false, postureMonitoringEnabled: Bool = false, postureNudgesEnabled: Bool = false, poorPostureThresholdSeconds: Int = 30, postureSensitivityDegrees: Double = 15.0, autoStartEnabled: Bool = true, pomodoroModeEnabled: Bool = false, focusIntervalMinutes: Int = 25, shortBreakMinutes: Int = 5, longBreakMinutes: Int = 15, intervalsBeforeLongBreak: Int = 4, moveChallengesEnabled: Bool = false) {
+    init(maxSitMinutes: Int = 45, maxStandMinutes: Int = 15, calendarFilter: Bool = true, showMenuBarCountdown: Bool = false, postureMonitoringEnabled: Bool = false, postureNudgesEnabled: Bool = false, poorPostureThresholdSeconds: Int = 30, postureSensitivityDegrees: Double = 15.0, autoStartEnabled: Bool = true, pomodoroModeEnabled: Bool = false, focusIntervalMinutes: Int = 25, shortBreakMinutes: Int = 5, longBreakMinutes: Int = 15, intervalsBeforeLongBreak: Int = 4, moveChallengesEnabled: Bool = false, challengeAudioFeedbackEnabled: Bool = true) {
         self.maxSitMinutes = maxSitMinutes
         self.maxStandMinutes = maxStandMinutes
         self.calendarFilter = calendarFilter
@@ -46,6 +47,7 @@ class UserPrefs {
         self.longBreakMinutes = longBreakMinutes
         self.intervalsBeforeLongBreak = intervalsBeforeLongBreak
         self.moveChallengesEnabled = moveChallengesEnabled
+        self.challengeAudioFeedbackEnabled = challengeAudioFeedbackEnabled
     }
     
     // Computed properties to provide default values
@@ -104,5 +106,10 @@ class UserPrefs {
     var moveChallengesEnabledValue: Bool {
         get { moveChallengesEnabled ?? false }
         set { moveChallengesEnabled = newValue }
+    }
+    
+    var challengeAudioFeedbackEnabledValue: Bool {
+        get { challengeAudioFeedbackEnabled ?? true }
+        set { challengeAudioFeedbackEnabled = newValue }
     }
 } 

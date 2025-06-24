@@ -14,6 +14,7 @@ struct MenuBarView: View {
 
     @State private var updateCounter = 0
     @State private var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    @StateObject private var audioService = AudioService()
     
     // Challenge state
     @State private var currentChallenge: Challenge?
@@ -492,13 +493,24 @@ struct MenuBarView: View {
         currentChallenge = challenges[randomIndex]
         showChallenge = true
         
+        // Play audio feedback if enabled
+        if userPrefs.challengeAudioFeedbackEnabledValue {
+            audioService.playChallengeSound()
+        }
+        
         // Auto-open the popup when a challenge appears
-        NotificationCenter.default.post(name: NSNotification.Name("OpenPopup"), object: nil)
+        // TODO: Currently it opens the settings, not the popup
+        // NotificationCenter.default.post(name: NSNotification.Name("OpenPopup"), object: nil)
     }
     
     private func completeChallenge() {
         showChallenge = false
         currentChallenge = nil
+        
+        // Play completion sound if audio feedback is enabled
+        if userPrefs.challengeAudioFeedbackEnabledValue {
+            audioService.playCompletionSound()
+        }
         
         statsService.recordChallengeAction(completed: true)
     }
@@ -506,6 +518,11 @@ struct MenuBarView: View {
     private func discardChallenge() {
         showChallenge = false
         currentChallenge = nil
+        
+        // Play discard sound if audio feedback is enabled
+        if userPrefs.challengeAudioFeedbackEnabledValue {
+            audioService.playDiscardSound()
+        }
         
         statsService.recordChallengeAction(completed: false)
     }
