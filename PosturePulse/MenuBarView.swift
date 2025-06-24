@@ -243,83 +243,63 @@ struct MenuBarView: View {
             .padding(.top, 8)
             
             // Main content area
-            if showChallenge, let challenge = currentChallenge {
-                // Show challenge card
-                VStack(spacing: 16) {
-                    Text("Time for a Challenge!")
-                        .font(.system(size: 18, weight: .semibold))
+            VStack {
+                Spacer(minLength: 20)
+
+                // Phase indicator with icon (no background)
+                HStack(spacing: 12) {
+                    Image(systemName: phaseIcon)
+                        .font(.system(size: 24, weight: .medium))
+                        .foregroundColor(phaseIconColor)
+                    
+                    Text(phaseText)
+                        .font(.system(size: 24, weight: .medium))
                         .foregroundColor(.white)
-                        .padding(.top, 8)
-                    
-                    PopupChallengeCard(
-                        challenge: challenge,
-                        onComplete: completeChallenge,
-                        onDiscard: discardChallenge
-                    )
-                    .padding(.horizontal, 16)
-                    
-                    Spacer()
                 }
-            } else {
-                // Show normal timer interface
-                VStack {
-                    Spacer(minLength: 20)
 
-                    // Phase indicator with icon (no background)
-                    HStack(spacing: 12) {
-                        Image(systemName: phaseIcon)
-                            .font(.system(size: 24, weight: .medium))
-                            .foregroundColor(phaseIconColor)
-                        
-                        Text(phaseText)
-                            .font(.system(size: 24, weight: .medium))
-                            .foregroundColor(.white)
-                    }
-
-                    // Session progress indicator for Pomodoro mode
-                    if let progressText = sessionProgressText {
-                        Text(progressText)
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(.white.opacity(0.8))
-                            .padding(.top, 2)
-                    }
-
-                    Text(formatTime(displayTime))
-                        .font(.system(size: 64, weight: .light, design: .rounded))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.5)
-                        .padding(.top, 8)
-
-                    HStack(spacing: 40) {
-                        Button(action: handleRestart) {
-                            Image(systemName: "arrow.clockwise")
-                                .font(.system(size: 20))
-                                .foregroundColor(scheduler.isRunning ? .white : .gray)
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(!scheduler.isRunning)
-                        .help("Restart timer")
-
-                        Button(action: handlePlayPause) {
-                            Image(systemName: playPauseIcon)
-                                .font(.system(size: 40, weight: .thin))
-                                .foregroundColor(scheduler.isRunning && scheduler.isPaused ? .gray : .white)
-                        }
-                        .buttonStyle(.plain)
-                        .help(playPauseTooltip)
-                        
-                        Button(action: handleSkipPhase) {
-                            Image(systemName: "forward.fill")
-                                .font(.system(size: 20))
-                                .foregroundColor(scheduler.isRunning ? .white : .gray)
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(!scheduler.isRunning)
-                        .help("Skip to next phase")
-                    }
-
-                    Spacer(minLength: 20)
+                // Session progress indicator for Pomodoro mode
+                if let progressText = sessionProgressText {
+                    Text(progressText)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.white.opacity(0.8))
+                        .padding(.top, 2)
                 }
+
+                Text(formatTime(displayTime))
+                    .font(.system(size: 64, weight: .light, design: .rounded))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                    .padding(.top, 8)
+
+                HStack(spacing: 40) {
+                    Button(action: handleRestart) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 20))
+                            .foregroundColor(scheduler.isRunning ? .white : .gray)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!scheduler.isRunning)
+                    .help("Restart timer")
+
+                    Button(action: handlePlayPause) {
+                        Image(systemName: playPauseIcon)
+                            .font(.system(size: 40, weight: .thin))
+                            .foregroundColor(scheduler.isRunning && scheduler.isPaused ? .gray : .white)
+                    }
+                    .buttonStyle(.plain)
+                    .help(playPauseTooltip)
+                    
+                    Button(action: handleSkipPhase) {
+                        Image(systemName: "forward.fill")
+                            .font(.system(size: 20))
+                            .foregroundColor(scheduler.isRunning ? .white : .gray)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!scheduler.isRunning)
+                    .help("Skip to next phase")
+                }
+
+                Spacer(minLength: 20)
             }
 
             // Bottom toolbar with smaller, monochrome buttons
@@ -351,9 +331,40 @@ struct MenuBarView: View {
             .padding(.vertical, 8)
             .background(Color.black.opacity(0.2))
         }
-        .frame(width: 300, height: showChallenge ? 400 : 300)
+        .frame(width: 300, height: 300)
         .background(phaseBackgroundColor)
         .foregroundColor(.white)
+        .overlay(
+            // Challenge overlay as a proper popup
+            Group {
+                if showChallenge, let challenge = currentChallenge {
+                    ZStack {
+                        // Semi-transparent backdrop
+                        Color.black.opacity(0.7)
+                        
+                        // Challenge content
+                        VStack(spacing: 16) {
+                            Text("Time for a Challenge!")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(.white)
+                                .padding(.top, 8)
+                            
+                            PopupChallengeCard(
+                                challenge: challenge,
+                                onComplete: completeChallenge,
+                                onDiscard: discardChallenge
+                            )
+                            .padding(.horizontal, 16)
+                            
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 20)
+                    }
+                }
+            }
+        )
         .onAppear(perform: setupInitialState)
         .onReceive(timer) { _ in
             // Force UI update every second when popup is open
