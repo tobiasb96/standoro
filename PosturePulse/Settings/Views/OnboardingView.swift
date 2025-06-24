@@ -369,7 +369,7 @@ struct OnboardingView: View {
                                 .multilineTextAlignment(.center)
                         }
                         .padding(.top, 40)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(maxWidth: .infinity, alignment: .center)
                         .padding(.horizontal, 32)
                         
                         // Menu Bar Explanation
@@ -377,21 +377,11 @@ struct OnboardingView: View {
                             HStack(spacing: 20) {
                                 // Menu Bar Icon Visual
                                 VStack(spacing: 8) {
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(Color.blue.opacity(0.2))
-                                        .frame(width: 200, height: 40)
-                                        .overlay(
-                                            HStack {
-                                                Image(systemName: "figure.stand")
-                                                    .foregroundColor(.blue)
-                                                    .font(.system(size: 16))
-                                                Text("PosturePulse")
-                                                    .font(.system(size: 12))
-                                                    .foregroundColor(.blue)
-                                            }
-                                        )
+                                    Image(systemName: "figure.stand")
+                                        .foregroundColor(.blue)
+                                        .font(.system(size: 30))
                                     
-                                    Text("Menu Bar Icon")
+                                    Text("Menu Icon")
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                 }
@@ -477,29 +467,6 @@ struct OnboardingView: View {
                             .padding(.horizontal, 32)
                         }
                         
-                        // Try It Now Section
-                        VStack(spacing: 16) {
-                            Text("Try It Now")
-                                .font(.headline)
-                                .foregroundColor(.settingsHeader)
-                            
-                            Text("Ready to start your first session? Click below to begin your posture journey:")
-                                .font(.system(size: 14))
-                                .foregroundColor(.settingsSubheader)
-                            
-                            Button("Start First Session") {
-                                // Start the scheduler if not already running
-                                if !scheduler.isRunning {
-                                    scheduler.start()
-                                }
-                                NotificationCenter.default.post(name: NSNotification.Name("OpenPopup"), object: nil)
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .controlSize(.large)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 32)
-                        
                         // Final Instructions
                         VStack(spacing: 12) {
                             Text("What happens next?")
@@ -507,6 +474,14 @@ struct OnboardingView: View {
                                 .foregroundColor(.settingsHeader)
                             
                             VStack(alignment: .leading, spacing: 8) {
+                                HStack(alignment: .top, spacing: 8) {
+                                    Image(systemName: "play.fill")
+                                        .foregroundColor(.blue)
+                                        .font(.system(size: 14))
+                                    Text("You can start a session by clicking the menu bar icon or the dock icon")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.settingsSubheader)
+                                }
                                 HStack(alignment: .top, spacing: 8) {
                                     Image(systemName: "bell")
                                         .foregroundColor(.orange)
@@ -534,7 +509,7 @@ struct OnboardingView: View {
                                         .foregroundColor(.settingsSubheader)
                                 }
                             }
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .frame(maxWidth: .infinity, alignment: .center)
                             .padding(.horizontal, 32)
                         }
                         

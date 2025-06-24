@@ -74,17 +74,9 @@ struct MenuBarLabelView: View {
             }
         }
         .onReceive(timer) { _ in
-            // Update counter for both scheduler and posture updates
             updateCounter += 1
         }
         .onChange(of: userPrefs.showMenuBarCountdown) { _, newValue in
-            print("📊 MenuBarLabelView: showMenuBarCountdown changed to: \(newValue)")
-            // Force UI update when showMenuBarCountdown changes
-            updateCounter += 1
-        }
-        .onChange(of: userPrefs.postureMonitoringEnabledValue) { _, newValue in
-            print("📊 MenuBarLabelView: postureMonitoringEnabledValue changed to: \(newValue)")
-            // Force UI update when posture monitoring changes
             updateCounter += 1
         }
     }

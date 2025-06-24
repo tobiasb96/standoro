@@ -137,11 +137,24 @@ class Scheduler: ObservableObject {
     }
     
     func setPomodoroMode(_ enabled: Bool) {
+        guard self.pomodoroModeEnabled != enabled else { return }
+        
         self.pomodoroModeEnabled = enabled
+        
         if enabled {
-            // Reset Pomodoro tracking when enabling
+            // When enabling Pomodoro, reset state for a clean start
             completedFocusSessions = 0
             currentSessionType = .focus
+            if isRunning && !isPaused {
+                // Also reset the timer to the new focus interval
+                nextFire = Date().addingTimeInterval(self.focusInterval)
+            }
+        } else {
+            // When disabling Pomodoro, reset to a standard sitting phase
+            currentPhase = .sitting
+            if isRunning && !isPaused {
+                nextFire = Date().addingTimeInterval(self.sittingInterval)
+            }
         }
     }
 
@@ -419,10 +432,6 @@ class Scheduler: ObservableObject {
         guard postureNudgesEnabled,
               let motionService = motionService,
               let notificationService = notificationService else { return }
-        
-        // Only nudge if AirPods are NOT available/connected/receiving data
-        let airpodsActive = motionService.isDeviceAvailable && motionService.isDeviceConnected && motionService.isDeviceReceivingData
-        if airpodsActive { return }
         
         // Only nudge during work periods (sitting/focus)
         let isWorkPeriod: Bool = {

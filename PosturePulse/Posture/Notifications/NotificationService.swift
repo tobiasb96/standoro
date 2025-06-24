@@ -27,9 +27,14 @@ class NotificationService: ObservableObject {
     private let backoffExponent: Double = 3.0 // Exponential factor (increased from 1.5 to 3.0)
     private let maxNotificationCount: Int = 5 // Max notifications before max backoff
     
+    // Timer for periodic backoff/good-posture checks. Nil when tracking is disabled.
+    private var backoffResetTimer: Timer?
+    
     init() {
         checkAuthorizationStatus()
-        startBackoffResetTimer()
+        // Do NOT start the timer automatically – it will be started only when
+        // posture tracking is explicitly enabled (e.g. when the user turns the
+        // "AirPods Posture Monitoring" feature on).
     }
     
     func setCalendarService(_ calendarService: CalendarService, shouldCheck: Bool) {
@@ -226,13 +231,21 @@ class NotificationService: ObservableObject {
     }
     
     private func startBackoffResetTimer() {
+        // Ensure any existing timer is cancelled
+        stopBackoffResetTimer()
+        
         // Check for backoff reset and sustained good posture every 30 seconds
-        Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
+        backoffResetTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 self?.checkBackoffReset()
                 self?.checkSustainedGoodPosture()
             }
         }
+    }
+    
+    private func stopBackoffResetTimer() {
+        backoffResetTimer?.invalidate()
+        backoffResetTimer = nil
     }
     
     private func checkAuthorizationStatus() {
@@ -278,5 +291,20 @@ class NotificationService: ObservableObject {
                 print("🔔 NotificationService - Sent random posture nudge")
             }
         }
+    }
+    
+    // MARK: - Posture Tracking Lifecycle
+    
+    /// Call this when posture monitoring is enabled to start internal timers.
+    func enablePostureTracking() {
+        guard backoffResetTimer == nil else { return }
+        startBackoffResetTimer()
+    }
+    
+    /// Call this when posture monitoring is disabled to stop internal timers and
+    /// clear related state so no extra CPU cycles are used.
+    func disablePostureTracking() {
+        stopBackoffResetTimer()
+        resetPostureBackoff()
     }
 } 

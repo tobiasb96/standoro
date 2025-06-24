@@ -94,12 +94,19 @@ struct KeepPostureSettingsContentView: View {
                                 isRequestingPermission = true
                                 Task {
                                     await requestPostureAccess()
+                                    // Start monitoring & enable posture tracking once authorized
+                                    if motionService.isAuthorized {
+                                        motionService.startMonitoring()
+                                        motionService.notificationService.enablePostureTracking()
+                                    }
                                     isRequestingPermission = false
                                 }
                             } else if newValue && motionService.isAuthorized {
                                 motionService.startMonitoring()
+                                motionService.notificationService.enablePostureTracking()
                             } else if !newValue {
                                 motionService.stopMonitoring()
+                                motionService.notificationService.disablePostureTracking()
                             }
                         }
                     ))
