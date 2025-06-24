@@ -23,7 +23,7 @@ struct GeneralSettingsContentView: View {
                 icon: "menubar.rectangle",
                 header: "Menu Bar Timer",
                 subheader: "Show the countdown timer in your menu bar for quick access to your current session status and remaining time.",
-                iconColor: .settingsAccentBlue,
+                iconColor: .settingsAccentGreen,
                 trailing: AnyView(
                     Toggle("", isOn: Binding(
                         get: { userPrefs.showMenuBarCountdown },
@@ -40,7 +40,7 @@ struct GeneralSettingsContentView: View {
                 icon: "play.circle",
                 header: "Auto-Start Sessions",
                 subheader: "Automatically continue to the next phase when a session ends. When disabled, you'll need to manually start each phase, giving you more control over your workflow.",
-                iconColor: .settingsAccentBlue,
+                iconColor: .settingsAccentGreen,
                 trailing: AnyView(
                     Toggle("", isOn: Binding(
                         get: { userPrefs.autoStartEnabledValue },
@@ -60,7 +60,7 @@ struct GeneralSettingsContentView: View {
                 icon: "calendar",
                 header: "Calendar Integration",
                 subheader: "Automatically mute alerts when you're in calendar meetings to avoid interruptions during important calls and presentations.",
-                iconColor: .settingsAccentBlue,
+                iconColor: .settingsAccentGreen,
                 showDivider: userPrefs.calendarFilter,
                 trailing: AnyView(
                     Toggle("", isOn: Binding(
@@ -92,7 +92,7 @@ struct GeneralSettingsContentView: View {
                                 }
                                 .buttonStyle(.borderless)
                                 .font(.caption)
-                                .foregroundColor(.settingsAccentBlue)
+                                .foregroundColor(.settingsAccentGreen)
                             }
                         }
                         if let errorMessage = calendarService.errorMessage {

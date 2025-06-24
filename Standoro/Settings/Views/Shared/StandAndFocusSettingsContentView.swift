@@ -21,7 +21,7 @@ struct StandAndFocusSettingsContentView: View {
                 icon: "timer",
                 header: "Work Mode",
                 subheader: "Choose between simple alternating phases or structured Pomodoro sessions to boost your productivity while staying active.",
-                iconColor: .settingsAccentBlue,
+                iconColor: .settingsAccentGreen,
             ) {
                 VStack(spacing: 12) {
                     HStack {
@@ -36,10 +36,10 @@ struct StandAndFocusSettingsContentView: View {
                                 Text("Simple Mode")
                                     .font(.system(size: 10, weight: .medium))
                             }
-                            .foregroundColor(userPrefs.pomodoroModeEnabledValue ? .settingsSubheader : .settingsAccentBlue)
+                            .foregroundColor(userPrefs.pomodoroModeEnabledValue ? .settingsSubheader : .settingsAccentGreen)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 5)
-                            .background(userPrefs.pomodoroModeEnabledValue ? Color.clear : Color.settingsAccentBlue.opacity(0.2))
+                            .background(userPrefs.pomodoroModeEnabledValue ? Color.clear : Color.settingsAccentGreen.opacity(0.2))
                             .cornerRadius(8)
                         }
                         .buttonStyle(PlainButtonStyle())
@@ -55,10 +55,10 @@ struct StandAndFocusSettingsContentView: View {
                                 Text("Pomodoro Mode")
                                     .font(.system(size: 10, weight: .medium))
                             }
-                            .foregroundColor(userPrefs.pomodoroModeEnabledValue ? .settingsAccentBlue : .settingsSubheader)
+                            .foregroundColor(userPrefs.pomodoroModeEnabledValue ? .settingsAccentGreen : .settingsSubheader)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 5)
-                            .background(userPrefs.pomodoroModeEnabledValue ? Color.settingsAccentBlue.opacity(0.2) : Color.clear)
+                            .background(userPrefs.pomodoroModeEnabledValue ? Color.settingsAccentGreen.opacity(0.2) : Color.clear)
                             .cornerRadius(8)
                         }
                         .buttonStyle(PlainButtonStyle())
@@ -95,7 +95,7 @@ struct StandAndFocusSettingsContentView: View {
                 icon: "brain.head.profile",
                 header: "Focus Interval",
                 subheader: "How long should each focused work session be? Longer sessions allow for deeper work, while shorter sessions help maintain concentration.",
-                iconColor: .settingsAccentBlue,
+                iconColor: .settingsAccentGreen,
                 showDivider: true
             ) {
                 IntervalSliderView(
@@ -120,7 +120,7 @@ struct StandAndFocusSettingsContentView: View {
                 icon: "cup.and.saucer",
                 header: "Short Break",
                 subheader: "How long should short breaks be? Use this time to stand up, stretch, or take a quick walk to refresh your mind and body.",
-                iconColor: .settingsAccentBlue,
+                iconColor: .settingsAccentGreen,
                 showDivider: true
             ) {
                 IntervalSliderView(
@@ -145,7 +145,7 @@ struct StandAndFocusSettingsContentView: View {
                 icon: "bed.double",
                 header: "Long Break",
                 subheader: "How long should long breaks be? Longer breaks allow for more substantial rest and recovery between focus sessions.",
-                iconColor: .settingsAccentBlue,
+                iconColor: .settingsAccentGreen,
                 showDivider: true
             ) {
                 IntervalSliderView(
@@ -170,7 +170,7 @@ struct StandAndFocusSettingsContentView: View {
                 icon: "number.circle",
                 header: "Long Break Frequency",
                 subheader: "How many focus sessions before a long break? This helps maintain a sustainable rhythm of work and rest.",
-                iconColor: .settingsAccentBlue,
+                iconColor: .settingsAccentGreen,
                 showDivider: true
             ) {
                 IntervalSliderView(
@@ -200,7 +200,7 @@ struct StandAndFocusSettingsContentView: View {
                 icon: "figure.stand",
                 header: "Standing Goal",
                 subheader: "How long would you like to stand for each session? Standing helps improve circulation, reduce back pain, and increase energy levels.",
-                iconColor: .settingsAccentBlue,
+                iconColor: .settingsAccentGreen,
                 showDivider: true
             ) {
                 IntervalSliderView(
@@ -225,7 +225,7 @@ struct StandAndFocusSettingsContentView: View {
                 icon: "chair",
                 header: "Maximum Sitting Time",
                 subheader: "How long can you sit before needing a break? Regular movement helps prevent stiffness and maintains your energy throughout the day.",
-                iconColor: .settingsAccentBlue,
+                iconColor: .settingsAccentGreen,
                 showDivider: true
             ) {
                 IntervalSliderView(

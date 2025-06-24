@@ -26,7 +26,7 @@ enum ChallengeCategory: String, CaseIterable {
     var color: Color {
         switch self {
         case .balance:
-            return .blue
+            return .settingsAccentGreen
         case .strength:
             return .orange
         case .flexibility:

@@ -31,7 +31,7 @@ struct OnboardingView: View {
                         VStack(spacing: 24) {
                             Image(systemName: "figure.stand.line.dotted.figure.stand")
                                 .font(.system(size: 90))
-                                .foregroundColor(.settingsAccentBlue)
+                                .foregroundColor(.settingsAccentGreen)
                             
                             Text("Welcome to Standoro")
                                 .font(.system(size: 28, weight: .semibold))
@@ -56,7 +56,7 @@ struct OnboardingView: View {
                                 HStack(alignment: .top, spacing: 12) {
                                     Image(systemName: "figure.stand")
                                         .font(.system(size: 20))
-                                        .foregroundColor(.settingsAccentBlue)
+                                        .foregroundColor(.settingsAccentGreen)
                                         .frame(width: 24, alignment: .leading)
                                     
                                     VStack(alignment: .leading, spacing: 2) {
@@ -73,7 +73,7 @@ struct OnboardingView: View {
                                 HStack(alignment: .top, spacing: 12) {
                                     Image(systemName: "figure.walk")
                                         .font(.system(size: 20))
-                                        .foregroundColor(.settingsAccentBlue)
+                                        .foregroundColor(.settingsAccentGreen)
                                         .frame(width: 24, alignment: .leading)
                                     
                                     VStack(alignment: .leading, spacing: 2) {
@@ -90,7 +90,7 @@ struct OnboardingView: View {
                                 HStack(alignment: .top, spacing: 12) {
                                     Image(systemName: "airpods")
                                         .font(.system(size: 20))
-                                        .foregroundColor(.settingsAccentBlue)
+                                        .foregroundColor(.settingsAccentGreen)
                                         .frame(width: 24, alignment: .leading)
                                     
                                     VStack(alignment: .leading, spacing: 2) {
@@ -378,7 +378,7 @@ struct OnboardingView: View {
                                 // Menu Bar Icon Visual
                                 VStack(spacing: 8) {
                                     Image(systemName: "figure.stand")
-                                        .foregroundColor(.blue)
+                                        .foregroundColor(.settingsAccentGreen)
                                         .font(.system(size: 30))
                                     
                                     Text("Menu Icon")
@@ -394,7 +394,7 @@ struct OnboardingView: View {
                                     VStack(alignment: .leading, spacing: 8) {
                                         HStack(alignment: .top, spacing: 8) {
                                             Image(systemName: "1.circle.fill")
-                                                .foregroundColor(.blue)
+                                                .foregroundColor(.settingsAccentGreen)
                                                 .font(.system(size: 14))
                                             Text("Click the Standoro icon in your menu bar for quick access to settings and status")
                                                 .font(.system(size: 14))
@@ -403,7 +403,7 @@ struct OnboardingView: View {
                                         
                                         HStack(alignment: .top, spacing: 8) {
                                             Image(systemName: "2.circle.fill")
-                                                .foregroundColor(.blue)
+                                                .foregroundColor(.settingsAccentGreen)
                                                 .font(.system(size: 14))
                                             Text("The icon shows your current posture monitoring status")
                                                 .font(.system(size: 14))
@@ -412,7 +412,7 @@ struct OnboardingView: View {
                                         
                                         HStack(alignment: .top, spacing: 8) {
                                             Image(systemName: "3.circle.fill")
-                                                .foregroundColor(.blue)
+                                                .foregroundColor(.settingsAccentGreen)
                                                 .font(.system(size: 14))
                                             Text("Access settings, view statistics, and control features")
                                                 .font(.system(size: 14))
@@ -421,7 +421,7 @@ struct OnboardingView: View {
                                         
                                         HStack(alignment: .top, spacing: 8) {
                                             Image(systemName: "4.circle.fill")
-                                                .foregroundColor(.blue)
+                                                .foregroundColor(.settingsAccentGreen)
                                                 .font(.system(size: 14))
                                             Text("When focus sessions are enabled, a timer is displayed in the menu bar")
                                                 .font(.system(size: 14))
@@ -440,11 +440,11 @@ struct OnboardingView: View {
                                 // Dock Icon Visual
                                 VStack(spacing: 8) {
                                     RoundedRectangle(cornerRadius: 12)
-                                        .fill(Color.blue.opacity(0.2))
+                                        .fill(Color.settingsAccentGreen.opacity(0.2))
                                         .frame(width: 60, height: 60)
                                         .overlay(
                                             Image(systemName: "figure.stand")
-                                                .foregroundColor(.blue)
+                                                .foregroundColor(.settingsAccentGreen)
                                                 .font(.system(size: 30))
                                         )
                                     
@@ -476,7 +476,7 @@ struct OnboardingView: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 HStack(alignment: .top, spacing: 8) {
                                     Image(systemName: "play.fill")
-                                        .foregroundColor(.blue)
+                                        .foregroundColor(.settingsAccentGreen)
                                         .font(.system(size: 14))
                                     Text("You can start a session by clicking the menu bar icon or the dock icon")
                                         .font(.system(size: 14))
@@ -502,7 +502,7 @@ struct OnboardingView: View {
                                 
                                 HStack(alignment: .top, spacing: 8) {
                                     Image(systemName: "gear")
-                                        .foregroundColor(.blue)
+                                        .foregroundColor(.settingsAccentGreen)
                                         .font(.system(size: 14))
                                     Text("Adjust settings anytime through the menu bar or dock icon")
                                         .font(.system(size: 14))

@@ -57,7 +57,7 @@ struct SettingsCard<Content: View>: View {
 
 struct SettingsCard_Previews: PreviewProvider {
     static var previews: some View {
-        SettingsCard(icon: "gearshape", header: "General", subheader: "General app preferences.", iconColor: .blue) {
+        SettingsCard(icon: "gearshape", header: "General", subheader: "General app preferences.", iconColor: .settingsAccentGreen) {
             Toggle("Example Toggle", isOn: .constant(true))
         }
         .padding()

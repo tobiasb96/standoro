@@ -40,7 +40,7 @@ struct KeepPostureSettingsContentView: View {
                 icon: "bell.badge",
                 header: "Posture Nudges",
                 subheader: "Receive gentle reminders to maintain good posture throughout your day. These nudges are especially useful when you don't have AirPods connected for real-time monitoring.",
-                iconColor: .settingsAccentBlue,
+                iconColor: .settingsAccentGreen,
                 trailing: AnyView(
                     Toggle("", isOn: Binding(
                         get: { userPrefs.postureNudgesEnabledValue },
@@ -80,9 +80,9 @@ struct KeepPostureSettingsContentView: View {
             // AirPods Posture Monitoring Card
             SettingsCard(
                 icon: "airpods",
-                header: "AirPods Posture Monitoring",
-                subheader: "Monitor your sitting posture using AirPods' motion sensors to detect when you're slouching or leaning too far. This provides real-time feedback to help you maintain better posture.",
-                iconColor: .settingsAccentBlue,
+                header: "Posture Monitoring",
+                subheader: "Monitor your sitting posture using AirPods' motion sensors to detect slouching and provide gentle reminders.",
+                iconColor: .settingsAccentGreen,
                 showDivider: userPrefs.postureMonitoringEnabledValue,
                 trailing: AnyView(
                     Toggle("", isOn: Binding(
@@ -120,7 +120,7 @@ struct KeepPostureSettingsContentView: View {
                             Image(systemName: motionService.isAuthorized ? "checkmark.circle.fill" : 
                                   isRequestingPermission ? "clock.fill" : "exclamationmark.triangle.fill")
                                 .foregroundColor(motionService.isAuthorized ? .green : 
-                                               isRequestingPermission ? .blue : .orange)
+                                               isRequestingPermission ? .settingsAccentGreen : .orange)
                                 .font(.caption)
                             
                             Text(motionService.isAuthorized ? "System permission granted" : 
@@ -140,7 +140,7 @@ struct KeepPostureSettingsContentView: View {
                                 }
                                 .buttonStyle(.borderless)
                                 .font(.caption)
-                                .foregroundColor(.blue)
+                                .foregroundColor(.settingsAccentGreen)
                                 .disabled(isRequestingPermission)
                             }
                         }
@@ -182,7 +182,7 @@ struct KeepPostureSettingsContentView: View {
                                           motionService.currentPosture == .calibrating ? "clock.fill" : "questionmark.circle.fill")
                                         .foregroundColor(motionService.currentPosture == .good ? .green : 
                                                        motionService.currentPosture == .poor ? .orange :
-                                                       motionService.currentPosture == .calibrating ? .blue : .gray)
+                                                       motionService.currentPosture == .calibrating ? .settingsAccentGreen : .gray)
                                         .font(.caption)
                                     
                                     Text(motionService.currentPosture == .good ? "Good posture" :
@@ -198,7 +198,7 @@ struct KeepPostureSettingsContentView: View {
                                     }
                                     .buttonStyle(.borderless)
                                     .font(.caption)
-                                    .foregroundColor(.blue)
+                                    .foregroundColor(.settingsAccentGreen)
                                 }
                                 .padding(.bottom, 8)
                             }
@@ -285,7 +285,7 @@ struct KeepPostureSettingsContentView: View {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
                                 Image(systemName: "info.circle")
-                                    .foregroundColor(.settingsAccentBlue)
+                                    .foregroundColor(.settingsAccentGreen)
                                     .font(.caption)
                                 
                                 Text("Live Motion Data")
@@ -341,8 +341,8 @@ struct KeepPostureSettingsContentView: View {
                                 SettingsCard(
                                     icon: "slider.horizontal.3",
                                     header: "Sensitivity",
-                                    subheader: "Adjust how sensitive the posture detection is. Higher sensitivity detects smaller posture changes.",
-                                    iconColor: .settingsAccentBlue
+                                    subheader: "Adjust how sensitive the posture detection should be.",
+                                    iconColor: .settingsAccentGreen
                                 ) {
                                     HStack(spacing: 12) {
                                         SensitivityButton(
@@ -385,7 +385,7 @@ struct KeepPostureSettingsContentView: View {
                                     icon: "timer",
                                     header: "Poor Posture Threshold",
                                     subheader: "How long to maintain poor posture before receiving a notification.",
-                                    iconColor: .settingsAccentBlue
+                                    iconColor: .settingsAccentGreen
                                 ) {
                                     IntervalSliderView(
                                         label: "Threshold",

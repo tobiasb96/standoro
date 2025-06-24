@@ -38,7 +38,7 @@ struct IntervalSliderView: View {
                     try? context.save()
                 }
             ), in: Double(range.lowerBound)...Double(range.upperBound), step: 1)
-            .tint(Color(red: 0.2, green: 0.4, blue: 0.9))
+            .tint(Color(red: 0.4, green: 0.6, blue: 0.4))
             .controlSize(.regular)
             Spacer(minLength: 20)
             Text("\(value) \(unit)")
@@ -46,7 +46,7 @@ struct IntervalSliderView: View {
                 .foregroundColor(.white)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
-                .background(Color(red: 0.2, green: 0.4, blue: 0.9))
+                .background(Color(red: 0.4, green: 0.6, blue: 0.4))
                 .cornerRadius(8)
             }
             
@@ -62,7 +62,7 @@ struct IntervalSliderView: View {
                     .foregroundColor(value == option ? .white : .secondary)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
-                    .background(value == option ? Color(red: 0.2, green: 0.4, blue: 0.9) : Color(red: 0.16, green: 0.16, blue: 0.18))
+                    .background(value == option ? Color(red: 0.4, green: 0.6, blue: 0.4) : Color(red: 0.16, green: 0.16, blue: 0.18))
                     .cornerRadius(6)
                     .font(.caption)
                     .fontWeight(.medium)

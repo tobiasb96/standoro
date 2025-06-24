@@ -51,11 +51,11 @@ struct SidebarView: View {
             HStack(spacing: 12) {
                 Image(systemName: icon)
                     .font(.system(size: 16, weight: .regular))
-                    .foregroundColor(item == selection ? .settingsAccentBlue : .settingsText)
+                    .foregroundColor(item == selection ? .settingsAccentGreen : .settingsText)
                     .frame(width: 22, alignment: .center)
                 Text(label)
                     .font(.system(size: 14))
-                    .foregroundColor(item == selection ? .settingsAccentBlue : .settingsText)
+                    .foregroundColor(item == selection ? .settingsAccentGreen : .settingsText)
                     .frame(alignment: .leading)
                 Spacer()
             }

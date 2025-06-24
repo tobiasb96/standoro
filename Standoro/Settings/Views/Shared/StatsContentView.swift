@@ -56,7 +56,7 @@ struct StatsContentView: View {
                     value: "\(totalFocusMinutes)",
                     subtitle: "Total focused time",
                     icon: "brain.head.profile",
-                    color: .blue
+                    color: .settingsAccentGreen
                 )
                 
                 // Break Compliance Card
@@ -110,7 +110,7 @@ struct StatsContentView: View {
                 }
                 .frame(height: 200)
                 .chartForegroundStyleScale([
-                    "Sitting": Color.blue,
+                    "Sitting": Color.settingsAccentGreen,
                     "Standing": Color.green
                 ])
             }

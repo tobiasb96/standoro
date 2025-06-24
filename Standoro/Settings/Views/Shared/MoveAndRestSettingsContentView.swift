@@ -11,9 +11,9 @@ struct MoveAndRestSettingsContentView: View {
             // Move Challenges Card
             SettingsCard(
                 icon: "figure.walk",
-                header: "Move Challenges",
-                subheader: "Take regular movement breaks with guided exercises and stretches. These challenges help you stay active and prevent stiffness during long work sessions.",
-                iconColor: .settingsAccentBlue,
+                header: "Movement Challenges",
+                subheader: "Take regular movement breaks with guided exercises and stretches to keep your body active and prevent stiffness.",
+                iconColor: .settingsAccentGreen,
                 trailing: AnyView(
                     Toggle("", isOn: Binding(
                         get: { userPrefs.moveChallengesEnabledValue },
@@ -57,9 +57,9 @@ struct MoveAndRestSettingsContentView: View {
             if userPrefs.moveChallengesEnabledValue {
                 SettingsCard(
                     icon: "speaker.wave.2",
-                    header: "Audio Feedback",
-                    subheader: "Play sounds when challenges appear and when you complete or discard them. This provides immediate audio feedback to enhance the challenge experience.",
-                    iconColor: .settingsAccentBlue,
+                    header: "Challenge Audio Feedback",
+                    subheader: "Enable sound effects for challenge events to provide audio feedback when challenges appear or are completed.",
+                    iconColor: .settingsAccentGreen,
                     trailing: AnyView(
                         Toggle("", isOn: Binding(
                             get: { userPrefs.challengeAudioFeedbackEnabledValue },

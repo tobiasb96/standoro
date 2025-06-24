@@ -8,7 +8,7 @@ struct CustomToggleStyle: ToggleStyle {
             ZStack {
                 RoundedRectangle(cornerRadius: 12)
                     .frame(width: 36, height: 20)
-                    .foregroundColor(configuration.isOn ? Color.settingsAccentBlue : Color(red: 60/255, green: 62/255, blue: 66/255))
+                    .foregroundColor(configuration.isOn ? Color.settingsAccentGreen : Color(red: 60/255, green: 62/255, blue: 66/255))
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(Color.settingsCardBorder, lineWidth: 1)

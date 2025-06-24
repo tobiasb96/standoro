@@ -105,22 +105,22 @@ struct MenuBarView: View {
         if !scheduler.isRunning {
             // When not running, show based on current settings
             if userPrefs.pomodoroModeEnabledValue {
-                return Color.blue.opacity(0.3) // Focus session color
+                return Color.settingsAccentGreen.opacity(0.3) // Focus session color - muted green
             } else {
                 return Color.gray.opacity(0.3)
             }
         } else if scheduler.isPaused {
-            return Color.gray.opacity(0.3)
+            return Color.gray.opacity(0.3) // Gray for pause
         } else {
             if scheduler.pomodoroModeEnabled {
                 switch scheduler.currentSessionType {
                 case .focus:
-                    return Color.blue.opacity(0.3)
+                    return Color.settingsAccentGreen.opacity(0.3) // Green for focus
                 case .shortBreak, .longBreak:
-                    return Color.green.opacity(0.3)
+                    return Color(red: 0.7, green: 0.3, blue: 0.3).opacity(0.3) // Muted red for breaks
                 }
             } else {
-                return Color.blue.opacity(0.3)
+                return Color.settingsAccentGreen.opacity(0.3) // Green for focus
             }
         }
     }
@@ -129,22 +129,22 @@ struct MenuBarView: View {
         if !scheduler.isRunning {
             // When not running, show based on current settings
             if userPrefs.pomodoroModeEnabledValue {
-                return Color.blue // Focus session color
+                return Color.settingsAccentGreen // Focus session color - muted green
             } else {
                 return Color.gray
             }
         } else if scheduler.isPaused {
-            return Color.gray
+            return Color.gray // Gray for pause
         } else {
             if scheduler.pomodoroModeEnabled {
                 switch scheduler.currentSessionType {
                 case .focus:
-                    return Color.blue
+                    return Color.settingsAccentGreen // Green for focus
                 case .shortBreak, .longBreak:
-                    return Color.green
+                    return Color(red: 0.7, green: 0.3, blue: 0.3) // Muted red for breaks
                 }
             } else {
-                return Color.blue
+                return Color.settingsAccentGreen // Green for focus
             }
         }
     }
@@ -209,15 +209,15 @@ struct MenuBarView: View {
         if scheduler.isRunning {
             switch scheduler.currentSessionType {
             case .focus:
-                return .blue.opacity(0.2)
+                return Color.settingsAccentGreen.opacity(0.2) // Green for focus
             case .shortBreak:
-                return .green.opacity(0.2)
+                return Color(red: 0.7, green: 0.3, blue: 0.3).opacity(0.2) // Muted red for breaks
             case .longBreak:
-                return .green.opacity(0.2)
+                return Color(red: 0.7, green: 0.3, blue: 0.3).opacity(0.2) // Muted red for breaks
             }
         } else {
             // When not running, show focus session color
-            return .blue.opacity(0.2)
+            return Color.settingsAccentGreen.opacity(0.2) // Green for focus
         }
     }
 
@@ -689,7 +689,7 @@ struct MenuBarView: View {
         case .poor:
             return .red
         case .calibrating:
-            return .blue
+            return .settingsAccentGreen
         case .unknown, .noData:
             return .clear
         }

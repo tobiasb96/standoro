@@ -9,5 +9,5 @@ extension Color {
     static let settingsSubheader = Color(red: 140/255, green: 145/255, blue: 155/255)
     static let settingsCard = Color(red: 40/255, green: 42/255, blue: 46/255)
     static let settingsCardBorder = Color(red: 60/255, green: 62/255, blue: 66/255)
-    static let settingsAccentBlue = Color(red: 0.22, green: 0.47, blue: 0.98)
+    static let settingsAccentGreen = Color(red: 0.4, green: 0.6, blue: 0.4)
 } 

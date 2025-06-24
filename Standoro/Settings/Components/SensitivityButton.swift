@@ -19,7 +19,7 @@ struct SensitivityButton: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background(isSelected ? Color(red: 0.2, green: 0.4, blue: 0.9) : Color(red: 0.16, green: 0.16, blue: 0.18))
+            .background(isSelected ? Color(red: 0.4, green: 0.6, blue: 0.4) : Color(red: 0.16, green: 0.16, blue: 0.18))
             .cornerRadius(8)
         }
         .buttonStyle(.plain)
