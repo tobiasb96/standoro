@@ -104,6 +104,9 @@ class PostureAnalyzer: BaseAnalyzer, ObservableObject {
                 poorPostureStartTime = nil
                 currentPosture = .good
                 print("🔔 PostureAnalyzer - ✅ Posture improved")
+                
+                // Start tracking sustained good posture
+                NotificationCenter.default.post(name: .postureImproved, object: nil)
             } else if currentPosture == .calibrating {
                 currentPosture = .good
                 print("🔔 PostureAnalyzer - ✅ Calibration complete")
@@ -115,6 +118,9 @@ class PostureAnalyzer: BaseAnalyzer, ObservableObject {
                 poorPostureStartTime = Date()
                 currentPosture = .poor
                 print("🔔 PostureAnalyzer - ⚠️ Poor posture detected")
+                
+                // Stop tracking good posture when it becomes poor
+                NotificationCenter.default.post(name: .postureBecamePoor, object: nil)
             } else if currentPosture == .poor {
                 checkPoorPostureDuration()
             }
@@ -144,4 +150,6 @@ class PostureAnalyzer: BaseAnalyzer, ObservableObject {
 // MARK: - Notification Names
 extension Notification.Name {
     static let postureThresholdReached = Notification.Name("postureThresholdReached")
+    static let postureImproved = Notification.Name("postureImproved")
+    static let postureBecamePoor = Notification.Name("postureBecamePoor")
 } 

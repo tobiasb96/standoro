@@ -212,6 +212,20 @@ class MotionService: ObservableObject {
             }
             .store(in: &cancellables)
         
+        // Listen for posture improvement to start tracking sustained good posture
+        NotificationCenter.default.publisher(for: .postureImproved)
+            .sink { [weak self] _ in
+                self?.notificationService.startTrackingGoodPosture()
+            }
+            .store(in: &cancellables)
+        
+        // Listen for posture becoming poor to stop tracking
+        NotificationCenter.default.publisher(for: .postureBecamePoor)
+            .sink { [weak self] _ in
+                self?.notificationService.stopTrackingGoodPosture()
+            }
+            .store(in: &cancellables)
+        
         // Listen for standup detected
         NotificationCenter.default.publisher(for: .standupDetected)
             .sink { [weak self] _ in
