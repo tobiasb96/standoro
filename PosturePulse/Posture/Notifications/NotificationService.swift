@@ -8,6 +8,7 @@ class NotificationService: ObservableObject {
     @Published var isAuthorized = false
     private var calendarService: CalendarService?
     private var shouldCheckCalendar: Bool = false
+    private var statsService: StatsService?
     
     // Exponential backoff state for posture notifications
     private var postureNotificationCount: Int = 0
@@ -23,7 +24,7 @@ class NotificationService: ObservableObject {
     
     // Backoff configuration
     private let baseBackoffTime: TimeInterval = 60 // Start with 1 minute
-    private let backoffExponent: Double = 1.5 // Exponential factor
+    private let backoffExponent: Double = 3.0 // Exponential factor (increased from 1.5 to 3.0)
     private let maxNotificationCount: Int = 5 // Max notifications before max backoff
     
     init() {
@@ -34,6 +35,10 @@ class NotificationService: ObservableObject {
     func setCalendarService(_ calendarService: CalendarService, shouldCheck: Bool) {
         self.calendarService = calendarService
         self.shouldCheckCalendar = shouldCheck
+    }
+    
+    func setStatsService(_ statsService: StatsService) {
+        self.statsService = statsService
     }
     
     func requestAuthorization() async -> Bool {
@@ -80,6 +85,7 @@ class NotificationService: ObservableObject {
     
     private func calculateBackoffTime() -> TimeInterval {
         // Calculate exponential backoff: base * (exponent ^ count)
+        // With exponent = 3.0: 60s → 180s → 540s → 1620s → 4860s (capped at 300s max)
         let exponentialBackoff = baseBackoffTime * pow(backoffExponent, Double(postureNotificationCount))
         
         // Cap at maximum backoff time
@@ -132,6 +138,8 @@ class NotificationService: ObservableObject {
                 Task { @MainActor in
                     self.postureNotificationCount += 1
                     self.lastPostureNotificationTime = Date()
+                    // Only track stats when notification is actually sent
+                    self.statsService?.recordPostureAlert()
                     print("🔔 NotificationService - Sent posture notification #\(self.postureNotificationCount)")
                 }
             }

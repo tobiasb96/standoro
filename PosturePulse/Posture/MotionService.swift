@@ -160,6 +160,8 @@ class MotionService: ObservableObject {
     
     func setStatsService(_ service: StatsService) {
         self.statsService = service
+        // Pass stats service to notification service so it can track stats when notifications are actually sent
+        notificationService.setStatsService(service)
     }
     
     // MARK: - Private Methods
@@ -216,7 +218,7 @@ class MotionService: ObservableObject {
         NotificationCenter.default.publisher(for: .postureThresholdReached)
             .sink { [weak self] _ in
                 self?.notificationService.sendPostureNotification()
-                self?.statsService?.recordPostureAlert()
+                // Stats are now tracked by NotificationService only when notifications are actually sent
             }
             .store(in: &cancellables)
         
