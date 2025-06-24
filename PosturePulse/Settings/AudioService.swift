@@ -1,37 +1,46 @@
 import Foundation
 import AVFoundation
+import Combine
+import AppKit
+
+enum SoundType {
+    case challengeAppear
+    case challengeComplete
+    case challengeDiscard
+    case workoutComplete
+    case notification
+    case success
+    case error
+}
 
 /// Handles audio feedback for the app
 @MainActor
 class AudioService: ObservableObject {
-    private var audioPlayer: AVAudioPlayer?
+    
+    private let soundMap: [SoundType: String] = [
+        .challengeAppear: "Glass",
+        .challengeComplete: "Ping",
+        .challengeDiscard: "Basso",
+        .workoutComplete: "Ping",
+        .notification: "Glass",
+        .success: "Ping",
+        .error: "Basso"
+    ]
     
     init() {
-        setupAudioSession()
+        // No need for AVAudioSession setup on macOS
+        // System sounds work directly without session configuration
     }
     
-    private func setupAudioSession() {
-        do {
-            try AVAudioSession.sharedInstance().setCategory(.ambient, mode: .default)
-            try AVAudioSession.sharedInstance().setActive(true)
-        } catch {
-            print("🔊 AudioService - Failed to setup audio session: \(error)")
+    func playSound(_ type: SoundType) {
+        guard let soundName = soundMap[type] else { 
+            print("🔊 AudioService - No sound found for type: \(type)")
+            return 
+        }        
+        if let sound = NSSound(named: soundName) {
+            sound.play()
+        } else {
+            AudioServicesPlaySystemSound(1000)
         }
-    }
-    
-    /// Play a challenge notification sound
-    func playChallengeSound() {
-        // Use a distinctive system sound for challenge notifications
-        AudioServicesPlaySystemSound(1008) // System notification sound with a different tone
-    }
-    
-    /// Play a completion sound when challenge is completed
-    func playCompletionSound() {
-        AudioServicesPlaySystemSound(1322) // Success sound
-    }
-    
-    /// Play a discard sound when challenge is discarded
-    func playDiscardSound() {
-        AudioServicesPlaySystemSound(1006) // Cancel sound
     }
 } 

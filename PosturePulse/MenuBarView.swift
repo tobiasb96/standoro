@@ -495,7 +495,10 @@ struct MenuBarView: View {
         
         // Play audio feedback if enabled
         if userPrefs.challengeAudioFeedbackEnabledValue {
-            audioService.playChallengeSound()
+            print("🔊 MenuBarView - Playing challenge appear sound")
+            audioService.playSound(.challengeAppear)
+        } else {
+            print("🔊 MenuBarView - Audio feedback disabled, not playing sound")
         }
         
         // Auto-open the popup when a challenge appears
@@ -509,7 +512,10 @@ struct MenuBarView: View {
         
         // Play completion sound if audio feedback is enabled
         if userPrefs.challengeAudioFeedbackEnabledValue {
-            audioService.playCompletionSound()
+            print("🔊 MenuBarView - Playing challenge complete sound")
+            audioService.playSound(.challengeComplete)
+        } else {
+            print("🔊 MenuBarView - Audio feedback disabled, not playing completion sound")
         }
         
         statsService.recordChallengeAction(completed: true)
@@ -521,7 +527,10 @@ struct MenuBarView: View {
         
         // Play discard sound if audio feedback is enabled
         if userPrefs.challengeAudioFeedbackEnabledValue {
-            audioService.playDiscardSound()
+            print("🔊 MenuBarView - Playing challenge discard sound")
+            audioService.playSound(.challengeDiscard)
+        } else {
+            print("🔊 MenuBarView - Audio feedback disabled, not playing discard sound")
         }
         
         statsService.recordChallengeAction(completed: false)

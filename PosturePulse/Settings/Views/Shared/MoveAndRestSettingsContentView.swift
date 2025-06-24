@@ -53,42 +53,44 @@ struct MoveAndRestSettingsContentView: View {
                 }
             }
             
-            // Audio Feedback Card
-            SettingsCard(
-                icon: "speaker.wave.2",
-                header: "Audio Feedback",
-                subheader: "Play sounds when challenges appear and when you complete or discard them. This provides immediate audio feedback to enhance the challenge experience.",
-                iconColor: .settingsAccentBlue,
-                trailing: AnyView(
-                    Toggle("", isOn: Binding(
-                        get: { userPrefs.challengeAudioFeedbackEnabledValue },
-                        set: { 
-                            userPrefs.challengeAudioFeedbackEnabledValue = $0
-                            try? ctx.save()
+            // Audio Feedback Card - only show when Move Challenges are enabled
+            if userPrefs.moveChallengesEnabledValue {
+                SettingsCard(
+                    icon: "speaker.wave.2",
+                    header: "Audio Feedback",
+                    subheader: "Play sounds when challenges appear and when you complete or discard them. This provides immediate audio feedback to enhance the challenge experience.",
+                    iconColor: .settingsAccentBlue,
+                    trailing: AnyView(
+                        Toggle("", isOn: Binding(
+                            get: { userPrefs.challengeAudioFeedbackEnabledValue },
+                            set: { 
+                                userPrefs.challengeAudioFeedbackEnabledValue = $0
+                                try? ctx.save()
+                            }
+                        ))
+                        .toggleStyle(CustomToggleStyle())
+                    )
+                ) {
+                    if userPrefs.challengeAudioFeedbackEnabledValue && showExplanations {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Audio feedback includes:")
+                                .font(.subheadline)
+                                .foregroundColor(.settingsHeader)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("• Notification sound when a challenge appears")
+                                    .font(.caption)
+                                    .foregroundColor(.settingsSubheader)
+                                Text("• Success sound when you complete a challenge")
+                                    .font(.caption)
+                                    .foregroundColor(.settingsSubheader)
+                                Text("• Cancel sound when you discard a challenge")
+                                    .font(.caption)
+                                    .foregroundColor(.settingsSubheader)
+                            }
                         }
-                    ))
-                    .toggleStyle(CustomToggleStyle())
-                )
-            ) {
-                if userPrefs.challengeAudioFeedbackEnabledValue && showExplanations {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Audio feedback includes:")
-                            .font(.subheadline)
-                            .foregroundColor(.settingsHeader)
-                        
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("• Notification sound when a challenge appears")
-                                .font(.caption)
-                                .foregroundColor(.settingsSubheader)
-                            Text("• Success sound when you complete a challenge")
-                                .font(.caption)
-                                .foregroundColor(.settingsSubheader)
-                            Text("• Cancel sound when you discard a challenge")
-                                .font(.caption)
-                                .foregroundColor(.settingsSubheader)
-                        }
+                        .padding(.top, 8)
                     }
-                    .padding(.top, 8)
                 }
             }
         }
