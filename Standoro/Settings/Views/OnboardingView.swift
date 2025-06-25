@@ -6,18 +6,17 @@ struct OnboardingView: View {
     @Environment(\.modelContext) private var ctx
     @AppStorage("didOnboard") private var didOnboard = false
     @State private var currentPage = 0
-    @StateObject private var motionService = MotionService()
+    @ObservedObject var motionService: MotionService
     @ObservedObject var calendarService: CalendarService
     @ObservedObject var scheduler: Scheduler
     @StateObject private var permissionManager: PermissionManager
     let userPrefs: UserPrefs
     
-    init(userPrefs: UserPrefs, calendarService: CalendarService, scheduler: Scheduler) {
+    init(userPrefs: UserPrefs, motionService: MotionService, calendarService: CalendarService, scheduler: Scheduler) {
         self.userPrefs = userPrefs
+        self.motionService = motionService
         self.calendarService = calendarService
         self.scheduler = scheduler
-        let motionService = MotionService()
-        self._motionService = StateObject(wrappedValue: motionService)
         self._permissionManager = StateObject(wrappedValue: PermissionManager(motionService: motionService, calendarService: calendarService))
     }
     
@@ -461,6 +460,6 @@ struct OnboardingView: View {
 }
 
 #Preview {
-    OnboardingView(userPrefs: UserPrefs(), calendarService: CalendarService(), scheduler: Scheduler())
+    OnboardingView(userPrefs: UserPrefs(), motionService: MotionService(), calendarService: CalendarService(), scheduler: Scheduler())
         .modelContainer(for: UserPrefs.self, inMemory: true)
 } 

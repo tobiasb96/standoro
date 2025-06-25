@@ -122,6 +122,9 @@ struct SettingsView: View {
                 motionService.setPostureThresholds(pitch: userPrefs.postureSensitivityDegreesValue, roll: userPrefs.postureSensitivityDegreesValue, duration: TimeInterval(userPrefs.poorPostureThresholdSecondsValue))
             }
             
+            // Set model context for stats service
+            statsService.setModelContext(ctx)
+            
             // Always enable high frequency mode when settings are opened
             // This allows users to see real-time angles even if posture monitoring is disabled
             if motionService.isAuthorized {

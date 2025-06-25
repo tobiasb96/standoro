@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import SwiftData
 
 enum AggregationPeriod: String, CaseIterable {
     case day = "Day"
@@ -15,10 +16,10 @@ enum AggregationPeriod: String, CaseIterable {
     }
 }
 
-/// Lean statistics collector. Stores counters in-memory for now. Persistence will be added later.
+/// Statistics collector that persists data using SwiftData ActivityRecord model
 @MainActor
 final class StatsService: ObservableObject {
-    // MARK: - Published summary values
+    // MARK: - Published summary values (computed from persistent data)
     @Published var focusSeconds: TimeInterval = 0
     @Published var sittingSeconds: TimeInterval = 0
     @Published var standingSeconds: TimeInterval = 0
@@ -31,57 +32,178 @@ final class StatsService: ObservableObject {
     // MARK: - Aggregation
     @Published var selectedPeriod: AggregationPeriod = .day
     
+    // MARK: - Model Context
+    private var modelContext: ModelContext?
+    
+    // MARK: - Initialization
+    func setModelContext(_ context: ModelContext) {
+        self.modelContext = context
+        refreshStats()
+    }
+    
     // MARK: - Recording helpers
     func recordPhase(type: SessionType,
                      phase: PosturePhase?,
                      seconds: TimeInterval,
                      skipped: Bool) {
-        print("📊 StatsService: recordPhase called - type: \(type), seconds: \(Int(seconds)), skipped: \(skipped)")
         
-        switch type {
-        case .focus:
-            focusSeconds += seconds
-            print("📊 StatsService: Added \(Int(seconds))s to focus (total: \(Int(focusSeconds/60))m)")
-            if let phase {
-                switch phase {
-                case .sitting:
-                    sittingSeconds += seconds
-                    print("📊 StatsService: Added \(Int(seconds))s to sitting (total: \(Int(sittingSeconds/60))m)")
-                case .standing:
-                    standingSeconds += seconds
-                    print("📊 StatsService: Added \(Int(seconds))s to standing (total: \(Int(standingSeconds/60))m)")
-                }
-            }
-        case .shortBreak, .longBreak:
-            if skipped {
-                breaksSkipped += 1
-                print("📊 StatsService: Break skipped (total skipped: \(breaksSkipped))")
-            } else {
-                breaksTaken += 1
-                print("📊 StatsService: Break taken (total taken: \(breaksTaken))")
-            }
+        // Create and save ActivityRecord
+        guard let ctx = modelContext else {
+            print("📊 StatsService: No model context available")
+            return
         }
+        
+        let record = ActivityRecord(
+            kind: type.rawValue,
+            secondsElapsed: seconds,
+            postureGoal: phase?.rawValue ?? "ignored",
+            skipped: skipped
+        )
+        
+        ctx.insert(record)
+        
+        do {
+            try ctx.save()
+            print("📊 StatsService: Saved activity record - type: \(type.rawValue), seconds: \(Int(seconds)), skipped: \(skipped)")
+        } catch {
+            print("📊 StatsService: Failed to save activity record: \(error)")
+        }
+        
+        // Update published values
+        refreshStats()
     }
 
     func recordChallengeAction(completed: Bool) {
-        if completed {
-            challengesCompleted += 1
-            print("📊 StatsService: Challenge completed (total: \(challengesCompleted))")
-        } else {
-            challengesDiscarded += 1
-            print("📊 StatsService: Challenge discarded (total: \(challengesDiscarded))")
+        guard let ctx = modelContext else {
+            print("📊 StatsService: No model context available")
+            return
         }
+        
+        let record = ActivityRecord(
+            kind: "challenge",
+            secondsElapsed: 0,
+            postureGoal: "ignored",
+            skipped: !completed,
+            challengeCompleted: completed
+        )
+        
+        ctx.insert(record)
+        
+        do {
+            try ctx.save()
+            print("📊 StatsService: Saved challenge record - completed: \(completed)")
+        } catch {
+            print("📊 StatsService: Failed to save challenge record: \(error)")
+        }
+        
+        // Update published values
+        refreshStats()
     }
 
     func recordPostureAlert() {
-        postureAlerts += 1
-        print("📊 StatsService: Posture alert recorded (total: \(postureAlerts))")
+        guard let ctx = modelContext else {
+            print("📊 StatsService: No model context available")
+            return
+        }
+        
+        let record = ActivityRecord(
+            kind: "posture_alert",
+            secondsElapsed: 0,
+            postureGoal: "ignored",
+            postureReminders: 1
+        )
+        
+        ctx.insert(record)
+        
+        do {
+            try ctx.save()
+            print("📊 StatsService: Saved posture alert record")
+        } catch {
+            print("📊 StatsService: Failed to save posture alert record: \(error)")
+        }
+        
+        // Update published values
+        refreshStats()
     }
     
     // MARK: - Refresh and aggregation
     func refreshStats() {
-        // For now, just trigger UI update
-        // In Phase 4, this would load from SwiftData based on selectedPeriod
+        guard let ctx = modelContext else {
+            print("📊 StatsService: No model context available for refresh")
+            return
+        }
+        
+        // Calculate date range based on selected period
+        let calendar = Calendar.current
+        let now = Date()
+        let startOfPeriod: Date
+        
+        switch selectedPeriod {
+        case .day:
+            startOfPeriod = calendar.startOfDay(for: now)
+        case .week:
+            startOfPeriod = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? now
+        case .month:
+            startOfPeriod = calendar.dateInterval(of: .month, for: now)?.start ?? now
+        }
+        
+        // Fetch records for the selected period
+        let descriptor = FetchDescriptor<ActivityRecord>(
+            predicate: #Predicate<ActivityRecord> { record in
+                record.timestamp >= startOfPeriod
+            },
+            sortBy: [SortDescriptor(\.timestamp)]
+        )
+        
+        do {
+            let records = try ctx.fetch(descriptor)
+            calculateStats(from: records)
+            print("📊 StatsService: Refreshed stats from \(records.count) records for period: \(selectedPeriod.rawValue)")
+        } catch {
+            print("📊 StatsService: Failed to fetch records: \(error)")
+        }
+    }
+    
+    private func calculateStats(from records: [ActivityRecord]) {
+        // Reset counters
+        focusSeconds = 0
+        sittingSeconds = 0
+        standingSeconds = 0
+        breaksTaken = 0
+        breaksSkipped = 0
+        challengesCompleted = 0
+        challengesDiscarded = 0
+        postureAlerts = 0
+        
+        for record in records {
+            switch record.kind {
+            case "focus":
+                focusSeconds += record.secondsElapsed
+                if record.postureGoal == "sitting" {
+                    sittingSeconds += record.secondsElapsed
+                } else if record.postureGoal == "standing" {
+                    standingSeconds += record.secondsElapsed
+                }
+            case "shortBreak", "longBreak":
+                if record.skipped {
+                    breaksSkipped += 1
+                } else {
+                    breaksTaken += 1
+                }
+            case "challenge":
+                if record.challengeCompleted {
+                    challengesCompleted += 1
+                } else {
+                    challengesDiscarded += 1
+                }
+            case "posture_alert":
+                postureAlerts += record.postureReminders
+            default:
+                break
+            }
+        }
+        
+        // Trigger UI update
         objectWillChange.send()
     }
     

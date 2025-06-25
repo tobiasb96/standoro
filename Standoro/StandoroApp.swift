@@ -30,6 +30,9 @@ class UserPrefsManager: ObservableObject {
 
 @main
 struct StandoroApp: App {
+    // Create a single, persistent model container for the entire app
+    let modelContainer: ModelContainer
+    
     @StateObject private var scheduler = Scheduler()
     @StateObject private var motionService = MotionService()
     @StateObject private var calendarService = CalendarService()
@@ -41,6 +44,18 @@ struct StandoroApp: App {
     @State private var showMainWindow = false
 
     init() {
+        // Create a persistent model container that includes all our models
+        do {
+            let schema = Schema([
+                UserPrefs.self,
+                ActivityRecord.self
+            ])
+            let modelConfiguration = ModelConfiguration(schema: schema)
+            self.modelContainer = try ModelContainer(for: schema, configurations: [modelConfiguration])
+        } catch {
+            fatalError("Could not create ModelContainer: \(error)")
+        }
+        
         requestNotifAuth()
     }
 
@@ -54,7 +69,7 @@ struct StandoroApp: App {
                 calendarService: calendarService,
                 statsService: statsService
             )
-            .modelContainer(for: UserPrefs.self, inMemory: true)
+            .modelContainer(modelContainer)
             .onAppear {
                 // Wire stats service after view is installed
                 scheduler.setStatsService(statsService)
@@ -70,13 +85,14 @@ struct StandoroApp: App {
         // Menu bar extra for quick access
         MenuBarExtra {
             AppContentView(
+                modelContainer: modelContainer,
                 userPrefsManager: userPrefsManager,
                 scheduler: scheduler, 
                 motionService: motionService, 
                 calendarService: calendarService, 
                 statsService: statsService
             )
-            .modelContainer(for: UserPrefs.self, inMemory: true)
+            .modelContainer(modelContainer)
             .onAppear {
                 // Wire stats service after view is installed
                 scheduler.setStatsService(statsService)
@@ -88,7 +104,7 @@ struct StandoroApp: App {
                 scheduler: scheduler, 
                 motionService: motionService
             )
-            .modelContainer(for: UserPrefs.self, inMemory: true)
+            .modelContainer(modelContainer)
         }
         .menuBarExtraStyle(.window)
     }
@@ -145,7 +161,7 @@ struct MainWindowView: View {
         Group {
             if !didOnboard {
                 // Show onboarding first
-                OnboardingView(userPrefs: userPrefs, calendarService: calendarService, scheduler: scheduler)
+                OnboardingView(userPrefs: userPrefs, motionService: motionService, calendarService: calendarService, scheduler: scheduler)
                     .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OnboardingCompleted"))) { _ in
                         didOnboard = true
                     }
@@ -164,6 +180,12 @@ struct MainWindowView: View {
         .onAppear {
             // Initialize userPrefsManager with the model context
             userPrefsManager.initialize(with: ctx)
+            // Set model context for stats service
+            statsService.setModelContext(ctx)
+            // Set UserPrefs for scheduler state persistence
+            if let prefs = userPrefsManager.userPrefs {
+                scheduler.setUserPrefs(prefs)
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ResetOnboarding"))) { _ in
             didOnboard = false
@@ -174,6 +196,10 @@ struct MainWindowView: View {
                 NSApp.activate(ignoringOtherApps: true)
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("SaveUserPrefs"))) { _ in
+            // Save UserPrefs when scheduler state changes
+            try? ctx.save()
+        }
     }
 }
 
@@ -183,6 +209,7 @@ struct AppContentView: View {
     @State private var onboardingWindowController: NSWindowController?
     @State private var settingsSelection: SettingsView.SidebarItem? = .standAndFocus
     @AppStorage("didOnboard") private var didOnboard = false
+    let modelContainer: ModelContainer
     let userPrefsManager: UserPrefsManager
     let scheduler: Scheduler
     let motionService: MotionService
@@ -210,6 +237,12 @@ struct AppContentView: View {
         .onAppear {
             // Initialize userPrefsManager with the model context
             userPrefsManager.initialize(with: ctx)
+            // Set model context for stats service
+            statsService.setModelContext(ctx)
+            // Set UserPrefs for scheduler state persistence
+            if let prefs = userPrefsManager.userPrefs {
+                scheduler.setUserPrefs(prefs)
+            }
             
             if !didOnboard {
                 showOnboardingWindow()
@@ -224,6 +257,10 @@ struct AppContentView: View {
                 NSApp.activate(ignoringOtherApps: true)
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("SaveUserPrefs"))) { _ in
+            // Save UserPrefs when scheduler state changes
+            try? ctx.save()
+        }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OpenStats"))) { _ in
             settingsSelection = .stats
             // Close existing settings window if open to force recreation with new selection
@@ -236,8 +273,8 @@ struct AppContentView: View {
     
     private func showOnboardingWindow() {
         if onboardingWindowController == nil {
-            let onboardingView = OnboardingView(userPrefs: userPrefs, calendarService: calendarService, scheduler: scheduler)
-                .modelContainer(for: UserPrefs.self, inMemory: true)
+            let onboardingView = OnboardingView(userPrefs: userPrefs, motionService: motionService, calendarService: calendarService, scheduler: scheduler)
+                .modelContainer(modelContainer)
                 .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OnboardingCompleted"))) { _ in
                     onboardingWindowController?.close()
                     onboardingWindowController = nil
@@ -271,7 +308,7 @@ struct AppContentView: View {
                 statsService: statsService,
                 initialSelection: settingsSelection
             )
-            .modelContainer(for: UserPrefs.self, inMemory: true)
+            .modelContainer(modelContainer)
             
             let window = NSWindow(
                 contentRect: NSRect(x: 0, y: 0, width: 1000, height: 687),

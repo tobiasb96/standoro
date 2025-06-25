@@ -24,7 +24,17 @@ class UserPrefs {
     var moveChallengesEnabled: Bool?
     var challengeAudioFeedbackEnabled: Bool?
     
-    init(maxSitMinutes: Int = 45, maxStandMinutes: Int = 15, calendarFilter: Bool = true, showMenuBarCountdown: Bool = false, postureMonitoringEnabled: Bool = false, postureNudgesEnabled: Bool = false, poorPostureThresholdSeconds: Int = 30, postureSensitivityDegrees: Double = 15.0, autoStartEnabled: Bool = true, pomodoroModeEnabled: Bool = false, focusIntervalMinutes: Int = 25, shortBreakMinutes: Int = 5, longBreakMinutes: Int = 15, intervalsBeforeLongBreak: Int = 4, moveChallengesEnabled: Bool = false, challengeAudioFeedbackEnabled: Bool = true) {
+    // Scheduler state persistence
+    var completedFocusSessions: Int?
+    var currentPhase: String?
+    var currentSessionType: String?
+    var isRunning: Bool?
+    var isPaused: Bool?
+    var nextFireTime: Date?
+    var remainingTimeWhenPaused: TimeInterval?
+    var phaseStartTime: Date?
+    
+    init(maxSitMinutes: Int = 45, maxStandMinutes: Int = 15, calendarFilter: Bool = true, showMenuBarCountdown: Bool = false, postureMonitoringEnabled: Bool = false, postureNudgesEnabled: Bool = false, poorPostureThresholdSeconds: Int = 30, postureSensitivityDegrees: Double = 15.0, autoStartEnabled: Bool = true, pomodoroModeEnabled: Bool = false, focusIntervalMinutes: Int = 25, shortBreakMinutes: Int = 5, longBreakMinutes: Int = 15, intervalsBeforeLongBreak: Int = 4, moveChallengesEnabled: Bool = false, challengeAudioFeedbackEnabled: Bool = true, completedFocusSessions: Int = 0, currentPhase: String = "sitting", currentSessionType: String = "focus", isRunning: Bool = false, isPaused: Bool = false, nextFireTime: Date = Date(), remainingTimeWhenPaused: TimeInterval = 0, phaseStartTime: Date? = nil) {
         self.maxSitMinutes = maxSitMinutes
         self.maxStandMinutes = maxStandMinutes
         self.calendarFilter = calendarFilter
@@ -41,6 +51,14 @@ class UserPrefs {
         self.intervalsBeforeLongBreak = intervalsBeforeLongBreak
         self.moveChallengesEnabled = moveChallengesEnabled
         self.challengeAudioFeedbackEnabled = challengeAudioFeedbackEnabled
+        self.completedFocusSessions = completedFocusSessions
+        self.currentPhase = currentPhase
+        self.currentSessionType = currentSessionType
+        self.isRunning = isRunning
+        self.isPaused = isPaused
+        self.nextFireTime = nextFireTime
+        self.remainingTimeWhenPaused = remainingTimeWhenPaused
+        self.phaseStartTime = phaseStartTime
     }
     
     // Computed properties to provide default values
@@ -104,5 +122,46 @@ class UserPrefs {
     var challengeAudioFeedbackEnabledValue: Bool {
         get { challengeAudioFeedbackEnabled ?? true }
         set { challengeAudioFeedbackEnabled = newValue }
+    }
+    
+    // Scheduler state computed properties
+    var completedFocusSessionsValue: Int {
+        get { completedFocusSessions ?? 0 }
+        set { completedFocusSessions = newValue }
+    }
+    
+    var currentPhaseValue: String {
+        get { currentPhase ?? "sitting" }
+        set { currentPhase = newValue }
+    }
+    
+    var currentSessionTypeValue: String {
+        get { currentSessionType ?? "focus" }
+        set { currentSessionType = newValue }
+    }
+    
+    var isRunningValue: Bool {
+        get { isRunning ?? false }
+        set { isRunning = newValue }
+    }
+    
+    var isPausedValue: Bool {
+        get { isPaused ?? false }
+        set { isPaused = newValue }
+    }
+    
+    var nextFireTimeValue: Date {
+        get { nextFireTime ?? Date() }
+        set { nextFireTime = newValue }
+    }
+    
+    var remainingTimeWhenPausedValue: TimeInterval {
+        get { remainingTimeWhenPaused ?? 0 }
+        set { remainingTimeWhenPaused = newValue }
+    }
+    
+    var phaseStartTimeValue: Date? {
+        get { phaseStartTime }
+        set { phaseStartTime = newValue }
     }
 } 

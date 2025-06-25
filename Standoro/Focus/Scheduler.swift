@@ -2,15 +2,15 @@ import Foundation
 import UserNotifications
 import Combine
 
-enum PosturePhase {
-    case sitting
-    case standing
+enum PosturePhase: String {
+    case sitting = "sitting"
+    case standing = "standing"
 }
 
-enum SessionType {
-    case focus
-    case shortBreak
-    case longBreak
+enum SessionType: String {
+    case focus = "focus"
+    case shortBreak = "shortBreak"
+    case longBreak = "longBreak"
 }
 
 @MainActor
@@ -51,6 +51,7 @@ class Scheduler: ObservableObject {
     // Stats recording
     private var statsService: StatsService?
     private var phaseStartTime: Date?
+    private var userPrefs: UserPrefs?
     
     var sittingInterval: TimeInterval {
         get { _sittingInterval }
@@ -156,6 +157,8 @@ class Scheduler: ObservableObject {
                 nextFire = Date().addingTimeInterval(self.sittingInterval)
             }
         }
+        
+        saveState()
     }
 
     func start(sittingInterval: TimeInterval? = nil, standingInterval: TimeInterval? = nil) {
@@ -198,6 +201,8 @@ class Scheduler: ObservableObject {
         phaseStartTime = Date()
         isRunning = true
         isPaused = false
+        
+        saveState()
     }
     
     func stop() {
@@ -214,6 +219,8 @@ class Scheduler: ObservableObject {
         pauseStartTime = nil
         remainingTimeWhenPaused = 0
         phaseStartTime = nil
+        
+        saveState()
     }
     
     func pause() {
@@ -222,6 +229,8 @@ class Scheduler: ObservableObject {
         pauseStartTime = Date()
         remainingTimeWhenPaused = nextFire.timeIntervalSinceNow
         isPaused = true
+        
+        saveState()
     }
     
     func resume() {
@@ -232,6 +241,8 @@ class Scheduler: ObservableObject {
         isPaused = false
         pauseStartTime = nil
         remainingTimeWhenPaused = 0
+        
+        saveState()
     }
 
     func restart() {
@@ -396,6 +407,8 @@ class Scheduler: ObservableObject {
                 nextFire = Date().addingTimeInterval(self.sittingInterval)
             }
         }
+        
+        saveState()
     }
     
     // Public setters for integration
@@ -463,6 +476,22 @@ class Scheduler: ObservableObject {
         self.statsService = service
     }
     
+    func setUserPrefs(_ prefs: UserPrefs) {
+        self.userPrefs = prefs
+        // Restore state from UserPrefs on first setup
+        restoreStateFromUserPrefs(prefs)
+    }
+    
+    private func saveState() {
+        guard let prefs = userPrefs else { return }
+        saveStateToUserPrefs(prefs)
+        
+        // Trigger a save to the model context
+        // Note: We can't directly access the model context from here,
+        // so we'll use a notification to trigger a save from the view layer
+        NotificationCenter.default.post(name: NSNotification.Name("SaveUserPrefs"), object: nil)
+    }
+    
     private func recordCurrentPhase(skipped: Bool) {
         guard let statsService, let start = phaseStartTime else { 
             print("📊 Stats: Cannot record - statsService: \(statsService != nil), phaseStartTime: \(phaseStartTime != nil)")
@@ -483,5 +512,49 @@ class Scheduler: ObservableObject {
                                      skipped: skipped)
         }
         print("📊 Stats: After recording - focus: \(Int(statsService.focusSeconds/60))m, sitting: \(Int(statsService.sittingSeconds/60))m, standing: \(Int(statsService.standingSeconds/60))m, breaks: \(statsService.breaksTaken)/\(statsService.breaksSkipped)")
+    }
+    
+    // MARK: - State Persistence
+    
+    func saveStateToUserPrefs(_ userPrefs: UserPrefs) {
+        // Save current state to UserPrefs for persistence
+        userPrefs.completedFocusSessions = completedFocusSessions
+        userPrefs.currentPhase = currentPhase.rawValue
+        userPrefs.currentSessionType = currentSessionType.rawValue
+        userPrefs.isRunning = isRunning
+        userPrefs.isPaused = isPaused
+        userPrefs.nextFireTime = nextFire
+        userPrefs.remainingTimeWhenPaused = remainingTimeWhenPaused
+        userPrefs.phaseStartTime = phaseStartTime
+    }
+    
+    func restoreStateFromUserPrefs(_ userPrefs: UserPrefs) {
+        // Restore state from UserPrefs
+        completedFocusSessions = userPrefs.completedFocusSessionsValue
+        currentPhase = PosturePhase(rawValue: userPrefs.currentPhaseValue) ?? .sitting
+        currentSessionType = SessionType(rawValue: userPrefs.currentSessionTypeValue) ?? .focus
+        isRunning = userPrefs.isRunningValue
+        isPaused = userPrefs.isPausedValue
+        nextFire = userPrefs.nextFireTimeValue
+        remainingTimeWhenPaused = userPrefs.remainingTimeWhenPausedValue
+        phaseStartTime = userPrefs.phaseStartTimeValue
+        
+        // Restart timer if it was running
+        if isRunning && !isPaused {
+            startTimer()
+        }
+    }
+    
+    private func startTimer() {
+        // Cancel existing timer
+        timer?.invalidate()
+        timer = nil
+        
+        // Create new timer
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.checkTimer()
+            }
+        }
     }
 } 
