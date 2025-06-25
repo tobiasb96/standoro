@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SidebarView: View {
     @Binding var selection: SettingsView.SidebarItem?
+    @State private var hoveredItem: SettingsView.SidebarItem?
     
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -61,9 +62,22 @@ struct SidebarView: View {
             }
             .padding(.vertical, 7)
             .padding(.horizontal, 8)
-            .background(item == selection ? Color.settingsCard.opacity(0.7) : Color.clear)
+            .background(
+                Group {
+                    if item == selection {
+                        Color.settingsCard.opacity(0.7)
+                    } else if hoveredItem == item {
+                        Color.settingsCard.opacity(0.3)
+                    } else {
+                        Color.clear
+                    }
+                }
+            )
             .cornerRadius(8)
         }
         .buttonStyle(PlainButtonStyle())
+        .onHover { isHovered in
+            hoveredItem = isHovered ? item : nil
+        }
     }
 } 
