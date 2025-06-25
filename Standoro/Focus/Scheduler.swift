@@ -419,6 +419,7 @@ class Scheduler: ObservableObject {
     
     func setPostureNudgesEnabled(_ enabled: Bool) {
         postureNudgesEnabled = enabled
+        print("🔔 Scheduler - Posture nudges enabled: \(enabled)")
         if enabled {
             startPostureNudgeTimer()
         } else {
@@ -429,6 +430,7 @@ class Scheduler: ObservableObject {
     private func startPostureNudgeTimer() {
         stopPostureNudgeTimer()
         scheduleNextPostureNudge()
+        print("🔔 Scheduler - Started posture nudge timer, next nudge in \(Int(nextPostureNudgeInterval/60)) minutes")
         postureNudgeTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 self?.checkPostureNudge()
@@ -444,7 +446,10 @@ class Scheduler: ObservableObject {
     private func checkPostureNudge() {
         guard postureNudgesEnabled,
               let motionService = motionService,
-              let notificationService = notificationService else { return }
+              let notificationService = notificationService else { 
+            print("🔔 Scheduler - Posture nudge check failed: enabled=\(postureNudgesEnabled), motionService=\(motionService != nil), notificationService=\(notificationService != nil)")
+            return 
+        }
         
         // Only nudge during work periods (sitting/focus)
         let isWorkPeriod: Bool = {
@@ -454,22 +459,30 @@ class Scheduler: ObservableObject {
                 return currentPhase == .sitting
             }
         }()
-        if !isWorkPeriod { return }
+        if !isWorkPeriod { 
+            print("🔔 Scheduler - Not in work period, skipping nudge (pomodoro=\(pomodoroModeEnabled), session=\(currentSessionType), phase=\(currentPhase))")
+            return 
+        }
         
         // Check if it's time for the next nudge
         let now = Date()
         if let last = lastPostureNudgeTime, now.timeIntervalSince(last) < nextPostureNudgeInterval {
+            let remaining = nextPostureNudgeInterval - now.timeIntervalSince(last)
+            print("🔔 Scheduler - Not time for nudge yet, \(Int(remaining/60)) minutes remaining")
             return
         }
         
         // Send nudge
+        print("🔔 Scheduler - Sending posture nudge!")
         notificationService.sendRandomPostureNudge()
         lastPostureNudgeTime = now
         scheduleNextPostureNudge()
+        print("🔔 Scheduler - Next nudge scheduled in \(Int(nextPostureNudgeInterval/60)) minutes")
     }
     
     private func scheduleNextPostureNudge() {
         nextPostureNudgeInterval = Double.random(in: minNudgeInterval...maxNudgeInterval)
+        print("🔔 Scheduler - Scheduled next nudge in \(Int(nextPostureNudgeInterval/60)) minutes (random between \(Int(minNudgeInterval/60))-\(Int(maxNudgeInterval/60)) minutes)")
     }
     
     func setStatsService(_ service: StatsService) {

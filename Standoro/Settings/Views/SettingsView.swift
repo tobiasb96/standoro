@@ -79,6 +79,7 @@ struct SettingsView: View {
                             KeepPostureSettingsContentView(
                                 userPrefs: userPrefs,
                                 motionService: motionService,
+                                scheduler: scheduler,
                                 ctx: ctx,
                                 showExplanations: false
                             )
@@ -116,6 +117,12 @@ struct SettingsView: View {
             
             // Set up auto-start setting
             scheduler.setAutoStartEnabled(userPrefs.autoStartEnabledValue)
+            
+            // Connect scheduler to motion service for posture nudges
+            scheduler.setMotionService(motionService)
+            
+            // Set up posture nudges if enabled
+            scheduler.setPostureNudgesEnabled(userPrefs.postureNudgesEnabledValue)
             
             // Set up motion service
             if userPrefs.postureMonitoringEnabledValue {

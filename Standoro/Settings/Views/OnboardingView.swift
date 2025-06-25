@@ -312,6 +312,7 @@ struct OnboardingView: View {
                             KeepPostureSettingsContentView(
                                 userPrefs: userPrefs,
                                 motionService: motionService,
+                                scheduler: scheduler,
                                 ctx: ctx,
                                 showExplanations: true
                             )
@@ -444,6 +445,12 @@ struct OnboardingView: View {
             motionService.setPostureThresholds(pitch: userPrefs.postureSensitivityDegreesValue, roll: userPrefs.postureSensitivityDegreesValue, duration: TimeInterval(userPrefs.poorPostureThresholdSecondsValue))
             motionService.startMonitoring()
         }
+        
+        // Connect scheduler to motion service for posture nudges
+        scheduler.setMotionService(motionService)
+        
+        // Set up posture nudges if enabled
+        scheduler.setPostureNudgesEnabled(userPrefs.postureNudgesEnabledValue)
         
         // Set up calendar service integration
         motionService.setCalendarService(calendarService, shouldCheck: userPrefs.calendarFilter)

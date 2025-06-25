@@ -419,6 +419,11 @@ struct MenuBarView: View {
             scheduler.standingInterval = TimeInterval(userPrefs.maxStandMinutes * 60)
             updateCounter += 1
         }
+        .onChange(of: userPrefs.postureNudgesEnabledValue) { _, newValue in
+            print("📊 MenuBarView: Posture nudges changed to: \(newValue)")
+            scheduler.setPostureNudgesEnabled(newValue)
+            updateCounter += 1
+        }
         .onAppear {
             // Enable high frequency mode when popup is opened
             if userPrefs.postureMonitoringEnabledValue && motionService.isAuthorized {

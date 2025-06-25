@@ -5,6 +5,7 @@ import Combine
 struct KeepPostureSettingsContentView: View {
     let userPrefs: UserPrefs
     let motionService: MotionService
+    let scheduler: Scheduler
     let ctx: ModelContext
     let showExplanations: Bool
     
@@ -21,9 +22,10 @@ struct KeepPostureSettingsContentView: View {
     // State to prevent multiple permission requests
     @State private var isRequestingPermission = false
     
-    init(userPrefs: UserPrefs, motionService: MotionService, ctx: ModelContext, showExplanations: Bool = false) {
+    init(userPrefs: UserPrefs, motionService: MotionService, scheduler: Scheduler, ctx: ModelContext, showExplanations: Bool = false) {
         self.userPrefs = userPrefs
         self.motionService = motionService
+        self.scheduler = scheduler
         self.ctx = ctx
         self.showExplanations = showExplanations
         
@@ -47,6 +49,8 @@ struct KeepPostureSettingsContentView: View {
                         set: { 
                             userPrefs.postureNudgesEnabledValue = $0
                             try? ctx.save()
+                            // Connect posture nudges setting to scheduler
+                            scheduler.setPostureNudgesEnabled($0)
                         }
                     ))
                     .toggleStyle(CustomToggleStyle())
@@ -482,6 +486,7 @@ struct KeepPostureSettingsContentView: View {
         KeepPostureSettingsContentView(
             userPrefs: UserPrefs(),
             motionService: MotionService(),
+            scheduler: Scheduler(),
             ctx: try! ModelContainer(for: UserPrefs.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true)).mainContext,
             showExplanations: true
         )
@@ -489,6 +494,7 @@ struct KeepPostureSettingsContentView: View {
         KeepPostureSettingsContentView(
             userPrefs: UserPrefs(),
             motionService: MotionService(),
+            scheduler: Scheduler(),
             ctx: try! ModelContainer(for: UserPrefs.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true)).mainContext,
             showExplanations: false
         )

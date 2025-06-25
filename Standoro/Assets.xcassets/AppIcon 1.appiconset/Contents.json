@@ -1,0 +1,14 @@
+{
+  "images" : [
+    {
+      "filename" : "Logo 32x32.png",
+      "idiom" : "mac",
+      "scale" : "2x",
+      "size" : "16x16"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

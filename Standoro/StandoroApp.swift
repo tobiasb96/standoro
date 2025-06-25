@@ -186,6 +186,10 @@ struct MainWindowView: View {
             if let prefs = userPrefsManager.userPrefs {
                 scheduler.setUserPrefs(prefs)
                 motionService.setUserPrefs(prefs)
+                // Connect scheduler to motion service for posture nudges
+                scheduler.setMotionService(motionService)
+                // Set up posture nudges if enabled
+                scheduler.setPostureNudgesEnabled(prefs.postureNudgesEnabledValue)
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ResetOnboarding"))) { _ in
@@ -244,6 +248,10 @@ struct AppContentView: View {
             if let prefs = userPrefsManager.userPrefs {
                 scheduler.setUserPrefs(prefs)
                 motionService.setUserPrefs(prefs)
+                // Connect scheduler to motion service for posture nudges
+                scheduler.setMotionService(motionService)
+                // Set up posture nudges if enabled
+                scheduler.setPostureNudgesEnabled(prefs.postureNudgesEnabledValue)
             }
             
             if !didOnboard {

@@ -7,25 +7,25 @@
       "size" : "16x16"
     },
     {
-      "filename" : "Text hinzufügen 512x512 (3) 5.png",
+      "filename" : "Logo 32x32 1.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "16x16"
     },
     {
-      "filename" : "Text hinzufügen 512x512 (3) 4.png",
+      "filename" : "Logo 32x32.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "32x32"
     },
     {
-      "filename" : "Text hinzufügen 512x512 (3) 3.png",
+      "filename" : "Logo 64x64.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "32x32"
     },
     {
-      "filename" : "Text hinzufügen 512x512 (3) 2.png",
+      "filename" : "Logo 128x128.png",
       "idiom" : "mac",
       "scale" : "1x",
       "size" : "128x128"
@@ -55,6 +55,7 @@
       "size" : "512x512"
     },
     {
+      "filename" : "Logo 1024x1024.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "512x512"
