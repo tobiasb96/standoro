@@ -29,9 +29,10 @@ struct OnboardingView: View {
                     VStack(spacing: 40) {
                         // Logo and Welcome
                         VStack(spacing: 24) {
-                            Image(systemName: "figure.stand.line.dotted.figure.stand")
-                                .font(.system(size: 90))
-                                .foregroundColor(.settingsAccentGreen)
+                            Image("Text hinzufügen 512x512")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 90, height: 90)
                             
                             Text("Welcome to Standoro")
                                 .font(.system(size: 28, weight: .semibold))
@@ -57,7 +58,7 @@ struct OnboardingView: View {
                                     Image(systemName: "figure.stand")
                                         .font(.system(size: 20))
                                         .foregroundColor(.settingsAccentGreen)
-                                        .frame(width: 24, alignment: .leading)
+                                        .frame(width: 24, alignment: .center)
                                     
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text("Stand + Focus")
@@ -74,7 +75,7 @@ struct OnboardingView: View {
                                     Image(systemName: "figure.walk")
                                         .font(.system(size: 20))
                                         .foregroundColor(.settingsAccentGreen)
-                                        .frame(width: 24, alignment: .leading)
+                                        .frame(width: 24, alignment: .center)
                                     
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text("Move + Rest")
@@ -91,7 +92,7 @@ struct OnboardingView: View {
                                     Image(systemName: "airpods")
                                         .font(.system(size: 20))
                                         .foregroundColor(.settingsAccentGreen)
-                                        .frame(width: 24, alignment: .leading)
+                                        .frame(width: 24, alignment: .center)
                                     
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text("Keep Posture")
@@ -385,6 +386,7 @@ struct OnboardingView: View {
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                 }
+                                .frame(width: 80, alignment: .center)
                                 
                                 VStack(alignment: .leading, spacing: 12) {
                                     Text("Quick Access")
@@ -452,6 +454,7 @@ struct OnboardingView: View {
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                 }
+                                .frame(width: 80, alignment: .center)
                                 
                                 VStack(alignment: .leading, spacing: 12) {
                                     Text("Full Settings Access")
@@ -509,7 +512,7 @@ struct OnboardingView: View {
                                         .foregroundColor(.settingsSubheader)
                                 }
                             }
-                            .frame(maxWidth: .infinity, alignment: .center)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 32)
                         }
                         
@@ -526,7 +529,8 @@ struct OnboardingView: View {
                 }
                 .tag(5)
             }
-            .tabViewStyle(.automatic)
+            .tabViewStyle(.page)
+            .indexViewStyle(.page(backgroundDisplayMode: .always))
         }
         .background(Color.settingsBackground)
         .frame(minWidth: 875, idealWidth: 1000, minHeight: 800, idealHeight: 900)
