@@ -91,9 +91,7 @@ struct SettingsView: View {
                                 showExplanations: false
                             )
                         case .about:
-                            Text("About Standoro (Coming Soon)")
-                                .font(.body)
-                                .foregroundColor(.settingsSubheader)
+                            AboutView()
                         case nil:
                             Text("Select a category")
                                 .font(.body)

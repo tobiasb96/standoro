@@ -29,11 +29,6 @@ struct OnboardingView: View {
                     VStack(spacing: 40) {
                         // Logo and Welcome
                         VStack(spacing: 24) {
-                            Image("Text hinzufügen 512x512")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 90, height: 90)
-                            
                             Text("Welcome to Standoro")
                                 .font(.system(size: 28, weight: .semibold))
                                 .foregroundColor(.settingsHeader)
@@ -53,7 +48,7 @@ struct OnboardingView: View {
                                 .multilineTextAlignment(.leading)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             
-                            VStack(spacing: 16) {
+                            VStack(alignment: .leading, spacing: 16) {
                                 HStack(alignment: .top, spacing: 12) {
                                     Image(systemName: "figure.stand")
                                         .font(.system(size: 20))
@@ -353,7 +348,7 @@ struct OnboardingView: View {
                 
                 // Page 5: How to Use Standoro
                 ScrollView {
-                    VStack(spacing: 40) {
+                    VStack(spacing: 20) {
                         // Header
                         VStack(spacing: 16) {
                             Image(systemName: "checkmark.circle.fill")
@@ -372,103 +367,8 @@ struct OnboardingView: View {
                         .padding(.top, 40)
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding(.horizontal, 32)
+                        .padding(.vertical, 10)
                         
-                        // Menu Bar Explanation
-                        VStack(spacing: 24) {
-                            HStack(spacing: 20) {
-                                // Menu Bar Icon Visual
-                                VStack(spacing: 8) {
-                                    Image(systemName: "figure.stand")
-                                        .foregroundColor(.settingsAccentGreen)
-                                        .font(.system(size: 30))
-                                    
-                                    Text("Menu Icon")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                }
-                                .frame(width: 80, alignment: .center)
-                                
-                                VStack(alignment: .leading, spacing: 12) {
-                                    Text("Quick Access")
-                                        .font(.headline)
-                                        .foregroundColor(.settingsHeader)
-                                    
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        HStack(alignment: .top, spacing: 8) {
-                                            Image(systemName: "1.circle.fill")
-                                                .foregroundColor(.settingsAccentGreen)
-                                                .font(.system(size: 14))
-                                            Text("Click the Standoro icon in your menu bar for quick access to settings and status")
-                                                .font(.system(size: 14))
-                                                .foregroundColor(.settingsSubheader)
-                                        }
-                                        
-                                        HStack(alignment: .top, spacing: 8) {
-                                            Image(systemName: "2.circle.fill")
-                                                .foregroundColor(.settingsAccentGreen)
-                                                .font(.system(size: 14))
-                                            Text("The icon shows your current posture monitoring status")
-                                                .font(.system(size: 14))
-                                                .foregroundColor(.settingsSubheader)
-                                        }
-                                        
-                                        HStack(alignment: .top, spacing: 8) {
-                                            Image(systemName: "3.circle.fill")
-                                                .foregroundColor(.settingsAccentGreen)
-                                                .font(.system(size: 14))
-                                            Text("Access settings, view statistics, and control features")
-                                                .font(.system(size: 14))
-                                                .foregroundColor(.settingsSubheader)
-                                        }
-                                        
-                                        HStack(alignment: .top, spacing: 8) {
-                                            Image(systemName: "4.circle.fill")
-                                                .foregroundColor(.settingsAccentGreen)
-                                                .font(.system(size: 14))
-                                            Text("When focus sessions are enabled, a timer is displayed in the menu bar")
-                                                .font(.system(size: 14))
-                                                .foregroundColor(.settingsSubheader)
-                                        }
-                                    }
-                                }
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 32)
-                        }
-                        
-                        // Dock Access
-                        VStack(spacing: 16) {
-                            HStack(spacing: 20) {
-                                // Dock Icon Visual
-                                VStack(spacing: 8) {
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .fill(Color.settingsAccentGreen.opacity(0.2))
-                                        .frame(width: 60, height: 60)
-                                        .overlay(
-                                            Image(systemName: "figure.stand")
-                                                .foregroundColor(.settingsAccentGreen)
-                                                .font(.system(size: 30))
-                                        )
-                                    
-                                    Text("Dock Icon")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                }
-                                .frame(width: 80, alignment: .center)
-                                
-                                VStack(alignment: .leading, spacing: 12) {
-                                    Text("Full Settings Access")
-                                        .font(.headline)
-                                        .foregroundColor(.settingsHeader)
-                                    
-                                    Text("Click the Standoro icon in your dock to open the full settings window with all configuration options.")
-                                        .font(.system(size: 14))
-                                        .foregroundColor(.settingsSubheader)
-                                }
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 32)
-                        }
                         
                         // Final Instructions
                         VStack(spacing: 12) {
@@ -512,8 +412,9 @@ struct OnboardingView: View {
                                         .foregroundColor(.settingsSubheader)
                                 }
                             }
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .frame(maxWidth: .infinity, alignment: .center)
                             .padding(.horizontal, 32)
+                            .padding(.vertical, 10)
                         }
                         
                         // Get Started Button
@@ -528,9 +429,8 @@ struct OnboardingView: View {
                     .padding(60)
                 }
                 .tag(5)
+                .tabViewStyle(.tabBarOnly)
             }
-            .tabViewStyle(.page)
-            .indexViewStyle(.page(backgroundDisplayMode: .always))
         }
         .background(Color.settingsBackground)
         .frame(minWidth: 875, idealWidth: 1000, minHeight: 800, idealHeight: 900)
