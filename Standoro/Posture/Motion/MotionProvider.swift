@@ -72,7 +72,6 @@ class AirPodsMotionProvider: NSObject, MotionProvider, CMHeadphoneMotionManagerD
         
         motionManager.startDeviceMotionUpdates(to: .main) { [weak self] motion, error in
             if let error = error {
-                print("🔔 AirPodsMotionProvider - Motion update error: \(error.localizedDescription)")
                 self?.updateDataAvailability(false)
                 return
             }

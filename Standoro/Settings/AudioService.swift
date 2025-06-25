@@ -3,10 +3,10 @@ import AVFoundation
 import Combine
 import AppKit
 
-enum SoundType {
-    case challengeAppear
-    case challengeComplete
-    case challengeDiscard
+enum SoundType: String, CaseIterable {
+    case challengeAppear = "challenge_appear"
+    case challengeComplete = "challenge_complete"
+    case challengeDiscard = "challenge_discard"
     case workoutComplete
     case notification
     case success
@@ -17,30 +17,47 @@ enum SoundType {
 @MainActor
 class AudioService: ObservableObject {
     
-    private let soundMap: [SoundType: String] = [
-        .challengeAppear: "Glass",
-        .challengeComplete: "Ping",
-        .challengeDiscard: "Basso",
-        .workoutComplete: "Ping",
-        .notification: "Glass",
-        .success: "Ping",
-        .error: "Basso"
-    ]
+    private var audioPlayers: [SoundType: AVAudioPlayer] = [:]
+    private var isEnabled = true
     
     init() {
-        // No need for AVAudioSession setup on macOS
-        // System sounds work directly without session configuration
+        loadSounds()
+    }
+    
+    private func loadSounds() {
+        for soundType in SoundType.allCases {
+            if let url = Bundle.main.url(forResource: soundType.rawValue, withExtension: "wav") {
+                do {
+                    let player = try AVAudioPlayer(contentsOf: url)
+                    player.prepareToPlay()
+                    audioPlayers[soundType] = player
+                } catch {
+                    #if DEBUG
+                    print("AudioService: Failed to load sound \(soundType.rawValue): \(error)")
+                    #endif
+                }
+            } else {
+                #if DEBUG
+                print("AudioService: No sound found for type: \(soundType)")
+                #endif
+            }
+        }
     }
     
     func playSound(_ type: SoundType) {
-        guard let soundName = soundMap[type] else { 
-            print("🔊 AudioService - No sound found for type: \(type)")
-            return 
-        }        
-        if let sound = NSSound(named: soundName) {
-            sound.play()
-        } else {
-            AudioServicesPlaySystemSound(1000)
+        guard isEnabled else { return }
+        
+        if let player = audioPlayers[type] {
+            player.currentTime = 0
+            player.play()
         }
+    }
+    
+    func setEnabled(_ enabled: Bool) {
+        isEnabled = enabled
+    }
+    
+    func isSoundEnabled() -> Bool {
+        return isEnabled
     }
 } 

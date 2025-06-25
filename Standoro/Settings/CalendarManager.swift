@@ -64,7 +64,10 @@ class CalendarService: ObservableObject {
             
             return granted
         } catch {
-            print("🔔 CalendarService - Error requesting access: \(error)")
+            #if DEBUG
+            print("CalendarService: Error requesting access: \(error)")
+            #endif
+            
             await MainActor.run {
                 self.isAuthorized = false
                 self.authorizationStatus = .denied

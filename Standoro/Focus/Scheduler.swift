@@ -2,12 +2,12 @@ import Foundation
 import UserNotifications
 import Combine
 
-enum PosturePhase: String {
+enum PosturePhase: String, CaseIterable {
     case sitting = "sitting"
     case standing = "standing"
 }
 
-enum SessionType: String {
+enum SessionType: String, CaseIterable {
     case focus = "focus"
     case shortBreak = "shortBreak"
     case longBreak = "longBreak"
@@ -20,10 +20,13 @@ class Scheduler: ObservableObject {
     @Published var isPaused = false
     @Published var currentPhase: PosturePhase = .sitting
     @Published var currentSessionType: SessionType = .focus
+    @Published var timeRemaining: TimeInterval = 0
+    @Published var completedFocusSessions: Int = 0
+    @Published var pomodoroModeEnabled = false
     
     private var timer: Timer?
-    private var _sittingInterval: TimeInterval = 25 * 60 // Default 25 minutes
-    private var _standingInterval: TimeInterval = 5 * 60 // Default 5 minutes
+    private var _sittingInterval: TimeInterval = 45 * 60 // 45 minutes
+    private var _standingInterval: TimeInterval = 15 * 60 // 15 minutes
     private var pauseStartTime: Date?
     private var remainingTimeWhenPaused: TimeInterval = 0
     private var calendarService: CalendarService?
@@ -31,8 +34,7 @@ class Scheduler: ObservableObject {
     private var autoStartEnabled: Bool = true // Default to true
     
     // Pomodoro tracking
-    @Published private(set) var completedFocusSessions: Int = 0  // Publishes updates so UI can react in real-time
-    @Published var pomodoroModeEnabled: Bool = false
+    @Published private(set) var pomodoroModeEnabled: Bool = false
     private var _focusInterval: TimeInterval = 25 * 60 // Default 25 minutes for Pomodoro
     private var _shortBreakInterval: TimeInterval = 5 * 60 // Default 5 minutes
     private var _longBreakInterval: TimeInterval = 15 * 60 // Default 15 minutes
@@ -161,114 +163,92 @@ class Scheduler: ObservableObject {
         saveState()
     }
 
-    func start(sittingInterval: TimeInterval? = nil, standingInterval: TimeInterval? = nil) {
-        if let sittingInterval = sittingInterval {
-            self.sittingInterval = sittingInterval
-        }
-        if let standingInterval = standingInterval {
-            self.standingInterval = standingInterval
-        }
+    func start() {
+        guard !isRunning else { return }
         
-        guard self.sittingInterval > 0 && self.standingInterval > 0 else {
-            return
-        }
-        
-        // Cancel existing timer
-        timer?.invalidate()
-        timer = nil
-        
-        // Reset pause state
-        pauseStartTime = nil
-        remainingTimeWhenPaused = 0
-        
-        // Initialize based on mode
-        if pomodoroModeEnabled {
-            currentSessionType = .focus
-            currentPhase = .sitting // Start with sitting for focus
-            nextFire = Date().addingTimeInterval(self.focusInterval)
-        } else {
-            currentPhase = .sitting
-            nextFire = Date().addingTimeInterval(self.sittingInterval)
-        }
-        
-        // Create new timer
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                self?.checkTimer()
-            }
-        }
-        
-        phaseStartTime = Date()
         isRunning = true
         isPaused = false
         
-        saveState()
+        if let prefs = userPrefs {
+            // Restore state from UserPrefs if available
+            if prefs.isRunningValue {
+                currentPhase = PosturePhase(rawValue: prefs.currentPhaseValue) ?? .sitting
+                currentSessionType = SessionType(rawValue: prefs.currentSessionTypeValue) ?? .focus
+                completedFocusSessions = prefs.completedFocusSessionsValue
+                
+                if let nextFire = prefs.nextFireTimeValue {
+                    nextFire = nextFire
+                    calculateTimeRemaining()
+                } else {
+                    startNewPhase()
+                }
+            } else {
+                startNewPhase()
+            }
+        } else {
+            startNewPhase()
+        }
+        
+        startTimer()
+        startPostureNudgeTimer()
     }
     
     func stop() {
-        // Record current phase before stopping
-        recordCurrentPhase(skipped: false)
+        guard isRunning else { return }
         
-        timer?.invalidate()
-        timer = nil
         isRunning = false
         isPaused = false
+        timer?.invalidate()
+        postureNudgeTimer?.invalidate()
+        
+        // Record final stats
+        recordCurrentPhaseStats(skipped: true)
+        
+        // Reset state
         currentPhase = .sitting
         currentSessionType = .focus
-        completedFocusSessions = 0
-        pauseStartTime = nil
+        timeRemaining = 0
+        nextFire = Date()
         remainingTimeWhenPaused = 0
-        phaseStartTime = nil
         
+        // Save state to UserPrefs
         saveState()
     }
     
     func pause() {
         guard isRunning, !isPaused else { return }
         
-        pauseStartTime = Date()
-        remainingTimeWhenPaused = nextFire.timeIntervalSinceNow
         isPaused = true
+        remainingTimeWhenPaused = timeRemaining
+        timer?.invalidate()
+        postureNudgeTimer?.invalidate()
         
+        // Save state to UserPrefs
         saveState()
     }
     
     func resume() {
-        guard isRunning, isPaused, let _ = pauseStartTime else { return }
+        guard isRunning, isPaused else { return }
         
-        // Calculate new next fire time based on remaining time when paused
-        nextFire = Date().addingTimeInterval(remainingTimeWhenPaused)
         isPaused = false
-        pauseStartTime = nil
-        remainingTimeWhenPaused = 0
+        timeRemaining = remainingTimeWhenPaused
+        nextFire = Date().addingTimeInterval(timeRemaining)
         
+        startTimer()
+        startPostureNudgeTimer()
+        
+        // Save state to UserPrefs
         saveState()
     }
 
-    func restart() {
-        guard sittingInterval > 0 && standingInterval > 0 else {
-            return
-        }
+    func skip() {
+        guard isRunning, !isPaused else { return }
         
-        stop()
-        start()
-    }
-    
-    func skipPhase() {
-        guard isRunning else {
-            return
-        }
+        // Record current phase as skipped
+        recordCurrentPhaseStats(skipped: true)
         
-        // If paused, resume first
-        if isPaused {
-            resume()
-        }
-        
-        // Switch to next phase immediately without sending notification
-        let skippingBreak = pomodoroModeEnabled && currentSessionType != .focus
-        recordCurrentPhase(skipped: skippingBreak)
-        phaseStartTime = Date()
-        switchPhase()
+        // Move to next phase
+        advanceToNextPhase()
     }
 
     private func checkTimer() {
@@ -360,14 +340,16 @@ class Scheduler: ObservableObject {
                 
                 UNUserNotificationCenter.current().add(req) { error in
                     if let error = error {
+                        #if DEBUG
                         print("🔔 Scheduler - Notification error: \(error)")
+                        #endif
                     }
                 }
             }
         }
         
         // Handle auto-start logic
-        recordCurrentPhase(skipped: false)
+        recordCurrentPhaseStats(skipped: false)
         phaseStartTime = Date()
         if autoStartEnabled {
             // Continue to next phase automatically
@@ -446,38 +428,28 @@ class Scheduler: ObservableObject {
     private func checkPostureNudge() {
         guard postureNudgesEnabled,
               let motionService = motionService,
-              let notificationService = notificationService else { 
-            print("🔔 Scheduler - Posture nudge check failed: enabled=\(postureNudgesEnabled), motionService=\(motionService != nil), notificationService=\(notificationService != nil)")
-            return 
-        }
-        
-        // Only nudge during work periods (sitting/focus)
-        let isWorkPeriod: Bool = {
-            if pomodoroModeEnabled {
-                return currentSessionType == .focus
-            } else {
-                return currentPhase == .sitting
-            }
-        }()
-        if !isWorkPeriod { 
-            print("🔔 Scheduler - Not in work period, skipping nudge (pomodoro=\(pomodoroModeEnabled), session=\(currentSessionType), phase=\(currentPhase))")
-            return 
-        }
-        
-        // Check if it's time for the next nudge
-        let now = Date()
-        if let last = lastPostureNudgeTime, now.timeIntervalSince(last) < nextPostureNudgeInterval {
-            let remaining = nextPostureNudgeInterval - now.timeIntervalSince(last)
-            print("🔔 Scheduler - Not time for nudge yet, \(Int(remaining/60)) minutes remaining")
+              let notificationService = motionService.notificationService,
+              let nextNudgeTime = nextPostureNudgeTime else {
             return
         }
         
-        // Send nudge
-        print("🔔 Scheduler - Sending posture nudge!")
-        notificationService.sendRandomPostureNudge()
-        lastPostureNudgeTime = now
-        scheduleNextPostureNudge()
-        print("🔔 Scheduler - Next nudge scheduled in \(Int(nextPostureNudgeInterval/60)) minutes")
+        // Check if we're in a work period
+        let isWorkPeriod = pomodoroModeEnabled ? currentSessionType == .focus : true
+        
+        if !isWorkPeriod {
+            return
+        }
+        
+        // Check if it's time for a nudge
+        let remaining = nextNudgeTime.timeIntervalSince(Date())
+        if remaining <= 0 {
+            // Send posture nudge
+            notificationService.sendPostureNotification()
+            
+            // Schedule next nudge
+            let nextNudgeInterval = TimeInterval.random(in: minNudgeInterval...maxNudgeInterval)
+            nextPostureNudgeTime = Date().addingTimeInterval(nextNudgeInterval)
+        }
     }
     
     private func scheduleNextPostureNudge() {
@@ -505,7 +477,7 @@ class Scheduler: ObservableObject {
         NotificationCenter.default.post(name: NSNotification.Name("SaveUserPrefs"), object: nil)
     }
     
-    private func recordCurrentPhase(skipped: Bool) {
+    private func recordCurrentPhaseStats(skipped: Bool) {
         guard let statsService, let start = phaseStartTime else { 
             print("📊 Stats: Cannot record - statsService: \(statsService != nil), phaseStartTime: \(phaseStartTime != nil)")
             return 
@@ -529,16 +501,17 @@ class Scheduler: ObservableObject {
     
     // MARK: - State Persistence
     
-    func saveStateToUserPrefs(_ userPrefs: UserPrefs) {
-        // Save current state to UserPrefs for persistence
-        userPrefs.completedFocusSessions = completedFocusSessions
-        userPrefs.currentPhase = currentPhase.rawValue
-        userPrefs.currentSessionType = currentSessionType.rawValue
-        userPrefs.isRunning = isRunning
-        userPrefs.isPaused = isPaused
-        userPrefs.nextFireTime = nextFire
-        userPrefs.remainingTimeWhenPaused = remainingTimeWhenPaused
-        userPrefs.phaseStartTime = phaseStartTime
+    private func saveStateToUserPrefs() {
+        guard let prefs = userPrefs else { return }
+        
+        prefs.isRunningValue = isRunning
+        prefs.isPausedValue = isPaused
+        prefs.currentPhaseValue = currentPhase.rawValue
+        prefs.currentSessionTypeValue = currentSessionType.rawValue
+        prefs.completedFocusSessionsValue = completedFocusSessions
+        prefs.nextFireTimeValue = nextFireTime
+        prefs.remainingTimeWhenPausedValue = remainingTimeWhenPaused
+        prefs.phaseStartTimeValue = phaseStartTime
     }
     
     func restoreStateFromUserPrefs(_ userPrefs: UserPrefs) {
@@ -569,5 +542,109 @@ class Scheduler: ObservableObject {
                 self?.checkTimer()
             }
         }
+    }
+    
+    private func calculateTimeRemaining() {
+        guard let nextFire = nextFire else {
+            timeRemaining = 0
+            return
+        }
+        
+        timeRemaining = max(0, nextFire.timeIntervalSince(Date()))
+    }
+    
+    private func startNewPhase() {
+        phaseStartTime = Date()
+        
+        if pomodoroModeEnabled {
+            // Pomodoro mode logic
+            let interval: TimeInterval
+            switch currentSessionType {
+            case .focus:
+                interval = focusInterval
+                currentPhase = .sitting
+            case .shortBreak, .longBreak:
+                interval = currentSessionType == .shortBreak ? shortBreakInterval : longBreakInterval
+                currentPhase = .standing
+            }
+            
+            nextFire = Date().addingTimeInterval(interval)
+        } else {
+            // Simple mode logic
+            let interval = currentPhase == .sitting ? sittingInterval : standingInterval
+            nextFire = Date().addingTimeInterval(interval)
+        }
+        
+        calculateTimeRemaining()
+        saveState()
+    }
+    
+    private func advanceToNextPhase() {
+        if pomodoroModeEnabled {
+            advancePomodoroPhase()
+        } else {
+            advanceSimplePhase()
+        }
+        
+        startNewPhase()
+        sendPhaseCompletionNotification()
+    }
+    
+    private func advancePomodoroPhase() {
+        switch currentSessionType {
+        case .focus:
+            completedFocusSessions += 1
+            
+            // Check if it's time for a long break
+            if completedFocusSessions % intervalsBeforeLongBreak == 0 {
+                currentSessionType = .longBreak
+            } else {
+                currentSessionType = .shortBreak
+            }
+        case .shortBreak, .longBreak:
+            currentSessionType = .focus
+        }
+    }
+    
+    private func advanceSimplePhase() {
+        currentPhase = currentPhase == .sitting ? .standing : .sitting
+    }
+    
+    private func sendPhaseCompletionNotification() {
+        let content = UNMutableNotificationContent()
+        
+        switch currentSessionType {
+        case .focus:
+            content.title = "Focus Session Complete!"
+            content.body = "Great work! Time for a break."
+        case .shortBreak:
+            content.title = "Break Complete!"
+            content.body = "Ready to focus again?"
+        case .longBreak:
+            content.title = "Long Break Complete!"
+            content.body = autoStartEnabled ? "Great work! Ready for more?" : "Great work! Ready for more? Open the menu to start."
+        }
+        
+        content.sound = .default
+        
+        let request = UNNotificationRequest(
+            identifier: UUID().uuidString,
+            content: content,
+            trigger: nil
+        )
+        
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                #if DEBUG
+                print("Scheduler: Notification error: \(error)")
+                #endif
+            }
+        }
+    }
+    
+    // MARK: - Computed Properties
+    
+    private var autoStartEnabled: Bool {
+        return userPrefs?.autoStartEnabledValue ?? true
     }
 } 

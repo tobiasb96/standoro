@@ -1,183 +1,224 @@
 import Foundation
 import Combine
 
-/// Analyzes motion data for posture detection
+/// Analyzes motion data to detect posture quality
 @MainActor
-class PostureAnalyzer: BaseAnalyzer, ObservableObject {
+class PostureAnalyzer: ObservableObject {
     @Published var currentPosture: PostureStatus = .unknown
     @Published var currentPitch: Double = 0.0
     @Published var currentRoll: Double = 0.0
     @Published var pitchDeviation: Double = 0.0
     @Published var rollDeviation: Double = 0.0
     
-    private var calibrationData: (pitch: Double, roll: Double)? = (pitch: 0.0, roll: 0.0)
-    private var poorPostureStartTime: Date?
-    private var poorPostureThreshold: TimeInterval = 30
-    private var pitchThreshold: Double = 15.0
-    private var rollThreshold: Double = 15.0
-    
-    // UserPrefs reference for persistence
+    // Calibration data
+    private var calibrationData: (pitch: Double, roll: Double)?
     private var userPrefs: UserPrefs?
     
-    // Logging throttling
-    private var lastLogTime = Date()
-    private var lastDurationLog = Date()
+    // Thresholds
+    private var pitchThreshold: Double = 15.0
+    private var rollThreshold: Double = 15.0
+    private var poorPostureThreshold: TimeInterval = 30.0
     
-    enum PostureStatus {
-        case good
-        case poor
-        case unknown
-        case calibrating
-        case noData
+    // State tracking
+    private var poorPostureStartTime: Date?
+    private var isInPoorPosture = false
+    private var lastUpdateTime: Date = Date()
+    private var updateFrequency: TimeInterval = 1.0
+    private var isHighFrequencyMode = false
+    
+    // Publishers
+    private let postureStatusSubject = PassthroughSubject<PostureStatus, Never>()
+    private let poorPostureAlertSubject = PassthroughSubject<Void, Never>()
+    
+    var postureStatusPublisher: AnyPublisher<PostureStatus, Never> {
+        postureStatusSubject.eraseToAnyPublisher()
     }
     
-    override func enableHighFrequencyMode() {
-        super.enableHighFrequencyMode()
-        updateFrequency = 1.0
+    var poorPostureAlertPublisher: AnyPublisher<Void, Never> {
+        poorPostureAlertSubject.eraseToAnyPublisher()
     }
     
-    override func disableHighFrequencyMode() {
-        super.disableHighFrequencyMode()
-        updateFrequency = 5.0
-    }
+    // MARK: - Calibration Methods
     
     func startCalibration() {
-        currentPosture = .calibrating
+        // Reset calibration data
         calibrationData = nil
-        print("🔔 PostureAnalyzer - Calibration started")
+        currentPosture = .calibrating
+        #if DEBUG
+        print("PostureAnalyzer: Calibration started")
+        #endif
     }
     
     func completeCalibration() {
-        calibrationData = (pitch: currentPitch, roll: currentRoll)
-        currentPosture = .good
-        print("🔔 PostureAnalyzer - Calibration completed: pitch=\(String(format: "%.1f", currentPitch))°, roll=\(String(format: "%.1f", currentRoll))°")
+        guard let pitch = currentPitch, let roll = currentRoll else {
+            return
+        }
         
-        // Save calibration data to UserPrefs
-        saveCalibrationToUserPrefs()
-    }
-    
-    func setPoorPostureThreshold(_ seconds: TimeInterval) {
-        poorPostureThreshold = seconds
-    }
-    
-    func setPitchThreshold(_ degrees: Double) {
-        pitchThreshold = degrees
-    }
-    
-    func setRollThreshold(_ degrees: Double) {
-        rollThreshold = degrees
+        calibrationData = (pitch: pitch, roll: roll)
+        currentPosture = .good
+        
+        // Save calibration to UserPrefs if available
+        if let prefs = userPrefs {
+            prefs.calibratedPitchValue = pitch
+            prefs.calibratedRollValue = roll
+            prefs.isCalibratedValue = true
+        }
+        
+        #if DEBUG
+        print("PostureAnalyzer: Calibration completed: pitch=\(String(format: "%.1f", pitch))°, roll=\(String(format: "%.1f", roll))°")
+        #endif
     }
     
     func setUserPrefs(_ prefs: UserPrefs) {
         self.userPrefs = prefs
-        // Restore calibration data from UserPrefs
-        restoreCalibrationFromUserPrefs(prefs)
-    }
-    
-    private func saveCalibrationToUserPrefs() {
-        guard let prefs = userPrefs, let calibration = calibrationData else { return }
-        prefs.calibratedPitchValue = calibration.pitch
-        prefs.calibratedRollValue = calibration.roll
-        prefs.isCalibratedValue = true
         
-        // Trigger a save to the model context
-        NotificationCenter.default.post(name: NSNotification.Name("SaveUserPrefs"), object: nil)
-    }
-    
-    private func restoreCalibrationFromUserPrefs(_ prefs: UserPrefs) {
+        // Restore calibration if available
         if prefs.isCalibratedValue, 
-           let pitch = prefs.calibratedPitchValue, 
+           let pitch = prefs.calibratedPitchValue,
            let roll = prefs.calibratedRollValue {
             calibrationData = (pitch: pitch, roll: roll)
-            print("🔔 PostureAnalyzer - Restored calibration: pitch=\(String(format: "%.1f", pitch))°, roll=\(String(format: "%.1f", roll))°")
+            currentPosture = .good
+            
+            #if DEBUG
+            print("PostureAnalyzer: Restored calibration: pitch=\(String(format: "%.1f", pitch))°, roll=\(String(format: "%.1f", roll))°")
+            #endif
         }
     }
     
-    func setNoData() {
-        currentPosture = .noData
+    // MARK: - Configuration Methods
+    
+    func setPitchThreshold(_ threshold: Double) {
+        pitchThreshold = threshold
     }
+    
+    func setRollThreshold(_ threshold: Double) {
+        rollThreshold = threshold
+    }
+    
+    func setPoorPostureThreshold(_ threshold: TimeInterval) {
+        poorPostureThreshold = threshold
+    }
+    
+    func setUpdateFrequency(_ frequency: TimeInterval) {
+        updateFrequency = frequency
+    }
+    
+    func enableHighFrequencyMode() {
+        isHighFrequencyMode = true
+        updateFrequency = 0.1 // 10Hz updates
+    }
+    
+    func disableHighFrequencyMode() {
+        isHighFrequencyMode = false
+        updateFrequency = 1.0 // 1Hz updates
+    }
+    
+    // MARK: - Analysis Methods
     
     func processMotionData(_ motionData: MotionData) {
-        // Check if enough time has passed since last update
-        if !shouldUpdate() {
-            return
-        }
-        
         // Update current values
         currentPitch = motionData.pitch
         currentRoll = motionData.roll
         
-        // Check if we need to calibrate
+        // Auto-calibrate if no calibration data exists
         if calibrationData == nil {
             calibrationData = (pitch: motionData.pitch, roll: motionData.roll)
-            print("🔔 PostureAnalyzer - Auto-calibrated: pitch=\(String(format: "%.1f", motionData.pitch))°, roll=\(String(format: "%.1f", motionData.roll))°")
+            currentPosture = .good
             
-            // Save auto-calibration data to UserPrefs
-            saveCalibrationToUserPrefs()
+            #if DEBUG
+            print("PostureAnalyzer: Auto-calibrated: pitch=\(String(format: "%.1f", motionData.pitch))°, roll=\(String(format: "%.1f", motionData.roll))°")
+            #endif
             return
         }
         
-        // Calculate deviation from calibrated position
-        let pitchDev = abs(MotionData.normalizeAngle(motionData.pitch - calibrationData!.pitch))
-        let rollDev = abs(MotionData.normalizeAngle(motionData.roll - calibrationData!.roll))
+        // Check if we should update based on frequency
+        if !shouldUpdate() {
+            return
+        }
+        
+        // Calculate deviations from calibration
+        guard let calibration = calibrationData else {
+            return
+        }
+        
+        let pitchDev = abs(MotionData.normalizeAngle(motionData.pitch - calibration.pitch))
+        let rollDev = abs(MotionData.normalizeAngle(motionData.roll - calibration.roll))
         
         pitchDeviation = pitchDev
         rollDeviation = rollDev
         
+        #if DEBUG
+        print("PostureAnalyzer: Current: pitch=\(String(format: "%.1f", motionData.pitch))°, roll=\(String(format: "%.1f", motionData.roll))° | Deviations: pitch=\(String(format: "%.1f", pitchDev))°, roll=\(String(format: "%.1f", rollDev))°")
+        #endif
+        
         // Determine posture status
         let isGoodPosture = pitchDev <= pitchThreshold && rollDev <= rollThreshold
         
-        // Log current status (throttled)
-        if Date().timeIntervalSince(lastLogTime) > 2.0 {
-            print("🔔 PostureAnalyzer - Current: pitch=\(String(format: "%.1f", motionData.pitch))°, roll=\(String(format: "%.1f", motionData.roll))° | Deviations: pitch=\(String(format: "%.1f", pitchDev))°, roll=\(String(format: "%.1f", rollDev))° | Good posture: \(isGoodPosture)")
-            lastLogTime = Date()
-        }
-        
         if isGoodPosture {
-            if currentPosture == .poor {
-                poorPostureStartTime = nil
+            if currentPosture != .good {
                 currentPosture = .good
-                print("🔔 PostureAnalyzer - ✅ Posture improved")
+                postureStatusSubject.send(.good)
                 
-                // Start tracking sustained good posture
-                NotificationCenter.default.post(name: .postureImproved, object: nil)
-            } else if currentPosture == .calibrating {
-                currentPosture = .good
-                print("🔔 PostureAnalyzer - ✅ Calibration complete")
-            } else if currentPosture == .noData {
-                currentPosture = .good
+                #if DEBUG
+                print("PostureAnalyzer: ✅ Posture improved")
+                #endif
+                
+                // Reset poor posture tracking
+                if isInPoorPosture {
+                    isInPoorPosture = false
+                    poorPostureStartTime = nil
+                }
+            }
+            
+            // Check if calibration is complete
+            if currentPosture == .calibrating {
+                completeCalibration()
             }
         } else {
-            if currentPosture == .good || currentPosture == .calibrating || currentPosture == .noData {
-                poorPostureStartTime = Date()
+            if currentPosture != .poor {
                 currentPosture = .poor
-                print("🔔 PostureAnalyzer - ⚠️ Poor posture detected")
+                postureStatusSubject.send(.poor)
                 
-                // Stop tracking good posture when it becomes poor
-                NotificationCenter.default.post(name: .postureBecamePoor, object: nil)
-            } else if currentPosture == .poor {
-                checkPoorPostureDuration()
+                #if DEBUG
+                print("PostureAnalyzer: ⚠️ Poor posture detected")
+                #endif
+                
+                // Start tracking poor posture duration
+                if !isInPoorPosture {
+                    isInPoorPosture = true
+                    poorPostureStartTime = Date()
+                }
+            }
+            
+            // Check if poor posture has been maintained for threshold duration
+            if isInPoorPosture, let startTime = poorPostureStartTime {
+                let duration = Date().timeIntervalSince(startTime)
+                
+                if duration >= poorPostureThreshold {
+                    #if DEBUG
+                    print("PostureAnalyzer: 🚨 Poor posture maintained for \(Int(poorPostureThreshold)) seconds")
+                    #endif
+                    
+                    // Send alert
+                    poorPostureAlertSubject.send(())
+                    
+                    // Reset to prevent multiple alerts
+                    poorPostureStartTime = Date()
+                } else {
+                    let remaining = poorPostureThreshold - duration
+                    #if DEBUG
+                    print("PostureAnalyzer: ⏰ Poor posture for \(Int(duration))s, \(Int(remaining))s until notification")
+                    #endif
+                }
             }
         }
+        
+        lastUpdateTime = Date()
     }
     
-    private func checkPoorPostureDuration() {
-        guard let startTime = poorPostureStartTime else { return }
-        
-        let duration = Date().timeIntervalSince(startTime)
-        if duration >= poorPostureThreshold {
-            // Notify that poor posture threshold reached
-            NotificationCenter.default.post(name: .postureThresholdReached, object: nil)
-            poorPostureStartTime = Date()
-            print("🔔 PostureAnalyzer - 🚨 Poor posture maintained for \(Int(poorPostureThreshold)) seconds")
-        } else {
-            // Log remaining time every 5 seconds
-            if Date().timeIntervalSince(lastDurationLog) > 5.0 {
-                let remaining = poorPostureThreshold - duration
-                print("🔔 PostureAnalyzer - ⏰ Poor posture for \(Int(duration))s, \(Int(remaining))s until notification")
-                lastDurationLog = Date()
-            }
-        }
+    private func shouldUpdate() -> Bool {
+        let timeSinceLastUpdate = Date().timeIntervalSince(lastUpdateTime)
+        return timeSinceLastUpdate >= updateFrequency
     }
 }
 

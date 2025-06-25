@@ -98,11 +98,18 @@ struct MoveAndRestSettingsContentView: View {
 }
 
 #Preview {
-    MoveAndRestSettingsContentView(
-        userPrefs: UserPrefs(),
-        ctx: try! ModelContainer(for: UserPrefs.self).mainContext,
-        showExplanations: true
-    )
-    .padding()
-    .background(Color(red: 0.1, green: 0.1, blue: 0.15))
+    do {
+        let container = try ModelContainer(for: UserPrefs.self)
+        return MoveAndRestSettingsContentView(
+            userPrefs: UserPrefs(),
+            ctx: container.mainContext,
+            showExplanations: true
+        )
+        .padding()
+        .background(Color(red: 0.1, green: 0.1, blue: 0.15))
+    } catch {
+        return Text("Failed to create preview: \(error.localizedDescription)")
+            .padding()
+            .background(Color(red: 0.1, green: 0.1, blue: 0.15))
+    }
 } 

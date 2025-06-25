@@ -249,21 +249,30 @@ struct StandAndFocusSettingsContentView: View {
 }
 
 #Preview {
-    VStack(spacing: 20) {
-        StandAndFocusSettingsContentView(
-            userPrefs: UserPrefs(),
-            scheduler: Scheduler(),
-            ctx: try! ModelContainer(for: UserPrefs.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true)).mainContext,
-            showExplanations: true
-        )
+    do {
+        let container1 = try ModelContainer(for: UserPrefs.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        let container2 = try ModelContainer(for: UserPrefs.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
         
-        StandAndFocusSettingsContentView(
-            userPrefs: UserPrefs(pomodoroModeEnabled: true),
-            scheduler: Scheduler(),
-            ctx: try! ModelContainer(for: UserPrefs.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true)).mainContext,
-            showExplanations: false
-        )
+        return VStack(spacing: 20) {
+            StandAndFocusSettingsContentView(
+                userPrefs: UserPrefs(),
+                scheduler: Scheduler(),
+                ctx: container1.mainContext,
+                showExplanations: true
+            )
+            
+            StandAndFocusSettingsContentView(
+                userPrefs: UserPrefs(pomodoroModeEnabled: true),
+                scheduler: Scheduler(),
+                ctx: container2.mainContext,
+                showExplanations: false
+            )
+        }
+        .background(Color.settingsBackground)
+        .padding()
+    } catch {
+        return Text("Failed to create preview: \(error.localizedDescription)")
+            .background(Color.settingsBackground)
+            .padding()
     }
-    .background(Color.settingsBackground)
-    .padding()
 } 

@@ -17,13 +17,26 @@ class UserPrefsManager: ObservableObject {
         guard let ctx = modelContext else { return }
         
         let descriptor = FetchDescriptor<UserPrefs>()
-        if let prefs = try? ctx.fetch(descriptor), let first = prefs.first {
-            self.userPrefs = first
-        } else {
+        do {
+            let prefs = try ctx.fetch(descriptor)
+            if let first = prefs.first {
+                self.userPrefs = first
+            } else {
+                let newPrefs = UserPrefs()
+                ctx.insert(newPrefs)
+                try ctx.save()
+                self.userPrefs = newPrefs
+            }
+        } catch {
+            // Handle error gracefully - create default prefs
             let newPrefs = UserPrefs()
             ctx.insert(newPrefs)
-            try? ctx.save()
-            self.userPrefs = newPrefs
+            do {
+                try ctx.save()
+                self.userPrefs = newPrefs
+            } catch {
+                self.userPrefs = newPrefs
+            }
         }
     }
 }
@@ -42,6 +55,8 @@ struct StandoroApp: App {
     @State private var settingsSelection: SettingsView.SidebarItem? = .standAndFocus
     @StateObject private var userPrefsManager = UserPrefsManager()
     @State private var showMainWindow = false
+    @State private var showErrorAlert = false
+    @State private var errorMessage = ""
 
     init() {
         // Create a persistent model container that includes all our models
@@ -53,7 +68,18 @@ struct StandoroApp: App {
             let modelConfiguration = ModelConfiguration(schema: schema)
             self.modelContainer = try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            // Instead of crashing, we'll show an error alert
+            // Create a temporary in-memory container as fallback
+            do {
+                let schema = Schema([UserPrefs.self, ActivityRecord.self])
+                let modelConfiguration = ModelConfiguration(isStoredInMemoryOnly: true)
+                self.modelContainer = try ModelContainer(for: schema, configurations: [modelConfiguration])
+            } catch {
+                // If even the fallback fails, we have to use a basic container
+                // This is a last resort and shouldn't happen in normal circumstances
+                let schema = Schema([UserPrefs.self, ActivityRecord.self])
+                self.modelContainer = try! ModelContainer(for: schema, configurations: [ModelConfiguration(isStoredInMemoryOnly: true)])
+            }
         }
         
         requestNotifAuth()
@@ -200,10 +226,6 @@ struct MainWindowView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 NSApp.activate(ignoringOtherApps: true)
             }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("SaveUserPrefs"))) { _ in
-            // Save UserPrefs when scheduler state changes
-            try? ctx.save()
         }
     }
 }

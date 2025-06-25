@@ -49,7 +49,6 @@ final class StatsService: ObservableObject {
         
         // Create and save ActivityRecord
         guard let ctx = modelContext else {
-            print("📊 StatsService: No model context available")
             return
         }
         
@@ -64,9 +63,11 @@ final class StatsService: ObservableObject {
         
         do {
             try ctx.save()
-            print("📊 StatsService: Saved activity record - type: \(type.rawValue), seconds: \(Int(seconds)), skipped: \(skipped)")
         } catch {
-            print("📊 StatsService: Failed to save activity record: \(error)")
+            // Log error but don't crash the app
+            #if DEBUG
+            print("StatsService: Failed to save activity record: \(error)")
+            #endif
         }
         
         // Update published values
@@ -75,7 +76,6 @@ final class StatsService: ObservableObject {
 
     func recordChallengeAction(completed: Bool) {
         guard let ctx = modelContext else {
-            print("📊 StatsService: No model context available")
             return
         }
         
@@ -91,9 +91,10 @@ final class StatsService: ObservableObject {
         
         do {
             try ctx.save()
-            print("📊 StatsService: Saved challenge record - completed: \(completed)")
         } catch {
-            print("📊 StatsService: Failed to save challenge record: \(error)")
+            #if DEBUG
+            print("StatsService: Failed to save challenge record: \(error)")
+            #endif
         }
         
         // Update published values
@@ -102,7 +103,6 @@ final class StatsService: ObservableObject {
 
     func recordPostureAlert() {
         guard let ctx = modelContext else {
-            print("📊 StatsService: No model context available")
             return
         }
         
@@ -117,9 +117,10 @@ final class StatsService: ObservableObject {
         
         do {
             try ctx.save()
-            print("📊 StatsService: Saved posture alert record")
         } catch {
-            print("📊 StatsService: Failed to save posture alert record: \(error)")
+            #if DEBUG
+            print("StatsService: Failed to save posture alert record: \(error)")
+            #endif
         }
         
         // Update published values
@@ -129,7 +130,6 @@ final class StatsService: ObservableObject {
     // MARK: - Refresh and aggregation
     func refreshStats() {
         guard let ctx = modelContext else {
-            print("📊 StatsService: No model context available for refresh")
             return
         }
         
@@ -158,9 +158,10 @@ final class StatsService: ObservableObject {
         do {
             let records = try ctx.fetch(descriptor)
             calculateStats(from: records)
-            print("📊 StatsService: Refreshed stats from \(records.count) records for period: \(selectedPeriod.rawValue)")
         } catch {
-            print("📊 StatsService: Failed to fetch records: \(error)")
+            #if DEBUG
+            print("StatsService: Failed to fetch records: \(error)")
+            #endif
         }
     }
     

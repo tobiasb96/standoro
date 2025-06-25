@@ -2,58 +2,96 @@ import Foundation
 import Combine
 import CoreMotion
 
-/// Detects when user stands up from sitting position
+/// Detects when user stands up or sits down using motion data
 @MainActor
-class StandupDetector: BaseAnalyzer, ObservableObject {
-    @Published var isStanding = false
-    @Published var lastStandupTime: Date?
-    @Published var lastSitTime: Date?
+class StandupDetector: ObservableObject {
+    @Published var isStanding: Bool = false
     
+    // Configuration
     private var accelerationThreshold: Double = 2.0 // m/s²
+    private var updateFrequency: TimeInterval = 1.0
+    private var isHighFrequencyMode = false
+    
+    // State tracking
+    private var lastUpdateTime: Date = Date()
+    private var lastAcceleration: Double = 0.0
+    private var accelerationBuffer: [Double] = []
+    private let bufferSize = 5
+    
+    // Publishers
+    private let standupEventSubject = PassthroughSubject<Bool, Never>()
+    
+    var standupEventPublisher: AnyPublisher<Bool, Never> {
+        standupEventSubject.eraseToAnyPublisher()
+    }
+    
+    // MARK: - Configuration Methods
     
     func setAccelerationThreshold(_ threshold: Double) {
         accelerationThreshold = threshold
     }
     
-    override func enableHighFrequencyMode() {
-        super.enableHighFrequencyMode()
-        updateFrequency = 0.5
+    func enableHighFrequencyMode() {
+        isHighFrequencyMode = true
+        updateFrequency = 0.1 // 10Hz updates
     }
     
-    override func disableHighFrequencyMode() {
-        super.disableHighFrequencyMode()
-        updateFrequency = 1.0
+    func disableHighFrequencyMode() {
+        isHighFrequencyMode = false
+        updateFrequency = 1.0 // 1Hz updates
     }
+    
+    // MARK: - Analysis Methods
     
     func processMotionData(_ motionData: MotionData) {
-        // Check update frequency
+        // Check if we should update based on frequency
         if !shouldUpdate() {
             return
         }
         
-        // Calculate vertical acceleration magnitude
-        let verticalAcceleration = abs(motionData.acceleration.y)
+        // Calculate vertical acceleration (simplified)
+        let verticalAcceleration = abs(motionData.acceleration.z)
         
-        // Detect standup based on vertical acceleration
-        if verticalAcceleration > accelerationThreshold {
-            if !isStanding {
+        // Add to buffer for smoothing
+        accelerationBuffer.append(verticalAcceleration)
+        if accelerationBuffer.count > bufferSize {
+            accelerationBuffer.removeFirst()
+        }
+        
+        // Calculate average acceleration
+        let averageAcceleration = accelerationBuffer.reduce(0, +) / Double(accelerationBuffer.count)
+        
+        // Detect significant acceleration change
+        let accelerationChange = abs(averageAcceleration - lastAcceleration)
+        
+        if accelerationChange > accelerationThreshold {
+            // Detect standup/sitdown based on acceleration pattern
+            if averageAcceleration > lastAcceleration && !isStanding {
+                // User stood up
                 isStanding = true
-                lastStandupTime = Date()
-                print("🔔 StandupDetector - 🚶 User stood up (acceleration: \(String(format: "%.2f", verticalAcceleration)) m/s²)")
+                standupEventSubject.send(true)
                 
-                // Notify standup detected
-                NotificationCenter.default.post(name: .standupDetected, object: nil)
-            }
-        } else {
-            if isStanding {
+                #if DEBUG
+                print("StandupDetector: User stood up (acceleration: \(String(format: "%.2f", verticalAcceleration)) m/s²)")
+                #endif
+            } else if averageAcceleration < lastAcceleration && isStanding {
+                // User sat down
                 isStanding = false
-                lastSitTime = Date()
-                print("🔔 StandupDetector - 🪑 User sat down")
+                standupEventSubject.send(false)
                 
-                // Notify sit down detected
-                NotificationCenter.default.post(name: .sitDownDetected, object: nil)
+                #if DEBUG
+                print("StandupDetector: User sat down")
+                #endif
             }
         }
+        
+        lastAcceleration = averageAcceleration
+        lastUpdateTime = Date()
+    }
+    
+    private func shouldUpdate() -> Bool {
+        let timeSinceLastUpdate = Date().timeIntervalSince(lastUpdateTime)
+        return timeSinceLastUpdate >= updateFrequency
     }
 }
 

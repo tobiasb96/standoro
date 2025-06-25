@@ -55,7 +55,9 @@ class PermissionManager: ObservableObject {
             }
             return granted
         } catch {
-            print("🔔 PermissionManager - Notification authorization error: \(error)")
+            #if DEBUG
+            print("PermissionManager: Notification authorization error: \(error)")
+            #endif
             return false
         }
     }

@@ -56,7 +56,9 @@ class NotificationService: ObservableObject {
             }
             return granted
         } catch {
-            print("🔔 NotificationService - Authorization error: \(error)")
+            #if DEBUG
+            print("NotificationService: Authorization error: \(error)")
+            #endif
             return false
         }
     }
@@ -120,7 +122,6 @@ class NotificationService: ObservableObject {
         }
         
         guard shouldSendPostureNotification() else {
-            print("🔔 NotificationService - Skipping posture notification due to backoff (count: \(postureNotificationCount))")
             return
         }
         
@@ -138,14 +139,15 @@ class NotificationService: ObservableObject {
         
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
-                print("🔔 NotificationService - Notification error: \(error)")
+                #if DEBUG
+                print("NotificationService: Notification error: \(error)")
+                #endif
             } else {
                 Task { @MainActor in
                     self.postureNotificationCount += 1
                     self.lastPostureNotificationTime = Date()
                     // Only track stats when notification is actually sent
                     self.statsService?.recordPostureAlert()
-                    print("🔔 NotificationService - Sent posture notification #\(self.postureNotificationCount)")
                 }
             }
         }
@@ -173,7 +175,9 @@ class NotificationService: ObservableObject {
         
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
-                print("🔔 NotificationService - Notification error: \(error)")
+                #if DEBUG
+                print("NotificationService: Notification error: \(error)")
+                #endif
             }
         }
     }
@@ -183,7 +187,6 @@ class NotificationService: ObservableObject {
         if !isTrackingGoodPosture {
             goodPostureStartTime = Date()
             isTrackingGoodPosture = true
-            print("🔔 NotificationService - Started tracking good posture")
         }
     }
     
@@ -192,85 +195,80 @@ class NotificationService: ObservableObject {
         if isTrackingGoodPosture {
             goodPostureStartTime = nil
             isTrackingGoodPosture = false
-            print("🔔 NotificationService - Stopped tracking good posture (posture became poor)")
         }
     }
     
     /// Check if sustained good posture duration has been reached
     private func checkSustainedGoodPosture() {
-        guard isTrackingGoodPosture, let startTime = goodPostureStartTime else { return }
+        guard isTrackingGoodPosture, let startTime = goodPostureStartTime else {
+            return
+        }
         
         let goodPostureDuration = Date().timeIntervalSince(startTime)
+        
         if goodPostureDuration >= requiredGoodPostureDuration {
-            resetPostureBackoff()
-            print("🔔 NotificationService - Sustained good posture for \(Int(requiredGoodPostureDuration))s, resetting backoff")
-        } else {
-            let remaining = requiredGoodPostureDuration - goodPostureDuration
-            print("🔔 NotificationService - Good posture for \(Int(goodPostureDuration))s, \(Int(remaining))s until backoff reset")
+            // Reset backoff when sustained good posture is achieved
+            resetPostureNotificationBackoff()
         }
     }
     
-    /// Reset posture notification backoff when sustained good posture is achieved
-    func resetPostureBackoff() {
+    /// Reset posture notification backoff
+    private func resetPostureNotificationBackoff() {
         postureNotificationCount = 0
         lastPostureNotificationTime = nil
+        backoffMultiplier = 1.0
         goodPostureStartTime = nil
         isTrackingGoodPosture = false
-        print("🔔 NotificationService - Reset posture notification backoff")
+        
+        #if DEBUG
+        print("NotificationService: Reset posture notification backoff")
+        #endif
     }
     
-    /// Check if backoff should be reset due to time passing
-    private func checkBackoffReset() {
-        guard let lastTime = lastPostureNotificationTime else { return }
-        
-        let timeSinceLastNotification = Date().timeIntervalSince(lastTime)
-        if timeSinceLastNotification >= resetBackoffAfter {
-            resetPostureBackoff()
-            print("🔔 NotificationService - Reset backoff due to time passing")
-        }
-    }
-    
-    private func startBackoffResetTimer() {
-        // Ensure any existing timer is cancelled
-        stopBackoffResetTimer()
-        
-        // Check for backoff reset and sustained good posture every 30 seconds
-        backoffResetTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
+    /// Start the backoff reset timer
+    func startBackoffResetTimer() {
+        backoffResetTimer?.invalidate()
+        backoffResetTimer = Timer.scheduledTimer(withTimeInterval: 60.0, repeats: true) { [weak self] _ in
             Task { @MainActor in
-                self?.checkBackoffReset()
                 self?.checkSustainedGoodPosture()
+                self?.checkTimeBasedBackoffReset()
             }
         }
     }
     
-    private func stopBackoffResetTimer() {
+    /// Stop the backoff reset timer
+    func stopBackoffResetTimer() {
         backoffResetTimer?.invalidate()
         backoffResetTimer = nil
     }
     
-    private func checkAuthorizationStatus() {
-        UNUserNotificationCenter.current().getNotificationSettings { settings in
-            Task { @MainActor in
-                self.isAuthorized = settings.authorizationStatus == .authorized
-            }
+    /// Check if enough time has passed to reset backoff
+    private func checkTimeBasedBackoffReset() {
+        guard let lastTime = lastPostureNotificationTime else { return }
+        
+        let timeSinceLastNotification = Date().timeIntervalSince(lastTime)
+        if timeSinceLastNotification >= resetBackoffAfter {
+            resetPostureNotificationBackoff()
         }
     }
     
-    // Add this method for random posture nudges
+    /// Send a random posture nudge (for periodic reminders)
     func sendRandomPostureNudge() {
-        guard isAuthorized else { return }
-        guard shouldSendNotification() else { return }
+        guard isAuthorized else {
+            return
+        }
+        
+        guard shouldSendNotification() else {
+            return
+        }
         
         let messages = [
-            ("Posture Nudge", "Remember to sit up straight and relax your shoulders."),
-            ("Posture Nudge", "Keep your back aligned and avoid slouching."),
-            ("Posture Nudge", "Take a moment to check your posture."),
-            ("Posture Nudge", "Adjust your screen to eye level for better posture."),
+            ("Posture Check", "Time for a quick posture check!"),
+            ("Posture Reminder", "How's your posture looking?"),
             ("Posture Nudge", "Stretch and reset your posture for a productivity boost!"),
-            ("Posture Nudge", "A quick posture check can help you stay healthy!"),
-            ("Posture Nudge", "Uncross your legs and plant your feet flat for best posture."),
-            ("Posture Nudge", "Roll your shoulders back and take a deep breath."),
+            ("Posture Nudge", "A quick posture check can help you stay healthy!")
         ]
+        
         let message = messages.randomElement() ?? ("Posture Nudge", "Check your posture!")
         
         let content = UNMutableNotificationContent()
@@ -286,25 +284,18 @@ class NotificationService: ObservableObject {
         
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
-                print("🔔 NotificationService - Random nudge error: \(error)")
-            } else {
-                print("🔔 NotificationService - Sent random posture nudge")
+                #if DEBUG
+                print("NotificationService: Random nudge error: \(error)")
+                #endif
             }
         }
     }
     
-    // MARK: - Posture Tracking Lifecycle
-    
-    /// Call this when posture monitoring is enabled to start internal timers.
-    func enablePostureTracking() {
-        guard backoffResetTimer == nil else { return }
-        startBackoffResetTimer()
-    }
-    
-    /// Call this when posture monitoring is disabled to stop internal timers and
-    /// clear related state so no extra CPU cycles are used.
-    func disablePostureTracking() {
-        stopBackoffResetTimer()
-        resetPostureBackoff()
+    private func checkAuthorizationStatus() {
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            DispatchQueue.main.async {
+                self.isAuthorized = settings.authorizationStatus == .authorized
+            }
+        }
     }
 } 
