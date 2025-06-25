@@ -16,6 +16,9 @@ class PostureAnalyzer: BaseAnalyzer, ObservableObject {
     private var pitchThreshold: Double = 15.0
     private var rollThreshold: Double = 15.0
     
+    // UserPrefs reference for persistence
+    private var userPrefs: UserPrefs?
+    
     // Logging throttling
     private var lastLogTime = Date()
     private var lastDurationLog = Date()
@@ -48,6 +51,9 @@ class PostureAnalyzer: BaseAnalyzer, ObservableObject {
         calibrationData = (pitch: currentPitch, roll: currentRoll)
         currentPosture = .good
         print("🔔 PostureAnalyzer - Calibration completed: pitch=\(String(format: "%.1f", currentPitch))°, roll=\(String(format: "%.1f", currentRoll))°")
+        
+        // Save calibration data to UserPrefs
+        saveCalibrationToUserPrefs()
     }
     
     func setPoorPostureThreshold(_ seconds: TimeInterval) {
@@ -60,6 +66,31 @@ class PostureAnalyzer: BaseAnalyzer, ObservableObject {
     
     func setRollThreshold(_ degrees: Double) {
         rollThreshold = degrees
+    }
+    
+    func setUserPrefs(_ prefs: UserPrefs) {
+        self.userPrefs = prefs
+        // Restore calibration data from UserPrefs
+        restoreCalibrationFromUserPrefs(prefs)
+    }
+    
+    private func saveCalibrationToUserPrefs() {
+        guard let prefs = userPrefs, let calibration = calibrationData else { return }
+        prefs.calibratedPitchValue = calibration.pitch
+        prefs.calibratedRollValue = calibration.roll
+        prefs.isCalibratedValue = true
+        
+        // Trigger a save to the model context
+        NotificationCenter.default.post(name: NSNotification.Name("SaveUserPrefs"), object: nil)
+    }
+    
+    private func restoreCalibrationFromUserPrefs(_ prefs: UserPrefs) {
+        if prefs.isCalibratedValue, 
+           let pitch = prefs.calibratedPitchValue, 
+           let roll = prefs.calibratedRollValue {
+            calibrationData = (pitch: pitch, roll: roll)
+            print("🔔 PostureAnalyzer - Restored calibration: pitch=\(String(format: "%.1f", pitch))°, roll=\(String(format: "%.1f", roll))°")
+        }
     }
     
     func setNoData() {
@@ -80,6 +111,9 @@ class PostureAnalyzer: BaseAnalyzer, ObservableObject {
         if calibrationData == nil {
             calibrationData = (pitch: motionData.pitch, roll: motionData.roll)
             print("🔔 PostureAnalyzer - Auto-calibrated: pitch=\(String(format: "%.1f", motionData.pitch))°, roll=\(String(format: "%.1f", motionData.roll))°")
+            
+            // Save auto-calibration data to UserPrefs
+            saveCalibrationToUserPrefs()
             return
         }
         

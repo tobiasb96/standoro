@@ -34,7 +34,12 @@ class UserPrefs {
     var remainingTimeWhenPaused: TimeInterval?
     var phaseStartTime: Date?
     
-    init(maxSitMinutes: Int = 45, maxStandMinutes: Int = 15, calendarFilter: Bool = true, showMenuBarCountdown: Bool = false, postureMonitoringEnabled: Bool = false, postureNudgesEnabled: Bool = false, poorPostureThresholdSeconds: Int = 30, postureSensitivityDegrees: Double = 15.0, autoStartEnabled: Bool = true, pomodoroModeEnabled: Bool = false, focusIntervalMinutes: Int = 25, shortBreakMinutes: Int = 5, longBreakMinutes: Int = 15, intervalsBeforeLongBreak: Int = 4, moveChallengesEnabled: Bool = false, challengeAudioFeedbackEnabled: Bool = true, completedFocusSessions: Int = 0, currentPhase: String = "sitting", currentSessionType: String = "focus", isRunning: Bool = false, isPaused: Bool = false, nextFireTime: Date = Date(), remainingTimeWhenPaused: TimeInterval = 0, phaseStartTime: Date? = nil) {
+    // Posture calibration persistence
+    var calibratedPitch: Double?
+    var calibratedRoll: Double?
+    var isCalibrated: Bool?
+    
+    init(maxSitMinutes: Int = 45, maxStandMinutes: Int = 15, calendarFilter: Bool = true, showMenuBarCountdown: Bool = false, postureMonitoringEnabled: Bool = false, postureNudgesEnabled: Bool = false, poorPostureThresholdSeconds: Int = 30, postureSensitivityDegrees: Double = 15.0, autoStartEnabled: Bool = true, pomodoroModeEnabled: Bool = false, focusIntervalMinutes: Int = 25, shortBreakMinutes: Int = 5, longBreakMinutes: Int = 15, intervalsBeforeLongBreak: Int = 4, moveChallengesEnabled: Bool = false, challengeAudioFeedbackEnabled: Bool = true, completedFocusSessions: Int = 0, currentPhase: String = "sitting", currentSessionType: String = "focus", isRunning: Bool = false, isPaused: Bool = false, nextFireTime: Date = Date(), remainingTimeWhenPaused: TimeInterval = 0, phaseStartTime: Date? = nil, calibratedPitch: Double? = nil, calibratedRoll: Double? = nil, isCalibrated: Bool? = nil) {
         self.maxSitMinutes = maxSitMinutes
         self.maxStandMinutes = maxStandMinutes
         self.calendarFilter = calendarFilter
@@ -59,6 +64,9 @@ class UserPrefs {
         self.nextFireTime = nextFireTime
         self.remainingTimeWhenPaused = remainingTimeWhenPaused
         self.phaseStartTime = phaseStartTime
+        self.calibratedPitch = calibratedPitch
+        self.calibratedRoll = calibratedRoll
+        self.isCalibrated = isCalibrated
     }
     
     // Computed properties to provide default values
@@ -163,5 +171,21 @@ class UserPrefs {
     var phaseStartTimeValue: Date? {
         get { phaseStartTime }
         set { phaseStartTime = newValue }
+    }
+    
+    // Posture calibration computed properties
+    var calibratedPitchValue: Double? {
+        get { calibratedPitch }
+        set { calibratedPitch = newValue }
+    }
+    
+    var calibratedRollValue: Double? {
+        get { calibratedRoll }
+        set { calibratedRoll = newValue }
+    }
+    
+    var isCalibratedValue: Bool {
+        get { isCalibrated ?? false }
+        set { isCalibrated = newValue }
     }
 } 

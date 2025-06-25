@@ -185,6 +185,7 @@ struct MainWindowView: View {
             // Set UserPrefs for scheduler state persistence
             if let prefs = userPrefsManager.userPrefs {
                 scheduler.setUserPrefs(prefs)
+                motionService.setUserPrefs(prefs)
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ResetOnboarding"))) { _ in
@@ -242,6 +243,7 @@ struct AppContentView: View {
             // Set UserPrefs for scheduler state persistence
             if let prefs = userPrefsManager.userPrefs {
                 scheduler.setUserPrefs(prefs)
+                motionService.setUserPrefs(prefs)
             }
             
             if !didOnboard {

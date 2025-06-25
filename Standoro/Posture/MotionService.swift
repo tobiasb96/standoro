@@ -164,6 +164,13 @@ class MotionService: ObservableObject {
         notificationService.setStatsService(service)
     }
     
+    // MARK: - UserPrefs for Calibration Persistence
+    
+    func setUserPrefs(_ prefs: UserPrefs) {
+        // Pass UserPrefs to PostureAnalyzer for calibration persistence
+        postureAnalyzer.setUserPrefs(prefs)
+    }
+    
     // MARK: - Private Methods
     
     private func setupMotionProviders() {
