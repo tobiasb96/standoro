@@ -7,10 +7,12 @@ import Combine
 class UserPrefsManager: ObservableObject {
     @Published var userPrefs: UserPrefs?
     private var modelContext: ModelContext?
+    private var cancellables = Set<AnyCancellable>()
     
     func initialize(with context: ModelContext) {
         self.modelContext = context
         loadOrCreateUserPrefs()
+        setupNotificationObserver()
     }
     
     private func loadOrCreateUserPrefs() {
@@ -37,6 +39,26 @@ class UserPrefsManager: ObservableObject {
             } catch {
                 self.userPrefs = newPrefs
             }
+        }
+    }
+    
+    private func setupNotificationObserver() {
+        // Observe "SaveUserPrefs" notifications so preferences are always persisted
+        NotificationCenter.default.publisher(for: NSNotification.Name("SaveUserPrefs"))
+            .sink { [weak self] _ in
+                self?.saveUserPrefs()
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func saveUserPrefs() {
+        guard let ctx = modelContext else { return }
+        do {
+            try ctx.save()
+        } catch {
+            #if DEBUG
+            print("UserPrefsManager: Failed to save UserPrefs – \(error)")
+            #endif
         }
     }
 }
@@ -80,11 +102,6 @@ struct StandoroApp: App {
                 let schema = Schema([UserPrefs.self, ActivityRecord.self])
                 self.modelContainer = try! ModelContainer(for: schema, configurations: [ModelConfiguration(isStoredInMemoryOnly: true)])
             }
-        }
-
-        // Observe "SaveUserPrefs" notifications so preferences are always persisted, even if other UI views are not active
-        NotificationCenter.default.addObserver(forName: NSNotification.Name("SaveUserPrefs"), object: nil, queue: .main) { _ in
-            self.persistUserPrefs()
         }
     }
 
@@ -159,17 +176,6 @@ struct StandoroApp: App {
                     NSApp.activate(ignoringOtherApps: true)
                 }
             }
-        }
-    }
-
-    // Persist UserPrefs globally when scheduler posts SaveUserPrefs, even if MenuBarExtra view is not mounted
-    func persistUserPrefs() {
-        do {
-            try modelContainer.mainContext.save()
-        } catch {
-            #if DEBUG
-            print("StandoroApp: Failed to save UserPrefs – \(error)")
-            #endif
         }
     }
 }
