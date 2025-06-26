@@ -1,6 +1,7 @@
 import Foundation
 import StoreKit
 import SwiftUI
+import Combine
 
 @MainActor
 class PurchaseManager: ObservableObject {
@@ -27,7 +28,7 @@ class PurchaseManager: ObservableObject {
             if case .verified(_) = verificationResult {
                 isProUnlocked = true
             }
-        case .userCancelled, .pending, .success(.unverified), .notPurchased:
+        case .userCancelled, .pending:
             break
         @unknown default:
             break

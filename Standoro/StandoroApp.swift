@@ -139,7 +139,8 @@ struct StandoroApp: App {
                 scheduler: scheduler, 
                 motionService: motionService, 
                 calendarService: calendarService, 
-                statsService: statsService
+                statsService: statsService,
+                purchaseManager: purchaseManager
             )
             .modelContainer(modelContainer)
             .environmentObject(purchaseManager)
@@ -257,6 +258,7 @@ struct AppContentView: View {
     let motionService: MotionService
     let calendarService: CalendarService
     let statsService: StatsService
+    let purchaseManager: PurchaseManager
     
     private var userPrefs: UserPrefs {
         userPrefsManager.userPrefs ?? UserPrefs()
@@ -356,6 +358,7 @@ struct AppContentView: View {
                 initialSelection: settingsSelection
             )
             .modelContainer(modelContainer)
+            .environmentObject(purchaseManager)
             
             let window = NSWindow(
                 contentRect: NSRect(x: 0, y: 0, width: 1000, height: 687),
