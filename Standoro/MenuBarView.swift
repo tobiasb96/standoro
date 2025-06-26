@@ -74,16 +74,16 @@ struct MenuBarView: View {
             if scheduler.pomodoroModeEnabled {
                 switch scheduler.currentSessionType {
                 case .focus:
-                    return scheduler.currentPhase == .sitting ? "chair" : "figure.stand"
+                    return scheduler.currentPhase == .sitting ? "chair.fill" : "figure.stand"
                 case .shortBreak:
-                    return "cup.and.saucer"
+                    return "cup.and.saucer.fill"
                 case .longBreak:
-                    return "bed.double"
+                    return "bed.double.fill"
                 }
             } else {
                 switch scheduler.currentPhase {
                 case .sitting:
-                    return "chair"
+                    return "chair.fill"
                 case .standing:
                     return "figure.stand"
                 }
@@ -91,9 +91,9 @@ struct MenuBarView: View {
         } else {
             // When not running, show based on current settings
             if userPrefs.pomodoroModeEnabledValue {
-                return "chair" // Focus sessions typically start with sitting
+                return "chair.fill" // Focus sessions typically start with sitting
             } else {
-                return "chair"
+                return "chair.fill"
             }
         }
     }
@@ -102,22 +102,22 @@ struct MenuBarView: View {
         if !scheduler.isRunning {
             // When not running, show based on current settings
             if userPrefs.pomodoroModeEnabledValue {
-                return Color.settingsAccentGreen.opacity(0.3) // Focus session color - muted green
+                return Color.settingsAccentGreen.opacity(0.2) // Focus session color - muted green
             } else {
-                return Color.gray.opacity(0.3)
+                return Color.gray.opacity(0.2)
             }
         } else if scheduler.isPaused {
-            return Color.gray.opacity(0.3) // Gray for pause
+            return Color.gray.opacity(0.2) // Gray for pause
         } else {
             if scheduler.pomodoroModeEnabled {
                 switch scheduler.currentSessionType {
                 case .focus:
-                    return Color.settingsAccentGreen.opacity(0.3) // Green for focus
+                    return Color.settingsAccentGreen.opacity(0.2) // Green for focus
                 case .shortBreak, .longBreak:
-                    return Color(red: 0.7, green: 0.3, blue: 0.3).opacity(0.3) // Muted red for breaks
+                    return Color(red: 0.7, green: 0.3, blue: 0.3).opacity(0.2) // Muted red for breaks
                 }
             } else {
-                return Color.settingsAccentGreen.opacity(0.3) // Green for focus
+                return Color.settingsAccentGreen.opacity(0.2) // Green for focus
             }
         }
     }
@@ -126,22 +126,22 @@ struct MenuBarView: View {
         if !scheduler.isRunning {
             // When not running, show based on current settings
             if userPrefs.pomodoroModeEnabledValue {
-                return Color.settingsAccentGreen // Focus session color - muted green
+                return Color.white // White for better readability on light backgrounds
             } else {
-                return Color.gray
+                return Color.white
             }
         } else if scheduler.isPaused {
-            return Color.gray // Gray for pause
+            return Color.white // White for pause
         } else {
             if scheduler.pomodoroModeEnabled {
                 switch scheduler.currentSessionType {
                 case .focus:
-                    return Color.settingsAccentGreen // Green for focus
+                    return Color.white // White for better readability on light backgrounds
                 case .shortBreak, .longBreak:
-                    return Color(red: 0.7, green: 0.3, blue: 0.3) // Muted red for breaks
+                    return Color.white // White for breaks
                 }
             } else {
-                return Color.settingsAccentGreen // Green for focus
+                return Color.white // White for better readability on light backgrounds
             }
         }
     }
@@ -233,100 +233,145 @@ struct MenuBarView: View {
                 if shouldShowCalendarMute {
                     Image(systemName: "bell.slash.fill")
                         .foregroundColor(.orange)
-                        .font(.system(size: 16))
+                        .font(.system(size: 14))
                         .help(calendarMuteTooltip)
                 }
             }
             .padding(.horizontal, 16)
-            .padding(.top, 8)
+            .padding(.top, 6)
 
             // Main content area
             VStack {
-                Spacer(minLength: 20)
+                Spacer(minLength: 12)
 
                 // Phase indicator with icon (no background)
                 HStack(spacing: 12) {
-                    Image(systemName: phaseIcon)
-                        .font(.system(size: 24, weight: .medium))
-                        .foregroundColor(phaseIconColor)
+                    ZStack {
+                        // Subtle background circle for the icon
+                        Circle()
+                            .fill(Color.white.opacity(0.1))
+                            .frame(width: 40, height: 40)
+                        
+                        Image(systemName: phaseIcon)
+                            .font(.system(size: 24, weight: .medium))
+                            .foregroundColor(phaseIconColor)
+                    }
                     
                     Text(phaseText)
-                        .font(.system(size: 24, weight: .medium))
+                        .font(.system(size: 20, weight: .medium))
                         .foregroundColor(.white)
                 }
 
                 // Session progress indicator for Pomodoro mode
                 if let progressText = sessionProgressText {
                     Text(progressText)
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.system(size: 11, weight: .medium))
                         .foregroundColor(.white.opacity(0.8))
-                        .padding(.top, 2)
+                        .padding(.top, 1)
                 }
 
                 Text(formatTime(displayTime))
-                    .font(.system(size: 64, weight: .light, design: .rounded))
+                    .font(.system(size: 52, weight: .light, design: .rounded))
                     .lineLimit(1)
                     .minimumScaleFactor(0.5)
-                    .padding(.top, 8)
+                    .padding(.top, 4)
 
-                HStack(spacing: 40) {
+                HStack(spacing: 32) {
                     Button(action: handleRestart) {
-                        Image(systemName: "arrow.clockwise")
-                            .font(.system(size: 20))
-                            .foregroundColor(scheduler.isRunning ? .white : .gray)
+                        ZStack {
+                            Circle()
+                                .fill(Color.white.opacity(0.1))
+                                .frame(width: 36, height: 36)
+                            
+                            Image(systemName: "arrow.clockwise")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(scheduler.isRunning ? .white : .white.opacity(0.5))
+                        }
                     }
                     .buttonStyle(.plain)
                     .disabled(!scheduler.isRunning)
                     .help("Restart timer")
 
                     Button(action: handlePlayPause) {
-                        Image(systemName: playPauseIcon)
-                            .font(.system(size: 40, weight: .thin))
-                            .foregroundColor(scheduler.isRunning && scheduler.isPaused ? .gray : .white)
+                        ZStack {
+                            Circle()
+                                .fill(Color.white.opacity(0.15))
+                                .frame(width: 52, height: 52)
+                            
+                            Image(systemName: playPauseIcon)
+                                .font(.system(size: 28, weight: .medium))
+                                .foregroundColor(scheduler.isRunning && scheduler.isPaused ? .white.opacity(0.7) : .white)
+                        }
                     }
                     .buttonStyle(.plain)
                     .help(playPauseTooltip)
                     
                     Button(action: handleSkipPhase) {
-                        Image(systemName: "forward.fill")
-                            .font(.system(size: 20))
-                            .foregroundColor(scheduler.isRunning ? .white : .gray)
+                        ZStack {
+                            Circle()
+                                .fill(Color.white.opacity(0.1))
+                                .frame(width: 36, height: 36)
+                            
+                            Image(systemName: "forward.fill")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(scheduler.isRunning ? .white : .white.opacity(0.5))
+                        }
                     }
                     .buttonStyle(.plain)
                     .disabled(!scheduler.isRunning)
                     .help("Skip to next phase")
                 }
 
-                Spacer(minLength: 20)
+                Spacer(minLength: 12)
             }
 
             // Bottom toolbar with smaller, monochrome buttons
             HStack {
                 Button(action: openStats) {
-                    Image(systemName: "chart.bar.xaxis")
-                        .foregroundColor(.white.opacity(0.7))
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(Color.white.opacity(0.1))
+                            .frame(width: 32, height: 32)
+                        
+                        Image(systemName: "chart.bar.xaxis")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.white.opacity(0.8))
+                    }
                 }.buttonStyle(.plain)
                 .help("View statistics")
 
                 Spacer()
 
                 Button(action: onOpenSettings) {
-                    Image(systemName: "gearshape.fill")
-                        .foregroundColor(.white.opacity(0.7))
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(Color.white.opacity(0.1))
+                            .frame(width: 32, height: 32)
+                        
+                        Image(systemName: "gearshape.fill")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.white.opacity(0.8))
+                    }
                 }.buttonStyle(.plain)
                 .help("Open settings")
 
                 Spacer()
 
                 Button(action: onQuit) {
-                    Image(systemName: "power")
-                        .foregroundColor(.white.opacity(0.7))
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(Color.white.opacity(0.1))
+                            .frame(width: 32, height: 32)
+                        
+                        Image(systemName: "power")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.white.opacity(0.8))
+                    }
                 }.buttonStyle(.plain)
                 .help("Quit application")
             }
-            .font(.system(size: 16))
             .padding(.horizontal, 16)
-            .padding(.vertical, 8)
+            .padding(.vertical, 6)
             .background(Color.black.opacity(0.2))
         }
         .frame(width: 300, height: 300)
