@@ -244,11 +244,11 @@ class MotionService: ObservableObject {
             .store(in: &cancellables)
         
         // Listen for standup detected
-        NotificationCenter.default.publisher(for: .standupDetected)
-            .sink { [weak self] _ in
-                self?.notificationService.sendStandupNotification()
-            }
-            .store(in: &cancellables)
+        // NotificationCenter.default.publisher(for: .standupDetected)
+        //     .sink { [weak self] _ in
+        //         self?.notificationService.sendStandUpNotification()
+        //     }
+        //     .store(in: &cancellables)
     }
     
     private func setupPropertyBindings() {

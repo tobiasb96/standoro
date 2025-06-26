@@ -148,6 +148,7 @@ class Scheduler: ObservableObject {
             // When enabling Pomodoro, reset state for a clean start
             completedFocusSessions = 0
             currentSessionType = .focus
+            currentPhase = .sitting // Start with sitting for the first focus session
             if isRunning && !isPaused {
                 // Also reset the timer to the new focus interval
                 nextFire = Date().addingTimeInterval(self.focusInterval)
@@ -243,6 +244,9 @@ class Scheduler: ObservableObject {
         // Record current phase as skipped
         recordCurrentPhaseStats(skipped: true)
         
+        // Send notification for the completed phase before moving to next
+        sendPhaseCompletionNotification()
+        
         // Move to next phase
         advanceToNextPhase()
     }
@@ -267,88 +271,13 @@ class Scheduler: ObservableObject {
             }
         }
         
-        // Capture values before the closure to avoid MainActor isolation issues
-        let currentPhase = self.currentPhase
-        let currentSessionType = self.currentSessionType
-        
-        // Capture Pomodoro intervals before the closure
-        let focusInterval = self.focusInterval
-        let shortBreakInterval = self.shortBreakInterval
-        let longBreakInterval = self.longBreakInterval
-        let completedSessions = self.completedFocusSessions
-        
-        // Capture normal intervals before the closure
-        let sittingInterval = self.sittingInterval
-        let standingInterval = self.standingInterval
-        
-        // Capture settings to avoid MainActor access within background closure
-        let autoStartEnabled = self.autoStartEnabled
-        let pomodoroMode = self.pomodoroModeEnabled
-        
-        // Check notification authorization first
-        UNUserNotificationCenter.current().getNotificationSettings { settings in
-            if settings.authorizationStatus == .authorized {
-                let content = UNMutableNotificationContent()
-                
-                if pomodoroMode {
-                    // Use captured values to avoid MainActor isolation issues
-                    let focusMinutes = Int(focusInterval / 60)
-                    let shortBreakMinutes = Int(shortBreakInterval / 60)
-                    _ = Int(longBreakInterval / 60) // Unused variable replaced with underscore
-                    
-                    // Pomodoro mode notifications
-                    switch currentSessionType {
-                    case .focus:
-                        content.title = "Focus Session Complete!"
-                        content.subtitle = "You've been \(currentPhase == .sitting ? "sitting" : "standing") for \(focusMinutes) minutes."
-                        content.body = autoStartEnabled ? "Time for a break." : "Time for a break. Open the menu to start your break."
-                    case .shortBreak:
-                        content.title = "Break Complete!"
-                        content.subtitle = "You've rested for \(shortBreakMinutes) minutes."
-                        content.body = autoStartEnabled ? "Ready for your next focus session?" : "Ready for your next focus session? Open the menu to start."
-                    case .longBreak:
-                        content.title = "Long Break Complete!"
-                        content.subtitle = "You've completed \(completedSessions) focus sessions."
-                        content.body = autoStartEnabled ? "Great work! Ready for more?" : "Great work! Ready for more? Open the menu to start."
-                    }
-                } else {
-                    // Normal mode notifications (existing logic)
-                    let sittingMinutes = Int(sittingInterval / 60)
-                    let standingMinutes = Int(standingInterval / 60)
-                    
-                    switch currentPhase {
-                    case .sitting:
-                        content.title = "Time to Stand Up!"
-                        content.subtitle = "You've been sitting for \(sittingMinutes) minutes."
-                        content.body = autoStartEnabled ? "A quick stretch will do you good." : "A quick stretch will do you good. Open the menu to start your standing session."
-                    case .standing:
-                        content.title = "Time to Sit Down"
-                        content.subtitle = "You've been standing for \(standingMinutes) minutes."
-                        content.body = autoStartEnabled ? "Time to relax for a bit." : "Time to relax for a bit. Open the menu to start your sitting session."
-                    }
-                }
-                
-                content.sound = .default
-                
-                let req = UNNotificationRequest(
-                    identifier: UUID().uuidString,
-                    content: content,
-                    trigger: nil
-                )
-                
-                UNUserNotificationCenter.current().add(req) { error in
-                    if let error = error {
-                        #if DEBUG
-                        print("🔔 Scheduler - Notification error: \(error)")
-                        #endif
-                    }
-                }
-            }
-        }
-        
         // Handle auto-start logic
         recordCurrentPhaseStats(skipped: false)
         phaseStartTime = Date()
+        
+        // Send notification for the completed phase
+        sendPhaseCompletionNotification()
+        
         if autoStartEnabled {
             // Continue to next phase automatically
             switchPhase()
@@ -370,6 +299,7 @@ class Scheduler: ObservableObject {
                     currentSessionType = .shortBreak
                     nextFire = Date().addingTimeInterval(self.shortBreakInterval)
                 }
+                // Don't change currentPhase here - it represents what we were doing during the focus session
             case .shortBreak, .longBreak:
                 currentSessionType = .focus
                 // Toggle sitting/standing for variety in focus sessions
@@ -559,10 +489,11 @@ class Scheduler: ObservableObject {
             switch currentSessionType {
             case .focus:
                 interval = focusInterval
-                currentPhase = .sitting
+                // Don't reset currentPhase here - it should alternate between sitting and standing
+                // The phase will be set in switchPhase() when transitioning from break to focus
             case .shortBreak, .longBreak:
                 interval = currentSessionType == .shortBreak ? shortBreakInterval : longBreakInterval
-                currentPhase = .standing
+                // During breaks, we don't change the phase - it represents what we were doing before the break
             }
             
             nextFire = Date().addingTimeInterval(interval)
@@ -584,7 +515,7 @@ class Scheduler: ObservableObject {
         }
         
         startNewPhase()
-        sendPhaseCompletionNotification()
+        // Remove the call to sendPhaseCompletionNotification since we handle notifications in fire()
     }
     
     private func advancePomodoroPhase() {
@@ -600,6 +531,8 @@ class Scheduler: ObservableObject {
             }
         case .shortBreak, .longBreak:
             currentSessionType = .focus
+            // Toggle sitting/standing for variety in focus sessions
+            currentPhase = (currentPhase == .sitting) ? .standing : .sitting
         }
     }
     
@@ -608,33 +541,82 @@ class Scheduler: ObservableObject {
     }
     
     private func sendPhaseCompletionNotification() {
-        let content = UNMutableNotificationContent()
+        // Capture values before the closure to avoid MainActor isolation issues
+        let currentPhase = self.currentPhase
+        let currentSessionType = self.currentSessionType
+        let autoStartEnabled = self.autoStartEnabled
+        let pomodoroMode = self.pomodoroModeEnabled
+        let completedSessions = self.completedFocusSessions
         
-        switch currentSessionType {
-        case .focus:
-            content.title = "Focus Session Complete!"
-            content.body = "Great work! Time for a break."
-        case .shortBreak:
-            content.title = "Break Complete!"
-            content.body = "Ready to focus again?"
-        case .longBreak:
-            content.title = "Long Break Complete!"
-            content.body = autoStartEnabled ? "Great work! Ready for more?" : "Great work! Ready for more? Open the menu to start."
-        }
+        // Capture intervals for more detailed notifications
+        let focusInterval = self.focusInterval
+        let shortBreakInterval = self.shortBreakInterval
+        let longBreakInterval = self.longBreakInterval
+        let sittingInterval = self.sittingInterval
+        let standingInterval = self.standingInterval
         
-        content.sound = .default
-        
-        let request = UNNotificationRequest(
-            identifier: UUID().uuidString,
-            content: content,
-            trigger: nil
-        )
-        
-        UNUserNotificationCenter.current().add(request) { error in
-            if let error = error {
-                #if DEBUG
-                print("Scheduler: Notification error: \(error)")
-                #endif
+        // Check notification authorization first
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            if settings.authorizationStatus == .authorized {
+                let content = UNMutableNotificationContent()
+                
+                if pomodoroMode {
+                    // Use captured values to avoid MainActor isolation issues
+                    let focusMinutes = Int(focusInterval / 60)
+                    let shortBreakMinutes = Int(shortBreakInterval / 60)
+                    let longBreakMinutes = Int(longBreakInterval / 60)
+                    
+                    // Pomodoro mode notifications
+                    switch currentSessionType {
+                    case .focus:
+                        content.title = "Focus Session Complete!"
+                        content.subtitle = "You've been \(currentPhase == .sitting ? "sitting" : "standing") for \(focusMinutes) minutes."
+                        content.body = autoStartEnabled ? "Time for a break." : "Time for a break. Open the menu to start your break."
+                    case .shortBreak:
+                        content.title = "Break Complete!"
+                        content.subtitle = "You've rested for \(shortBreakMinutes) minutes."
+                        // Determine next focus session posture based on what we just completed
+                        let nextPosture = currentPhase == .sitting ? "standing" : "sitting"
+                        content.body = autoStartEnabled ? "Ready for your next focus session? \(nextPosture.capitalized) up for this session." : "Ready for your next focus session? \(nextPosture.capitalized) up for this session. Open the menu to start."
+                    case .longBreak:
+                        content.title = "Long Break Complete!"
+                        content.subtitle = "You've completed \(completedSessions) focus sessions."
+                        // Determine next focus session posture based on what we just completed
+                        let nextPosture = currentPhase == .sitting ? "standing" : "sitting"
+                        content.body = autoStartEnabled ? "Great work! Ready for more? \(nextPosture.capitalized) up for this session." : "Great work! Ready for more? \(nextPosture.capitalized) up for this session. Open the menu to start."
+                    }
+                } else {
+                    // Normal mode notifications (existing logic)
+                    let sittingMinutes = Int(sittingInterval / 60)
+                    let standingMinutes = Int(standingInterval / 60)
+                    
+                    switch currentPhase {
+                    case .sitting:
+                        content.title = "Time to Stand Up!"
+                        content.subtitle = "You've been sitting for \(sittingMinutes) minutes."
+                        content.body = autoStartEnabled ? "A quick stretch will do you good." : "A quick stretch will do you good. Open the menu to start your standing session."
+                    case .standing:
+                        content.title = "Time to Sit Down"
+                        content.subtitle = "You've been standing for \(standingMinutes) minutes."
+                        content.body = autoStartEnabled ? "Time to relax for a bit." : "Time to relax for a bit. Open the menu to start your sitting session."
+                    }
+                }
+                
+                content.sound = .default
+                
+                let req = UNNotificationRequest(
+                    identifier: UUID().uuidString,
+                    content: content,
+                    trigger: nil
+                )
+                
+                UNUserNotificationCenter.current().add(req) { error in
+                    if let error = error {
+                        #if DEBUG
+                        print("🔔 Scheduler - Notification error: \(error)")
+                        #endif
+                    }
+                }
             }
         }
     }
