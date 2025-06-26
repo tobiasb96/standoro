@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 import EventKit
 import Combine
+import StoreKit
 
 struct SettingsView: View {
     @Environment(\.modelContext) private var ctx
@@ -10,6 +11,7 @@ struct SettingsView: View {
     @ObservedObject var motionService: MotionService
     @ObservedObject var calendarService: CalendarService
     @ObservedObject var statsService: StatsService
+    @EnvironmentObject var purchaseManager: PurchaseManager
     
     @State private var selection: SidebarItem?
     
@@ -26,12 +28,12 @@ struct SettingsView: View {
     }
     
     enum SidebarItem: Hashable {
-        case stats, standAndFocus, moveAndRest, keepPosture, general, about
+        case stats, standAndFocus, moveAndRest, keepPosture, general, about, upgrade
     }
 
     var body: some View {
         HStack(spacing: 0) {
-            SidebarView(selection: $selection)
+            SidebarView(selection: $selection, isProUnlocked: purchaseManager.isProUnlocked)
                 .frame(width: 220)
             
             Divider()
@@ -61,7 +63,11 @@ struct SettingsView: View {
                     ZStack {
                         switch selection {
                         case .stats:
-                            StatsContentView(statsService: statsService)
+                            if purchaseManager.isProUnlocked {
+                                StatsContentView(statsService: statsService)
+                            } else {
+                                ProUpgradeView()
+                            }
                         case .standAndFocus:
                             StandAndFocusSettingsContentView(
                                 userPrefs: userPrefs,
@@ -76,13 +82,17 @@ struct SettingsView: View {
                                 showExplanations: false
                             )
                         case .keepPosture:
-                            KeepPostureSettingsContentView(
-                                userPrefs: userPrefs,
-                                motionService: motionService,
-                                scheduler: scheduler,
-                                ctx: ctx,
-                                showExplanations: false
-                            )
+                            if purchaseManager.isProUnlocked {
+                                KeepPostureSettingsContentView(
+                                    userPrefs: userPrefs,
+                                    motionService: motionService,
+                                    scheduler: scheduler,
+                                    ctx: ctx,
+                                    showExplanations: false
+                                )
+                            } else {
+                                ProUpgradeView()
+                            }
                         case .general:
                             GeneralSettingsContentView(
                                 userPrefs: userPrefs,
@@ -91,6 +101,8 @@ struct SettingsView: View {
                                 ctx: ctx,
                                 showExplanations: false
                             )
+                        case .upgrade:
+                            ProUpgradeView()
                         case .about:
                             AboutView()
                         case nil:
@@ -179,6 +191,8 @@ struct SettingsView: View {
             return "General Settings"
         case .about:
             return "About"
+        case .upgrade:
+            return purchaseManager.isProUnlocked ? "Thank You" : "Standoro Pro"
         case nil:
             return nil
         }
@@ -194,6 +208,8 @@ struct SettingsView: View {
             return "Monitor your sitting posture using AirPods to detect when you're slouching or leaning too far. This helps you maintain better posture and reduce neck and back strain."
         case .general:
             return "Customize how Standoro behaves and integrates with your system."
+        case .upgrade:
+            return purchaseManager.isProUnlocked ? "You have unlocked all Pro features." : "Upgrade once, enjoy forever."
         default:
             return nil
         }

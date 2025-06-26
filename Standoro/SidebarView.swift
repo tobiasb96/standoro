@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SidebarView: View {
     @Binding var selection: SettingsView.SidebarItem?
+    let isProUnlocked: Bool
     @State private var hoveredItem: SettingsView.SidebarItem?
     
     var body: some View {
@@ -26,6 +27,17 @@ struct SidebarView: View {
                         .padding(.bottom, 2)
                         .padding(.leading, 4)
                     sidebarButton(item: .general, label: "General", icon: "gearshape")
+                    if !isProUnlocked {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Upgrade")
+                                .font(.system(size: 12))
+                                .foregroundColor(.settingsSubheader)
+                                .padding(.top, 18)
+                                .padding(.bottom, 2)
+                                .padding(.leading, 4)
+                            sidebarButton(item: .upgrade, label: "Get Pro", icon: "star.fill")
+                        }
+                    }
                 }
                 .padding(.top, 24)
                 .padding(.horizontal, 8)
@@ -59,6 +71,9 @@ struct SidebarView: View {
                     .foregroundColor(item == selection ? .settingsAccentGreen : .settingsText)
                     .frame(alignment: .leading)
                 Spacer()
+                if item == .stats && !isProUnlocked {
+                    ProBadge()
+                }
             }
             .padding(.vertical, 7)
             .padding(.horizontal, 8)

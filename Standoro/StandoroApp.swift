@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 import UserNotifications
 import Combine
+import StoreKit
 
 // Single source of truth for UserPrefs
 class UserPrefsManager: ObservableObject {
@@ -71,6 +72,7 @@ struct StandoroApp: App {
     @StateObject private var scheduler = Scheduler()
     @StateObject private var motionService = MotionService()
     @StateObject private var calendarService = CalendarService()
+    @StateObject private var purchaseManager = PurchaseManager()
     @State private var updateCounter = 0
     @State private var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     @StateObject private var statsService = StatsService()
@@ -116,6 +118,7 @@ struct StandoroApp: App {
                 statsService: statsService
             )
             .modelContainer(modelContainer)
+            .environmentObject(purchaseManager)
             .onAppear {
                 // Wire stats service after view is installed
                 scheduler.setStatsService(statsService)
@@ -139,6 +142,7 @@ struct StandoroApp: App {
                 statsService: statsService
             )
             .modelContainer(modelContainer)
+            .environmentObject(purchaseManager)
             .onAppear {
                 // Wire stats service after view is installed
                 scheduler.setStatsService(statsService)

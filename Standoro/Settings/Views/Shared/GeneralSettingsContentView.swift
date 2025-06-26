@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import StoreKit
 
 struct GeneralSettingsContentView: View {
     let userPrefs: UserPrefs
@@ -7,6 +8,8 @@ struct GeneralSettingsContentView: View {
     let scheduler: Scheduler
     let ctx: ModelContext
     let showExplanations: Bool
+    
+    @EnvironmentObject private var purchaseManager: PurchaseManager
     
     init(userPrefs: UserPrefs, calendarService: CalendarService, scheduler: Scheduler, ctx: ModelContext, showExplanations: Bool = false) {
         self.userPrefs = userPrefs
@@ -63,18 +66,24 @@ struct GeneralSettingsContentView: View {
                 iconColor: .settingsAccentGreen,
                 showDivider: userPrefs.calendarFilter,
                 trailing: AnyView(
-                    Toggle("", isOn: Binding(
-                        get: { userPrefs.calendarFilter },
-                        set: { newValue in
-                            userPrefs.calendarFilter = newValue
-                            try? ctx.save()
-                            scheduler.setCalendarService(calendarService, shouldCheck: newValue)
-                            if newValue && !calendarService.isAuthorized {
-                                Task { await requestCalendarAccess() }
+                    HStack(spacing: 6) {
+                        Toggle("", isOn: Binding(
+                            get: { userPrefs.calendarFilter },
+                            set: { newValue in
+                                userPrefs.calendarFilter = newValue
+                                try? ctx.save()
+                                scheduler.setCalendarService(calendarService, shouldCheck: newValue)
+                                if newValue && !calendarService.isAuthorized {
+                                    Task { await requestCalendarAccess() }
+                                }
                             }
+                        ))
+                        .toggleStyle(CustomToggleStyle())
+                        .disabled(!purchaseManager.isProUnlocked)
+                        if !purchaseManager.isProUnlocked {
+                            ProBadge()
                         }
-                    ))
-                    .toggleStyle(CustomToggleStyle())
+                    }
                 )
             ) {
                 if userPrefs.calendarFilter {
