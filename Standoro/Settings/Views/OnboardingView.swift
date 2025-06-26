@@ -110,6 +110,9 @@ struct OnboardingView: View {
                         
                         // Start Setup Button
                         Button("Start Setup") {
+                            Task {
+                                _ = await permissionManager.requestNotificationPermission()
+                            }
                             currentPage = 1
                         }
                         .buttonStyle(.borderedProminent)

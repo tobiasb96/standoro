@@ -15,7 +15,6 @@ struct MenuBarView: View {
     @State private var updateCounter = 0
     @State private var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     @StateObject private var audioService = AudioService()
-    @State private var cancellables = Set<AnyCancellable>()
 
     // Challenge state
     @State private var currentChallenge: Challenge?
@@ -518,16 +517,6 @@ struct MenuBarView: View {
     }
     
     // MARK: - Challenge System
-    
-    private func setupChallengeTriggers() {
-        // Monitor for phase transitions
-        Timer.publish(every: 1, on: .main, in: .common)
-            .autoconnect()
-            .sink { _ in
-                checkForChallengeOpportunity()
-        }
-            .store(in: &cancellables)
-    }
     
     private func showRandomChallenge() {
         let challenges = Challenge.allChallenges

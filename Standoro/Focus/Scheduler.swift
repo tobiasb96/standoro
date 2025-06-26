@@ -82,7 +82,7 @@ class Scheduler: ObservableObject {
     
     var intervalsBeforeLongBreak: Int {
         get { _intervalsBeforeLongBreak }
-        set { _intervalsBeforeLongBreak = newValue }
+        set { _intervalsBeforeLongBreak = max(1, newValue) }
     }
     
     var currentInterval: TimeInterval {
@@ -281,12 +281,16 @@ class Scheduler: ObservableObject {
         let sittingInterval = self.sittingInterval
         let standingInterval = self.standingInterval
         
+        // Capture settings to avoid MainActor access within background closure
+        let autoStartEnabled = self.autoStartEnabled
+        let pomodoroMode = self.pomodoroModeEnabled
+        
         // Check notification authorization first
         UNUserNotificationCenter.current().getNotificationSettings { settings in
             if settings.authorizationStatus == .authorized {
                 let content = UNMutableNotificationContent()
                 
-                if self.pomodoroModeEnabled {
+                if pomodoroMode {
                     // Use captured values to avoid MainActor isolation issues
                     let focusMinutes = Int(focusInterval / 60)
                     let shortBreakMinutes = Int(shortBreakInterval / 60)
@@ -297,15 +301,15 @@ class Scheduler: ObservableObject {
                     case .focus:
                         content.title = "Focus Session Complete!"
                         content.subtitle = "You've been \(currentPhase == .sitting ? "sitting" : "standing") for \(focusMinutes) minutes."
-                        content.body = self.autoStartEnabled ? "Time for a break." : "Time for a break. Open the menu to start your break."
+                        content.body = autoStartEnabled ? "Time for a break." : "Time for a break. Open the menu to start your break."
                     case .shortBreak:
                         content.title = "Break Complete!"
                         content.subtitle = "You've rested for \(shortBreakMinutes) minutes."
-                        content.body = self.autoStartEnabled ? "Ready for your next focus session?" : "Ready for your next focus session? Open the menu to start."
+                        content.body = autoStartEnabled ? "Ready for your next focus session?" : "Ready for your next focus session? Open the menu to start."
                     case .longBreak:
                         content.title = "Long Break Complete!"
                         content.subtitle = "You've completed \(completedSessions) focus sessions."
-                        content.body = self.autoStartEnabled ? "Great work! Ready for more?" : "Great work! Ready for more? Open the menu to start."
+                        content.body = autoStartEnabled ? "Great work! Ready for more?" : "Great work! Ready for more? Open the menu to start."
                     }
                 } else {
                     // Normal mode notifications (existing logic)
@@ -316,11 +320,11 @@ class Scheduler: ObservableObject {
                     case .sitting:
                         content.title = "Time to Stand Up!"
                         content.subtitle = "You've been sitting for \(sittingMinutes) minutes."
-                        content.body = self.autoStartEnabled ? "A quick stretch will do you good." : "A quick stretch will do you good. Open the menu to start your standing session."
+                        content.body = autoStartEnabled ? "A quick stretch will do you good." : "A quick stretch will do you good. Open the menu to start your standing session."
                     case .standing:
                         content.title = "Time to Sit Down"
                         content.subtitle = "You've been standing for \(standingMinutes) minutes."
-                        content.body = self.autoStartEnabled ? "Time to relax for a bit." : "Time to relax for a bit. Open the menu to start your sitting session."
+                        content.body = autoStartEnabled ? "Time to relax for a bit." : "Time to relax for a bit. Open the menu to start your sitting session."
                     }
                 }
                 
@@ -395,7 +399,9 @@ class Scheduler: ObservableObject {
     
     func setPostureNudgesEnabled(_ enabled: Bool) {
         postureNudgesEnabled = enabled
+        #if DEBUG
         print("🔔 Scheduler - Posture nudges enabled: \(enabled)")
+        #endif
         if enabled {
             startPostureNudgeTimer()
         } else {
@@ -406,7 +412,9 @@ class Scheduler: ObservableObject {
     private func startPostureNudgeTimer() {
         stopPostureNudgeTimer()
         scheduleNextPostureNudge()
+        #if DEBUG
         print("🔔 Scheduler - Started posture nudge timer, next nudge in \(Int(nextPostureNudgeInterval/60)) minutes")
+        #endif
         postureNudgeTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 self?.checkPostureNudge()

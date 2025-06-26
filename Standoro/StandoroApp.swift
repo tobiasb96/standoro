@@ -81,8 +81,11 @@ struct StandoroApp: App {
                 self.modelContainer = try! ModelContainer(for: schema, configurations: [ModelConfiguration(isStoredInMemoryOnly: true)])
             }
         }
-        
-        requestNotifAuth()
+
+        // Observe "SaveUserPrefs" notifications so preferences are always persisted, even if other UI views are not active
+        NotificationCenter.default.addObserver(forName: NSNotification.Name("SaveUserPrefs"), object: nil, queue: .main) { _ in
+            self.persistUserPrefs()
+        }
     }
 
     var body: some Scene {
@@ -135,15 +138,6 @@ struct StandoroApp: App {
         .menuBarExtraStyle(.window)
     }
     
-    private func requestNotifAuth() {
-        UNUserNotificationCenter.current().getNotificationSettings { settings in
-            if settings.authorizationStatus == .notDetermined {
-                UNUserNotificationCenter.current()
-                    .requestAuthorization(options: [.alert, .sound]) { _, _ in }
-            }
-        }
-    }
-    
     private func setupDockClickHandler() {
         // Set activation policy to regular (shows in dock)
         NSApp.setActivationPolicy(.regular)
@@ -165,6 +159,17 @@ struct StandoroApp: App {
                     NSApp.activate(ignoringOtherApps: true)
                 }
             }
+        }
+    }
+
+    // Persist UserPrefs globally when scheduler posts SaveUserPrefs, even if MenuBarExtra view is not mounted
+    func persistUserPrefs() {
+        do {
+            try modelContainer.mainContext.save()
+        } catch {
+            #if DEBUG
+            print("StandoroApp: Failed to save UserPrefs – \(error)")
+            #endif
         }
     }
 }
