@@ -15,7 +15,7 @@ class MotionService: ObservableObject {
     @Published var isDeviceReceivingData = false
     
     // Published properties for UI - these will trigger UI updates
-    @Published var currentPosture: PostureStatus = .unknown
+    @Published var currentPosture: PostureAnalyzer.PostureStatus = .unknown
     @Published var currentPitch: Double = 0.0
     @Published var currentRoll: Double = 0.0
     @Published var pitchDeviation: Double = 0.0
@@ -284,7 +284,4 @@ class MotionService: ObservableObject {
         postureAnalyzer.processMotionData(motionData)
         standupDetector.processMotionData(motionData)
     }
-}
-
-// MARK: - Type Aliases for Backward Compatibility
-typealias PostureStatus = PostureAnalyzer.PostureStatus 
+} 

@@ -198,57 +198,67 @@ class NotificationService: ObservableObject {
         }
     }
     
-    /// Check if sustained good posture duration has been reached
-    private func checkSustainedGoodPosture() {
-        guard isTrackingGoodPosture, let startTime = goodPostureStartTime else {
-            return
-        }
-        
-        let goodPostureDuration = Date().timeIntervalSince(startTime)
-        
-        if goodPostureDuration >= requiredGoodPostureDuration {
-            // Reset backoff when sustained good posture is achieved
-            resetPostureNotificationBackoff()
-        }
-    }
-    
-    /// Reset posture notification backoff
-    private func resetPostureNotificationBackoff() {
+    /// Enable posture tracking and start the backoff timer
+    func enablePostureTracking() {
+        // Reset backoff state when enabling
         postureNotificationCount = 0
         lastPostureNotificationTime = nil
         backoffMultiplier = 1.0
-        goodPostureStartTime = nil
-        isTrackingGoodPosture = false
+        
+        // Start the backoff reset timer
+        startBackoffResetTimer()
         
         #if DEBUG
-        print("NotificationService: Reset posture notification backoff")
+        print("NotificationService: Posture tracking enabled")
         #endif
     }
     
-    /// Start the backoff reset timer
-    func startBackoffResetTimer() {
+    /// Disable posture tracking and stop the backoff timer
+    func disablePostureTracking() {
+        // Stop the backoff reset timer
+        stopBackoffResetTimer()
+        
+        // Reset tracking state
+        isTrackingGoodPosture = false
+        goodPostureStartTime = nil
+        
+        #if DEBUG
+        print("NotificationService: Posture tracking disabled")
+        #endif
+    }
+    
+    private func startBackoffResetTimer() {
+        // Cancel existing timer
         backoffResetTimer?.invalidate()
-        backoffResetTimer = Timer.scheduledTimer(withTimeInterval: 60.0, repeats: true) { [weak self] _ in
+        
+        // Create new timer that fires every 30 seconds to check for backoff reset conditions
+        backoffResetTimer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) { [weak self] _ in
             Task { @MainActor in
-                self?.checkSustainedGoodPosture()
-                self?.checkTimeBasedBackoffReset()
+                self?.checkBackoffResetConditions()
             }
         }
     }
     
-    /// Stop the backoff reset timer
-    func stopBackoffResetTimer() {
+    private func stopBackoffResetTimer() {
         backoffResetTimer?.invalidate()
         backoffResetTimer = nil
     }
     
-    /// Check if enough time has passed to reset backoff
-    private func checkTimeBasedBackoffReset() {
-        guard let lastTime = lastPostureNotificationTime else { return }
-        
-        let timeSinceLastNotification = Date().timeIntervalSince(lastTime)
-        if timeSinceLastNotification >= resetBackoffAfter {
-            resetPostureNotificationBackoff()
+    private func checkBackoffResetConditions() {
+        // Reset backoff if we've been tracking good posture for the required duration
+        if isTrackingGoodPosture, let startTime = goodPostureStartTime {
+            let goodPostureDuration = Date().timeIntervalSince(startTime)
+            
+            if goodPostureDuration >= resetBackoffAfter {
+                // Reset backoff state
+                postureNotificationCount = 0
+                lastPostureNotificationTime = nil
+                backoffMultiplier = 1.0
+                
+                #if DEBUG
+                print("NotificationService: Backoff reset after \(Int(goodPostureDuration))s of good posture")
+                #endif
+            }
         }
     }
     

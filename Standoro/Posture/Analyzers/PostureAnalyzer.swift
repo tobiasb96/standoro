@@ -4,6 +4,14 @@ import Combine
 /// Analyzes motion data to detect posture quality
 @MainActor
 class PostureAnalyzer: ObservableObject {
+    enum PostureStatus {
+        case good
+        case poor
+        case unknown
+        case calibrating
+        case noData
+    }
+    
     @Published var currentPosture: PostureStatus = .unknown
     @Published var currentPitch: Double = 0.0
     @Published var currentRoll: Double = 0.0
@@ -50,22 +58,18 @@ class PostureAnalyzer: ObservableObject {
     }
     
     func completeCalibration() {
-        guard let pitch = currentPitch, let roll = currentRoll else {
-            return
-        }
-        
-        calibrationData = (pitch: pitch, roll: roll)
+        calibrationData = (pitch: currentPitch, roll: currentRoll)
         currentPosture = .good
         
         // Save calibration to UserPrefs if available
         if let prefs = userPrefs {
-            prefs.calibratedPitchValue = pitch
-            prefs.calibratedRollValue = roll
+            prefs.calibratedPitchValue = currentPitch
+            prefs.calibratedRollValue = currentRoll
             prefs.isCalibratedValue = true
         }
         
         #if DEBUG
-        print("PostureAnalyzer: Calibration completed: pitch=\(String(format: "%.1f", pitch))°, roll=\(String(format: "%.1f", roll))°")
+        print("PostureAnalyzer: Calibration completed: pitch=\(String(format: "%.1f", currentPitch))°, roll=\(String(format: "%.1f", currentRoll))°")
         #endif
     }
     
@@ -216,13 +220,17 @@ class PostureAnalyzer: ObservableObject {
         lastUpdateTime = Date()
     }
     
+    func setNoData() {
+        currentPosture = .noData
+    }
+    
     private func shouldUpdate() -> Bool {
         let timeSinceLastUpdate = Date().timeIntervalSince(lastUpdateTime)
         return timeSinceLastUpdate >= updateFrequency
     }
 }
 
-// MARK: - Notification Names
+// MARK: - Notification Extensions
 extension Notification.Name {
     static let postureThresholdReached = Notification.Name("postureThresholdReached")
     static let postureImproved = Notification.Name("postureImproved")

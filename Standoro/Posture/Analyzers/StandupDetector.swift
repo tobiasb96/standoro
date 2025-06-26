@@ -95,7 +95,7 @@ class StandupDetector: ObservableObject {
     }
 }
 
-// MARK: - Notification Names
+// MARK: - Notification Extensions
 extension Notification.Name {
     static let standupDetected = Notification.Name("standupDetected")
     static let sitDownDetected = Notification.Name("sitDownDetected")

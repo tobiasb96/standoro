@@ -31,10 +31,8 @@ class Scheduler: ObservableObject {
     private var remainingTimeWhenPaused: TimeInterval = 0
     private var calendarService: CalendarService?
     private var shouldCheckCalendar: Bool = false
-    private var autoStartEnabled: Bool = true // Default to true
     
     // Pomodoro tracking
-    @Published private(set) var pomodoroModeEnabled: Bool = false
     private var _focusInterval: TimeInterval = 25 * 60 // Default 25 minutes for Pomodoro
     private var _shortBreakInterval: TimeInterval = 5 * 60 // Default 5 minutes
     private var _longBreakInterval: TimeInterval = 15 * 60 // Default 15 minutes
@@ -46,6 +44,7 @@ class Scheduler: ObservableObject {
     var notificationService: NotificationService? = nil
     private var postureNudgeTimer: Timer?
     private var nextPostureNudgeInterval: TimeInterval = 0
+    private var nextPostureNudgeTime: Date?
     private var lastPostureNudgeTime: Date?
     private let minNudgeInterval: TimeInterval = 15 * 60 // 15 minutes
     private let maxNudgeInterval: TimeInterval = 45 * 60 // 45 minutes
@@ -136,7 +135,8 @@ class Scheduler: ObservableObject {
     }
     
     func setAutoStartEnabled(_ enabled: Bool) {
-        self.autoStartEnabled = enabled
+        // This will be handled by the computed property
+        // The actual value is stored in UserPrefs
     }
     
     func setPomodoroMode(_ enabled: Bool) {
@@ -176,12 +176,8 @@ class Scheduler: ObservableObject {
                 currentSessionType = SessionType(rawValue: prefs.currentSessionTypeValue) ?? .focus
                 completedFocusSessions = prefs.completedFocusSessionsValue
                 
-                if let nextFire = prefs.nextFireTimeValue {
-                    nextFire = nextFire
-                    calculateTimeRemaining()
-                } else {
-                    startNewPhase()
-                }
+                nextFire = prefs.nextFireTimeValue
+                calculateTimeRemaining()
             } else {
                 startNewPhase()
             }
@@ -274,8 +270,6 @@ class Scheduler: ObservableObject {
         // Capture values before the closure to avoid MainActor isolation issues
         let currentPhase = self.currentPhase
         let currentSessionType = self.currentSessionType
-        let autoStartEnabled = self.autoStartEnabled
-        let pomodoroModeEnabled = self.pomodoroModeEnabled
         
         // Capture Pomodoro intervals before the closure
         let focusInterval = self.focusInterval
@@ -292,7 +286,7 @@ class Scheduler: ObservableObject {
             if settings.authorizationStatus == .authorized {
                 let content = UNMutableNotificationContent()
                 
-                if pomodoroModeEnabled {
+                if self.pomodoroModeEnabled {
                     // Use captured values to avoid MainActor isolation issues
                     let focusMinutes = Int(focusInterval / 60)
                     let shortBreakMinutes = Int(shortBreakInterval / 60)
@@ -303,15 +297,15 @@ class Scheduler: ObservableObject {
                     case .focus:
                         content.title = "Focus Session Complete!"
                         content.subtitle = "You've been \(currentPhase == .sitting ? "sitting" : "standing") for \(focusMinutes) minutes."
-                        content.body = autoStartEnabled ? "Time for a break." : "Time for a break. Open the menu to start your break."
+                        content.body = self.autoStartEnabled ? "Time for a break." : "Time for a break. Open the menu to start your break."
                     case .shortBreak:
                         content.title = "Break Complete!"
                         content.subtitle = "You've rested for \(shortBreakMinutes) minutes."
-                        content.body = autoStartEnabled ? "Ready for your next focus session?" : "Ready for your next focus session? Open the menu to start."
+                        content.body = self.autoStartEnabled ? "Ready for your next focus session?" : "Ready for your next focus session? Open the menu to start."
                     case .longBreak:
                         content.title = "Long Break Complete!"
                         content.subtitle = "You've completed \(completedSessions) focus sessions."
-                        content.body = autoStartEnabled ? "Great work! Ready for more?" : "Great work! Ready for more? Open the menu to start."
+                        content.body = self.autoStartEnabled ? "Great work! Ready for more?" : "Great work! Ready for more? Open the menu to start."
                     }
                 } else {
                     // Normal mode notifications (existing logic)
@@ -322,11 +316,11 @@ class Scheduler: ObservableObject {
                     case .sitting:
                         content.title = "Time to Stand Up!"
                         content.subtitle = "You've been sitting for \(sittingMinutes) minutes."
-                        content.body = autoStartEnabled ? "A quick stretch will do you good." : "A quick stretch will do you good. Open the menu to start your standing session."
+                        content.body = self.autoStartEnabled ? "A quick stretch will do you good." : "A quick stretch will do you good. Open the menu to start your standing session."
                     case .standing:
                         content.title = "Time to Sit Down"
                         content.subtitle = "You've been standing for \(standingMinutes) minutes."
-                        content.body = autoStartEnabled ? "Time to relax for a bit." : "Time to relax for a bit. Open the menu to start your sitting session."
+                        content.body = self.autoStartEnabled ? "Time to relax for a bit." : "Time to relax for a bit. Open the menu to start your sitting session."
                     }
                 }
                 
@@ -361,7 +355,7 @@ class Scheduler: ObservableObject {
     }
     
     private func switchPhase() {
-        if pomodoroModeEnabled {
+        if self.pomodoroModeEnabled {
             switch currentSessionType {
             case .focus:
                 completedFocusSessions += 1
@@ -428,13 +422,14 @@ class Scheduler: ObservableObject {
     private func checkPostureNudge() {
         guard postureNudgesEnabled,
               let motionService = motionService,
-              let notificationService = motionService.notificationService,
               let nextNudgeTime = nextPostureNudgeTime else {
             return
         }
         
+        let notificationService = motionService.notificationService
+        
         // Check if we're in a work period
-        let isWorkPeriod = pomodoroModeEnabled ? currentSessionType == .focus : true
+        let isWorkPeriod = self.pomodoroModeEnabled ? currentSessionType == .focus : true
         
         if !isWorkPeriod {
             return
@@ -454,7 +449,9 @@ class Scheduler: ObservableObject {
     
     private func scheduleNextPostureNudge() {
         nextPostureNudgeInterval = Double.random(in: minNudgeInterval...maxNudgeInterval)
+        #if DEBUG
         print("🔔 Scheduler - Scheduled next nudge in \(Int(nextPostureNudgeInterval/60)) minutes (random between \(Int(minNudgeInterval/60))-\(Int(maxNudgeInterval/60)) minutes)")
+        #endif
     }
     
     func setStatsService(_ service: StatsService) {
@@ -469,7 +466,7 @@ class Scheduler: ObservableObject {
     
     private func saveState() {
         guard let prefs = userPrefs else { return }
-        saveStateToUserPrefs(prefs)
+        saveStateToUserPrefs()
         
         // Trigger a save to the model context
         // Note: We can't directly access the model context from here,
@@ -478,14 +475,12 @@ class Scheduler: ObservableObject {
     }
     
     private func recordCurrentPhaseStats(skipped: Bool) {
-        guard let statsService, let start = phaseStartTime else { 
-            print("📊 Stats: Cannot record - statsService: \(statsService != nil), phaseStartTime: \(phaseStartTime != nil)")
+        guard let statsService = statsService, let start = phaseStartTime else { 
             return 
         }
         let elapsed = max(Date().timeIntervalSince(start), 0)
-        print("📊 Stats: Recording phase - type: \(currentSessionType), phase: \(currentPhase), elapsed: \(Int(elapsed))s, skipped: \(skipped)")
         
-        if pomodoroModeEnabled {
+        if self.pomodoroModeEnabled {
             statsService.recordPhase(type: currentSessionType,
                                      phase: currentSessionType == .focus ? currentPhase : nil,
                                      seconds: elapsed,
@@ -496,7 +491,6 @@ class Scheduler: ObservableObject {
                                      seconds: elapsed,
                                      skipped: skipped)
         }
-        print("📊 Stats: After recording - focus: \(Int(statsService.focusSeconds/60))m, sitting: \(Int(statsService.sittingSeconds/60))m, standing: \(Int(statsService.standingSeconds/60))m, breaks: \(statsService.breaksTaken)/\(statsService.breaksSkipped)")
     }
     
     // MARK: - State Persistence
@@ -509,7 +503,7 @@ class Scheduler: ObservableObject {
         prefs.currentPhaseValue = currentPhase.rawValue
         prefs.currentSessionTypeValue = currentSessionType.rawValue
         prefs.completedFocusSessionsValue = completedFocusSessions
-        prefs.nextFireTimeValue = nextFireTime
+        prefs.nextFireTimeValue = nextFire
         prefs.remainingTimeWhenPausedValue = remainingTimeWhenPaused
         prefs.phaseStartTimeValue = phaseStartTime
     }
@@ -545,18 +539,13 @@ class Scheduler: ObservableObject {
     }
     
     private func calculateTimeRemaining() {
-        guard let nextFire = nextFire else {
-            timeRemaining = 0
-            return
-        }
-        
         timeRemaining = max(0, nextFire.timeIntervalSince(Date()))
     }
     
     private func startNewPhase() {
         phaseStartTime = Date()
         
-        if pomodoroModeEnabled {
+        if self.pomodoroModeEnabled {
             // Pomodoro mode logic
             let interval: TimeInterval
             switch currentSessionType {
@@ -580,7 +569,7 @@ class Scheduler: ObservableObject {
     }
     
     private func advanceToNextPhase() {
-        if pomodoroModeEnabled {
+        if self.pomodoroModeEnabled {
             advancePomodoroPhase()
         } else {
             advanceSimplePhase()
