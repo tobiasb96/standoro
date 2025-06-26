@@ -80,6 +80,32 @@ struct ProUpgradeView: View {
                             Task { await purchaseManager.restore() }
                         }
                         .buttonStyle(.bordered)
+                        
+                        #if DEBUG
+                        Divider()
+                            .padding(.vertical, 8)
+                        
+                        VStack(spacing: 8) {
+                            Text("Debug Controls")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            
+                            HStack(spacing: 12) {
+                                Button("Simulate Purchase") {
+                                    purchaseManager.simulatePurchase()
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                                
+                                Button("Reset Purchase") {
+                                    purchaseManager.resetPurchase()
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                            }
+                        }
+                        .padding(.top, 8)
+                        #endif
                     }
                 }
                 Spacer()

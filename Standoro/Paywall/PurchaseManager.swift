@@ -12,6 +12,13 @@ class PurchaseManager: ObservableObject {
     private let proProductId = "com.standoro.pro"
     
     init() {
+        #if DEBUG
+        // Enable StoreKit testing in debug builds
+        Task {
+            try? await AppStore.sync()
+        }
+        #endif
+        
         Task {
             await fetchProduct()
             await updatePurchasedStatus()
@@ -21,17 +28,42 @@ class PurchaseManager: ObservableObject {
     
     // MARK: - Public API
     func buyPro() async throws {
-        guard let product = proProduct else { return }
+        guard let product = proProduct else { 
+            #if DEBUG
+            print("PurchaseManager: No product available for purchase")
+            #endif
+            return 
+        }
+        
+        #if DEBUG
+        print("PurchaseManager: Attempting to purchase product: \(product.id)")
+        #endif
+        
         let result = try await product.purchase()
         switch result {
         case .success(let verificationResult):
             if case .verified(_) = verificationResult {
                 isProUnlocked = true
+                #if DEBUG
+                print("PurchaseManager: Purchase successful and verified")
+                #endif
+            } else {
+                #if DEBUG
+                print("PurchaseManager: Purchase successful but verification failed")
+                #endif
             }
-        case .userCancelled, .pending:
-            break
+        case .userCancelled:
+            #if DEBUG
+            print("PurchaseManager: Purchase cancelled by user")
+            #endif
+        case .pending:
+            #if DEBUG
+            print("PurchaseManager: Purchase pending approval")
+            #endif
         @unknown default:
-            break
+            #if DEBUG
+            print("PurchaseManager: Unknown purchase result")
+            #endif
         }
     }
     
@@ -39,6 +71,9 @@ class PurchaseManager: ObservableObject {
         do {
             try await AppStore.sync()
             await updatePurchasedStatus()
+            #if DEBUG
+            print("PurchaseManager: Restore completed")
+            #endif
         } catch {
             #if DEBUG
             print("PurchaseManager: Restore failed – \(error)")
@@ -50,6 +85,13 @@ class PurchaseManager: ObservableObject {
     private func fetchProduct() async {
         do {
             proProduct = try await Product.products(for: [proProductId]).first
+            #if DEBUG
+            if let product = proProduct {
+                print("PurchaseManager: Product fetched successfully - \(product.displayName) (\(product.displayPrice))")
+            } else {
+                print("PurchaseManager: No product found for ID: \(proProductId)")
+            }
+            #endif
         } catch {
             #if DEBUG
             print("PurchaseManager: Failed to fetch product – \(error)")
@@ -62,6 +104,9 @@ class PurchaseManager: ObservableObject {
             switch entitlement {
             case .verified(let transaction) where transaction.productID == proProductId:
                 isProUnlocked = true
+                #if DEBUG
+                print("PurchaseManager: Found valid entitlement for Pro")
+                #endif
                 return
             default:
                 continue
@@ -69,6 +114,9 @@ class PurchaseManager: ObservableObject {
         }
         // No entitlement found – user has not purchased
         isProUnlocked = false
+        #if DEBUG
+        print("PurchaseManager: No valid entitlements found")
+        #endif
     }
     
     private func observeTransactionUpdates() {
@@ -78,9 +126,25 @@ class PurchaseManager: ObservableObject {
                 if case .verified(let transaction) = update, transaction.productID == self.proProductId {
                     await MainActor.run {
                         self.isProUnlocked = true
+                        #if DEBUG
+                        print("PurchaseManager: Transaction update - Pro unlocked")
+                        #endif
                     }
                 }
             }
         })
     }
+    
+    #if DEBUG
+    // MARK: - Debug helpers for testing
+    func simulatePurchase() {
+        isProUnlocked = true
+        print("PurchaseManager: Simulated purchase - Pro unlocked")
+    }
+    
+    func resetPurchase() {
+        isProUnlocked = false
+        print("PurchaseManager: Reset purchase - Pro locked")
+    }
+    #endif
 } 
