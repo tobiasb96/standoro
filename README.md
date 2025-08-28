@@ -13,6 +13,11 @@ Standoro is a comprehensive wellness and productivity app that combines:
 - **Activity Challenges**: Gamified movement prompts to keep you active
 - **Statistics Tracking**: Monitor your wellness habits over time
 
+<img width="1440" height="900" alt="Standoro_Timer" src="https://github.com/user-attachments/assets/c2278436-392f-4270-a6ed-a91748dde369" />
+<img width="1440" height="900" alt="Standoro_Stats" src="https://github.com/user-attachments/assets/42449aa5-6e15-48c1-bee8-447fed35204e" />
+<img width="1440" height="900" alt="Standoro_Settings" src="https://github.com/user-attachments/assets/de9a879d-fd71-44e6-9428-82505a5ad523" />
+<img width="1440" height="900" alt="Standoro_Movement" src="https://github.com/user-attachments/assets/2b445a58-d758-4bea-afd2-8be9561aef7c" />
+
 ## 🏗️ Architecture
 
 The app follows a modular architecture with clear separation of concerns:
