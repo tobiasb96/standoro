@@ -20,8 +20,6 @@ Standoro is a comprehensive wellness and productivity app that combines:
   <img width="400" alt="Standoro_Movement" src="https://github.com/user-attachments/assets/2b445a58-d758-4bea-afd2-8be9561aef7c" />
 </div>
 
-<sub><i>Scroll horizontally to view more screenshots.</i></sub>
-
 ## 🏗️ Architecture
 
 The app follows a modular architecture with clear separation of concerns:
